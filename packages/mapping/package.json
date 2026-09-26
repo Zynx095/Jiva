@@ -1,0 +1,16 @@
+{
+  "name": "@jiva/mapping",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@jiva/domain-models": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2",
+    "@types/node": "^20.5.1"
+  }
+}

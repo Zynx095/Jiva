@@ -1,0 +1,19 @@
+{
+  "name": "@jiva/realtime",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w"
+  },
+  "dependencies": {
+    "@jiva/config": "*",
+    "@jiva/event-schema": "*",
+    "@aws-sdk/client-apigatewaymanagementapi": "^3.600.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.5.1",
+    "typescript": "^5.2.2"
+  }
+}

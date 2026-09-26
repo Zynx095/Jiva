@@ -1,0 +1,12 @@
+import * as L from './lib.mjs';
+const { events, ready } = L.listen(); await ready; const c='CASE-MAP-'+Date.now()%1000;
+const t=Date.now();
+await L.post(L.ev('patient.emergency.created',{condition:'TRAUMA',location:{latitude:13.0358,longitude:77.597},severity:'HIGH'},{type:'patient',id:'p'},{patientId:c}));
+while(!events.find(e=>e.eventType==='hospital.candidate.generated'&&e.payload.caseId===c) && Date.now()-t<60000) await L.sleep(100);
+console.log('candidate generation latency ms:', Date.now()-t);
+const cand=events.find(e=>e.eventType==='hospital.candidate.generated'&&e.payload.caseId===c)?.payload.candidates; console.log(cand&&cand.map(x=>[x.hospitalId,x.distanceKm,x.etaMinutes]));
+await L.post(L.ev('ambulance.dispatched',{ambulanceId:'AMB-BLR-002',caseId:c,destination:{latitude:1,longitude:1},estimatedEtaMinutes:1},{type:'ambulance',id:'x'},{patientId:c})); await L.sleep(500);
+await L.post(L.acc(c,'HOSP-BLR-004','ACCEPTED')); await L.sleep(1500);
+const rr=events.find(e=>e.eventType==='route.recalculated'&&e.payload.newHospitalId==='HOSP-BLR-004'); console.log('route event', rr&&JSON.stringify({provider:rr.payload.provider,sourceType:rr.payload.sourceType,synthetic:rr.payload.synthetic,d:rr.payload.distanceMeters,t:rr.payload.durationSeconds,coords:rr.payload.coordinates?.length}));
+const h=await L.get('/api/health'); console.log('health mapping', JSON.stringify(h.json.components.mapping));
+process.exit(0);

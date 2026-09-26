@@ -1,0 +1,48 @@
+{
+  "name": "jiva",
+  "version": "1.0.0",
+  "description": "Privacy-preserving, real-time, event-driven healthcare coordination platform",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev-all.mjs",
+    "dev:api": "tsx services/api/src/index.ts",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run build --workspaces --if-present",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "tsx tests/unit/idempotency.test.ts && tsx tests/unit/event-ordering.test.ts && tsx tests/unit/rbac.test.ts && tsx tests/unit/security-prompt-injection.test.ts && tsx tests/unit/mapping-provider.test.ts && tsx tests/unit/mapping-fallback.test.ts",
+    "test:integration": "tsx tests/integration/parity.test.ts && tsx tests/integration/mapping-parity.test.ts && tsx tests/integration/api-runtime.test.ts",
+    "demo:check": "tsx scripts/demo-check.ts",
+    "aws:bootstrap": "tsx scripts/aws-manage.ts bootstrap",
+    "aws:deploy": "tsx scripts/aws-manage.ts deploy",
+    "aws:status": "tsx scripts/aws-manage.ts status",
+    "aws:destroy": "tsx scripts/aws-manage.ts destroy",
+    "simulate:mapping:blr": "tsx scripts/simulate-mapping.ts",
+    "simulate:emergency": "npm run simulate:emergency:blr",
+    "simulate:emergency:blr": "tsx scripts/simulate-events.ts emergency:blr",
+    "simulate:hospital-response:blr": "tsx scripts/simulate-hospital-response.ts",
+    "simulate:hospital-acceptance:blr": "tsx scripts/simulate-hospital-response.ts acceptance",
+    "simulate:reroute:blr": "tsx scripts/simulate-full.ts",
+    "simulate:full:blr": "tsx scripts/simulate-full.ts",
+    "simulate:ai:blr": "tsx scripts/simulate-full.ts",
+    "simulate:aws:blr": "tsx scripts/simulate-aws.ts",
+    "data:fetch": "tsx scripts/data-fetch.ts",
+    "data:normalize": "tsx scripts/data-normalize.ts",
+    "data:validate": "tsx scripts/data-validate.ts",
+    "data:build": "npm run data:fetch && npm run data:normalize && npm run data:validate",
+    "start:prod": "node scripts/dev-all.mjs --prod",
+    "demo:reset": "tsx scripts/demo-reset.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.5.1",
+    "@types/uuid": "^10.0.0",
+    "ts-node": "^10.9.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5.2.2",
+    "uuid": "^14.0.2"
+  }
+}

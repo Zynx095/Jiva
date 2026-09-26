@@ -1,0 +1,26 @@
+[
+  {
+    "hospitalName": "KC General Hospital",
+    "address": "Malleshwaram, Bengaluru",
+    "category": "Government Hospital",
+    "pincode": "560003",
+    "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility/kc-general-hospital/",
+    "retrievedAt": "2026-09-25T00:00:00Z"
+  },
+  {
+    "hospitalName": "Jayanagar General Hospital",
+    "address": "4th T Block East, Jayanagar, Bengaluru",
+    "category": "Government Hospital",
+    "pincode": "560041",
+    "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility-category/hospitals/",
+    "retrievedAt": "2026-09-25T00:00:00Z"
+  },
+  {
+    "hospitalName": "Bowring and Lady Curzon Hospital",
+    "address": "Shivajinagar, Bengaluru",
+    "category": "Government Hospital",
+    "pincode": "560001",
+    "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility-category/hospitals/",
+    "retrievedAt": "2026-09-25T00:00:00Z"
+  }
+]

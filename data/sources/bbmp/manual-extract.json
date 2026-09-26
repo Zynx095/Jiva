@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Referral Hospital, Srirampura",
+    "zone": "West",
+    "ward": "Srirampura",
+    "category": "Referral Hospital",
+    "sourceUrl": "https://site.bbmp.gov.in/departmentwebsites/Health/palikehospitals.html",
+    "retrievedAt": "2026-09-25T00:00:00Z"
+  },
+  {
+    "name": "Maternity Home, Ulsoor",
+    "zone": "East",
+    "ward": "Halasuru",
+    "category": "Maternity Home",
+    "sourceUrl": "https://site.bbmp.gov.in/departmentwebsites/Health/palikehospitals.html",
+    "retrievedAt": "2026-09-25T00:00:00Z"
+  }
+]

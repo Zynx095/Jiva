@@ -1,0 +1,21 @@
+[
+  {
+    "name": "Bangalore Baptist Hospital",
+    "address": "Bellary Road, Hebbal, Bengaluru",
+    "website": "bbh.org.in",
+    "phone": "080-23002999",
+    "type": "Private Teaching Hospital",
+    "totalBeds": 450,
+    "sourceUrl": "https://bbh.org.in/",
+    "retrievedAt": "2026-09-25T00:00:00Z"
+  },
+  {
+    "name": "Manipal Hospital",
+    "address": "98, HAL Airport road, Bengaluru",
+    "website": "manipalhospitals.com",
+    "phone": "1800 102 5555",
+    "type": "Private Hospital",
+    "sourceUrl": "https://www.manipalhospitals.com/oldairportroad/",
+    "retrievedAt": "2026-09-25T00:00:00Z"
+  }
+]

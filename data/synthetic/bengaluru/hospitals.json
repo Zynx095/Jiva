@@ -1,0 +1,162 @@
+[
+  {
+    "hospitalId": "HOSP-BLR-001",
+    "displayName": "JIVA Bengaluru Trauma Centre — Hebbal",
+    "address": {
+      "fullAddress": "Hebbal, Bengaluru, Karnataka, India",
+      "locality": "Hebbal",
+      "city": "Bengaluru",
+      "district": "Bengaluru Urban",
+      "state": "Karnataka",
+      "country": "India"
+    },
+    "location": {
+      "latitude": 13.0358,
+      "longitude": 77.5970,
+      "coordinateSource": "SYNTHETIC"
+    },
+    "capabilities": {
+      "emergency": true,
+      "trauma": true,
+      "icu": true,
+      "ventilator": true
+    },
+    "historicalCapacity": {
+      "totalBeds": 150
+    },
+    "operationalState": {
+      "emergency": "AVAILABLE",
+      "trauma": "AVAILABLE",
+      "icu": "LIMITED",
+      "nicu": "UNKNOWN",
+      "picu": "UNKNOWN",
+      "ventilator": "AVAILABLE",
+      "acceptance": "UNKNOWN",
+      "source": "SYNTHETIC_DEMO"
+    },
+    "utilizationIndicators": [],
+    "provenance": [],
+    "verificationStatus": "SYNTHETIC_DEMO",
+    "dataStatus": "SYNTHETIC_DEMO"
+  },
+  {
+    "hospitalId": "HOSP-BLR-002",
+    "displayName": "JIVA Bengaluru Emergency Hospital — Whitefield",
+    "address": {
+      "fullAddress": "Whitefield, Bengaluru, Karnataka, India",
+      "locality": "Whitefield",
+      "city": "Bengaluru",
+      "district": "Bengaluru Urban",
+      "state": "Karnataka",
+      "country": "India"
+    },
+    "location": {
+      "latitude": 12.9698,
+      "longitude": 77.7499,
+      "coordinateSource": "SYNTHETIC"
+    },
+    "capabilities": {
+      "emergency": true,
+      "trauma": true,
+      "icu": true,
+      "ventilator": true
+    },
+    "historicalCapacity": {
+      "totalBeds": 200
+    },
+    "operationalState": {
+      "emergency": "AVAILABLE",
+      "trauma": "AVAILABLE",
+      "icu": "AVAILABLE",
+      "nicu": "UNKNOWN",
+      "picu": "UNKNOWN",
+      "ventilator": "AVAILABLE",
+      "acceptance": "UNKNOWN",
+      "source": "SYNTHETIC_DEMO"
+    },
+    "utilizationIndicators": [],
+    "provenance": [],
+    "verificationStatus": "SYNTHETIC_DEMO",
+    "dataStatus": "SYNTHETIC_DEMO"
+  },
+  {
+    "hospitalId": "HOSP-BLR-003",
+    "displayName": "JIVA Bengaluru Medical Institute — Koramangala",
+    "address": {
+      "fullAddress": "Koramangala, Bengaluru, Karnataka, India",
+      "locality": "Koramangala",
+      "city": "Bengaluru",
+      "district": "Bengaluru Urban",
+      "state": "Karnataka",
+      "country": "India"
+    },
+    "location": {
+      "latitude": 12.9352,
+      "longitude": 77.6245,
+      "coordinateSource": "SYNTHETIC"
+    },
+    "capabilities": {
+      "emergency": true,
+      "trauma": false,
+      "icu": false,
+      "ventilator": true
+    },
+    "historicalCapacity": {
+      "totalBeds": 100
+    },
+    "operationalState": {
+      "emergency": "LIMITED",
+      "trauma": "UNAVAILABLE",
+      "icu": "UNAVAILABLE",
+      "nicu": "UNKNOWN",
+      "picu": "UNKNOWN",
+      "ventilator": "LIMITED",
+      "acceptance": "UNKNOWN",
+      "source": "SYNTHETIC_DEMO"
+    },
+    "utilizationIndicators": [],
+    "provenance": [],
+    "verificationStatus": "SYNTHETIC_DEMO",
+    "dataStatus": "SYNTHETIC_DEMO"
+  },
+  {
+    "hospitalId": "HOSP-BLR-004",
+    "displayName": "JIVA Bengaluru Medical Centre — Indiranagar",
+    "address": {
+      "fullAddress": "Indiranagar, Bengaluru, Karnataka, India",
+      "locality": "Indiranagar",
+      "city": "Bengaluru",
+      "district": "Bengaluru Urban",
+      "state": "Karnataka",
+      "country": "India"
+    },
+    "location": {
+      "latitude": 12.9784,
+      "longitude": 77.6408,
+      "coordinateSource": "SYNTHETIC"
+    },
+    "capabilities": {
+      "emergency": true,
+      "trauma": true,
+      "icu": true,
+      "ventilator": true
+    },
+    "historicalCapacity": {
+      "totalBeds": 350
+    },
+    "operationalState": {
+      "emergency": "AVAILABLE",
+      "trauma": "AVAILABLE",
+      "icu": "AVAILABLE",
+      "nicu": "UNKNOWN",
+      "picu": "UNKNOWN",
+      "ventilator": "AVAILABLE",
+      "acceptance": "UNKNOWN",
+      "source": "SYNTHETIC_DEMO"
+    },
+    "utilizationIndicators": [],
+    "provenance": [],
+    "verificationStatus": "SYNTHETIC_DEMO",
+    "dataStatus": "SYNTHETIC_DEMO"
+  }
+]

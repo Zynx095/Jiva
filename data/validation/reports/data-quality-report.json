@@ -1,0 +1,12 @@
+{
+  "totalFacilities": 7,
+  "facilitiesWithCoordinates": 7,
+  "facilitiesWithPhone": 2,
+  "facilitiesWithOfficialSource": 7,
+  "facilitiesWithHistoricalBeds": 1,
+  "facilitiesWithCurrentOperationalData": 0,
+  "facilitiesWithUnknownCapacity": 7,
+  "unverifiedFields": 0,
+  "historicalFields": 0,
+  "errors": []
+}

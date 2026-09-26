@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  # Primary Routing Engine: Valhalla (OpenStreetMap-based routing)
+  valhalla:
+    image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
+    container_name: jiva-valhalla
+    ports:
+      - "8002:8002"
+    environment:
+      - serve_tiles=True
+      - build_tiles=True
+      - use_tiles_ignore_pbf=True
+      - force_rebuild=False
+      # Default: Southern India / Karnataka extract if custom_files provided
+      # URL example for Karnataka extract from Geofabrik:
+      # - tile_urls=https://download.geofabrik.de/asia/india/southern-zone-latest.osm.pbf
+    volumes:
+      - ./valhalla_tiles:/custom_files
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # Secondary Routing Engine / Fallback: OSRM (Car routing backend)
+  osrm:
+    image: osrm/osrm-backend:latest
+    container_name: jiva-osrm
+    ports:
+      - "5000:5000"
+    command: osrm-routed --algorithm mld /data/karnataka-latest.osrm
+    volumes:
+      - ./osrm_data:/data
+    restart: unless-stopped

@@ -1,0 +1,320 @@
+[
+  {
+    "hospitalId": "HOSP-INST-8592",
+    "displayName": "Bangalore Baptist Hospital",
+    "facilityType": "Private Teaching Hospital",
+    "address": {
+      "fullAddress": "Bellary Road, Hebbal, Bengaluru",
+      "city": "Bengaluru",
+      "district": "Bengaluru Urban",
+      "state": "Karnataka",
+      "country": "India"
+    },
+    "contact": {
+      "phone": "080-23002999",
+      "website": "bbh.org.in"
+    },
+    "capabilities": {},
+    "historicalCapacity": {
+      "totalBeds": 450
+    },
+    "operationalState": {
+      "emergency": "UNKNOWN",
+      "icu": "UNKNOWN",
+      "trauma": "UNKNOWN",
+      "nicu": "UNKNOWN",
+      "picu": "UNKNOWN",
+      "ventilator": "UNKNOWN",
+      "acceptance": "UNKNOWN",
+      "source": "UNKNOWN"
+    },
+    "utilizationIndicators": [],
+    "provenance": [
+      {
+        "sourceId": "institutions",
+        "sourceName": "Official Hospital Institutions / Websites",
+        "sourceType": "HOSPITAL_WEBSITE",
+        "sourceUrl": "https://bbh.org.in/",
+        "retrievedAt": "2026-09-25T00:00:00Z",
+        "verificationStatus": "PUBLIC_LISTED",
+        "confidence": 0.9
+      }
+    ],
+    "verificationStatus": "PUBLIC_LISTED",
+    "dataStatus": "PUBLIC_LISTED",
+    "location": {
+      "latitude": 13.0334,
+      "longitude": 77.5925,
+      "coordinateSource": "GEOCODED"
+    }
+  },
+  {
+    "hospitalId": "HOSP-INST-0698",
+    "displayName": "Manipal Hospital",
+    "facilityType": "Private Hospital",
+    "address": {
+      "fullAddress": "98, HAL Airport road, Bengaluru",
+      "city": "Bengaluru",
+      "district": "Bengaluru Urban",
+      "state": "Karnataka",
+      "country": "India"
+    },
+    "contact": {
+      "phone": "1800 102 5555",
+      "website": "manipalhospitals.com"
+    },
+    "capabilities": {},
+    "historicalCapacity": {},
+    "operationalState": {
+      "emergency": "UNKNOWN",
+      "icu": "UNKNOWN",
+      "trauma": "UNKNOWN",
+      "nicu": "UNKNOWN",
+      "picu": "UNKNOWN",
+      "ventilator": "UNKNOWN",
+      "acceptance": "UNKNOWN",
+      "source": "UNKNOWN"
+    },
+    "utilizationIndicators": [],
+    "provenance": [
+      {
+        "sourceId": "institutions",
+        "sourceName": "Official Hospital Institutions / Websites",
+        "sourceType": "HOSPITAL_WEBSITE",
+        "sourceUrl": "https://www.manipalhospitals.com/oldairportroad/",
+        "retrievedAt": "2026-09-25T00:00:00Z",
+        "verificationStatus": "PUBLIC_LISTED",
+        "confidence": 0.9
+      }
+    ],
+    "verificationStatus": "PUBLIC_LISTED",
+    "dataStatus": "PUBLIC_LISTED",
+    "location": {
+      "latitude": 12.9592,
+      "longitude": 77.6485,
+      "coordinateSource": "GEOCODED"
+    }
+  },
+  {
+    "hospitalId": "HOSP-GOVT-3784",
+    "displayName": "KC General Hospital",
+    "facilityType": "Government Hospital",
+    "address": {
+      "fullAddress": "Malleshwaram, Bengaluru",
+      "pincode": "560003",
+      "city": "Bengaluru",
+      "district": "Bengaluru Urban",
+      "state": "Karnataka",
+      "country": "India"
+    },
+    "capabilities": {},
+    "historicalCapacity": {},
+    "operationalState": {
+      "emergency": "UNKNOWN",
+      "icu": "UNKNOWN",
+      "trauma": "UNKNOWN",
+      "nicu": "UNKNOWN",
+      "picu": "UNKNOWN",
+      "ventilator": "UNKNOWN",
+      "acceptance": "UNKNOWN",
+      "source": "UNKNOWN"
+    },
+    "utilizationIndicators": [],
+    "provenance": [
+      {
+        "sourceId": "bengaluru-urban",
+        "sourceName": "Bengaluru Urban Government Hospital Directory",
+        "sourceType": "GOVERNMENT_DATASET",
+        "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility/kc-general-hospital/",
+        "retrievedAt": "2026-09-25T00:00:00Z",
+        "verificationStatus": "PUBLIC_LISTED",
+        "confidence": 0.95
+      }
+    ],
+    "verificationStatus": "PUBLIC_LISTED",
+    "dataStatus": "PUBLIC_LISTED",
+    "location": {
+      "latitude": 12.9961,
+      "longitude": 77.5712,
+      "coordinateSource": "GEOCODED"
+    }
+  },
+  {
+    "hospitalId": "HOSP-GOVT-2801",
+    "displayName": "Jayanagar General Hospital",
+    "facilityType": "Government Hospital",
+    "address": {
+      "fullAddress": "4th T Block East, Jayanagar, Bengaluru",
+      "pincode": "560041",
+      "city": "Bengaluru",
+      "district": "Bengaluru Urban",
+      "state": "Karnataka",
+      "country": "India"
+    },
+    "capabilities": {},
+    "historicalCapacity": {},
+    "operationalState": {
+      "emergency": "UNKNOWN",
+      "icu": "UNKNOWN",
+      "trauma": "UNKNOWN",
+      "nicu": "UNKNOWN",
+      "picu": "UNKNOWN",
+      "ventilator": "UNKNOWN",
+      "acceptance": "UNKNOWN",
+      "source": "UNKNOWN"
+    },
+    "utilizationIndicators": [],
+    "provenance": [
+      {
+        "sourceId": "bengaluru-urban",
+        "sourceName": "Bengaluru Urban Government Hospital Directory",
+        "sourceType": "GOVERNMENT_DATASET",
+        "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility-category/hospitals/",
+        "retrievedAt": "2026-09-25T00:00:00Z",
+        "verificationStatus": "PUBLIC_LISTED",
+        "confidence": 0.95
+      }
+    ],
+    "verificationStatus": "PUBLIC_LISTED",
+    "dataStatus": "PUBLIC_LISTED",
+    "location": {
+      "latitude": 12.9304,
+      "longitude": 77.5855,
+      "coordinateSource": "GEOCODED"
+    }
+  },
+  {
+    "hospitalId": "HOSP-GOVT-2123",
+    "displayName": "Bowring and Lady Curzon Hospital",
+    "facilityType": "Government Hospital",
+    "address": {
+      "fullAddress": "Shivajinagar, Bengaluru",
+      "pincode": "560001",
+      "city": "Bengaluru",
+      "district": "Bengaluru Urban",
+      "state": "Karnataka",
+      "country": "India"
+    },
+    "capabilities": {},
+    "historicalCapacity": {},
+    "operationalState": {
+      "emergency": "UNKNOWN",
+      "icu": "UNKNOWN",
+      "trauma": "UNKNOWN",
+      "nicu": "UNKNOWN",
+      "picu": "UNKNOWN",
+      "ventilator": "UNKNOWN",
+      "acceptance": "UNKNOWN",
+      "source": "UNKNOWN"
+    },
+    "utilizationIndicators": [],
+    "provenance": [
+      {
+        "sourceId": "bengaluru-urban",
+        "sourceName": "Bengaluru Urban Government Hospital Directory",
+        "sourceType": "GOVERNMENT_DATASET",
+        "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility-category/hospitals/",
+        "retrievedAt": "2026-09-25T00:00:00Z",
+        "verificationStatus": "PUBLIC_LISTED",
+        "confidence": 0.95
+      }
+    ],
+    "verificationStatus": "PUBLIC_LISTED",
+    "dataStatus": "PUBLIC_LISTED",
+    "location": {
+      "latitude": 12.9822,
+      "longitude": 77.6016,
+      "coordinateSource": "GEOCODED"
+    }
+  },
+  {
+    "hospitalId": "HOSP-BBMP-1608",
+    "displayName": "Referral Hospital, Srirampura",
+    "facilityType": "Referral Hospital",
+    "address": {
+      "fullAddress": "Srirampura, Bengaluru",
+      "ward": "Srirampura",
+      "zone": "West",
+      "city": "Bengaluru",
+      "district": "Bengaluru Urban",
+      "state": "Karnataka",
+      "country": "India"
+    },
+    "capabilities": {},
+    "historicalCapacity": {},
+    "operationalState": {
+      "emergency": "UNKNOWN",
+      "icu": "UNKNOWN",
+      "trauma": "UNKNOWN",
+      "nicu": "UNKNOWN",
+      "picu": "UNKNOWN",
+      "ventilator": "UNKNOWN",
+      "acceptance": "UNKNOWN",
+      "source": "UNKNOWN"
+    },
+    "utilizationIndicators": [],
+    "provenance": [
+      {
+        "sourceId": "bbmp",
+        "sourceName": "BBMP Health Department Hospital Directory",
+        "sourceType": "GOVERNMENT_DATASET",
+        "sourceUrl": "https://site.bbmp.gov.in/departmentwebsites/Health/palikehospitals.html",
+        "retrievedAt": "2026-09-25T00:00:00Z",
+        "verificationStatus": "PUBLIC_LISTED",
+        "confidence": 0.95
+      }
+    ],
+    "verificationStatus": "PUBLIC_LISTED",
+    "dataStatus": "PUBLIC_LISTED",
+    "location": {
+      "latitude": 12.9926,
+      "longitude": 77.5641,
+      "coordinateSource": "GEOCODED"
+    }
+  },
+  {
+    "hospitalId": "HOSP-BBMP-0132",
+    "displayName": "Maternity Home, Ulsoor",
+    "facilityType": "Maternity Home",
+    "address": {
+      "fullAddress": "Halasuru, Bengaluru",
+      "ward": "Halasuru",
+      "zone": "East",
+      "city": "Bengaluru",
+      "district": "Bengaluru Urban",
+      "state": "Karnataka",
+      "country": "India"
+    },
+    "capabilities": {},
+    "historicalCapacity": {},
+    "operationalState": {
+      "emergency": "UNKNOWN",
+      "icu": "UNKNOWN",
+      "trauma": "UNKNOWN",
+      "nicu": "UNKNOWN",
+      "picu": "UNKNOWN",
+      "ventilator": "UNKNOWN",
+      "acceptance": "UNKNOWN",
+      "source": "UNKNOWN"
+    },
+    "utilizationIndicators": [],
+    "provenance": [
+      {
+        "sourceId": "bbmp",
+        "sourceName": "BBMP Health Department Hospital Directory",
+        "sourceType": "GOVERNMENT_DATASET",
+        "sourceUrl": "https://site.bbmp.gov.in/departmentwebsites/Health/palikehospitals.html",
+        "retrievedAt": "2026-09-25T00:00:00Z",
+        "verificationStatus": "PUBLIC_LISTED",
+        "confidence": 0.95
+      }
+    ],
+    "verificationStatus": "PUBLIC_LISTED",
+    "dataStatus": "PUBLIC_LISTED",
+    "location": {
+      "latitude": 12.9779,
+      "longitude": 77.6245,
+      "coordinateSource": "GEOCODED"
+    }
+  }
+]

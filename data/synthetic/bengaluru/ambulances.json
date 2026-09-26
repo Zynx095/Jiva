@@ -1,0 +1,20 @@
+[
+  {
+    "ambulanceId": "AMB-BLR-001",
+    "status": "AVAILABLE",
+    "requiredCapabilities": [],
+    "currentLocation": { "latitude": 13.1007, "longitude": 77.5963 }
+  },
+  {
+    "ambulanceId": "AMB-BLR-002",
+    "status": "AVAILABLE",
+    "requiredCapabilities": [],
+    "currentLocation": { "latitude": 12.9698, "longitude": 77.7499 }
+  },
+  {
+    "ambulanceId": "AMB-BLR-003",
+    "status": "AVAILABLE",
+    "requiredCapabilities": [],
+    "currentLocation": { "latitude": 12.9352, "longitude": 77.6245 }
+  }
+]
