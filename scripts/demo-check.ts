@@ -25,7 +25,24 @@ async function main() {
     const ok = files.some(f => f.endsWith('.js')) && (!needsMap || files.some(f => f.startsWith('maplibre-gl-worker')));
     add(`Build: ${app}`, ok ? 'PASS' : 'FAIL', ok ? `${files.length} assets${needsMap ? ', map worker bundled' : ''}` : 'missing dist — run npm run build');
   }
-  add('Build: API lambdas', fs.existsSync(path.join(ROOT, 'services/api/dist/lambdas/ingestion.js')) ? 'PASS' : 'FAIL', 'services/api/dist');
+  {
+    // Every handler must exist in the self-contained bundle AND actually load in a fresh Node process.
+    const dir = path.join(ROOT, 'infrastructure/aws/lambda-dist');
+    const names = ['ingestion', 'emergencyProcessor', 'hospitalAcceptanceProcessor', 'ambulanceProcessor', 'routingProcessor', 'aiProcessor', 'websocketHandler'];
+    const missing = names.filter(n => !fs.existsSync(path.join(dir, `${n}.js`)));
+    let notLoadable: string[] = [];
+    if (!missing.length) {
+      const { execFileSync } = require('child_process');
+      notLoadable = names.filter(n => {
+        try {
+          execFileSync(process.execPath, ['-e', `const m=require(${JSON.stringify(path.join(dir, `${n}.js`))}); if(typeof m.handler!=='function') process.exit(3)`], { stdio: 'ignore', timeout: 30000 });
+          return false;
+        } catch { return true; }
+      });
+    }
+    const ok = !missing.length && !notLoadable.length;
+    add('Build: API lambdas (bundled)', ok ? 'PASS' : 'FAIL', ok ? `${names.length} handlers load from infrastructure/aws/lambda-dist (package-load only; NOT deployed)` : `missing: ${missing.join(', ') || '-'}; not loadable: ${notLoadable.join(', ') || '-'} — run npm run build`);
+  }
 
   // --- data
   const canonical = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/canonical/hospitals.json'), 'utf8'));

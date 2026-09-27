@@ -96,7 +96,9 @@ export class JivaAwsStack extends cdk.Stack {
     // ----------------------------------------------------
     // 5. LAMBDAS: Domain Event Processors
     // ----------------------------------------------------
-    const lambdaDir = path.resolve(__dirname, '../../../services/api/dist/lambdas');
+    // Self-contained esbuild bundles (npm run build:lambdas). The old asset, services/api/dist/lambdas, shipped only
+    // that folder: sibling modules and @jiva/* packages could not resolve at runtime.
+    const lambdaDir = path.resolve(__dirname, '../lambda-dist');
 
     // Common environment variables
     const commonEnv = {
@@ -117,6 +119,8 @@ export class JivaAwsStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(10),
     });
     jivaEventBus.grantPutEventsTo(ingestionLambda);
+    // Ingestion enforces acceptance correlation (no fabricated responses) by reading the request history.
+    operationalTable.grantReadData(ingestionLambda);
 
     // 5.2 Emergency Processor Lambda
     const emergencyProcessorLambda = new lambda.Function(this, 'EmergencyProcessorFunction', {
@@ -149,6 +153,8 @@ export class JivaAwsStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(15),
     });
     operationalTable.grantReadWriteData(ambulanceProcessorLambda);
+    // Dispatch assigns a destination from an existing acceptance (publishes destination/route events).
+    jivaEventBus.grantPutEventsTo(ambulanceProcessorLambda);
 
     // 5.5 Routing Processor Lambda
     const routingProcessorLambda = new lambda.Function(this, 'RoutingProcessorFunction', {
@@ -218,6 +224,8 @@ export class JivaAwsStack extends cdk.Stack {
       targets: [lambdaTarget(emergencyProcessorLambda)],
     });
 
+    // hospital.acceptance.cancelled: no producer emits it yet; routed so the ledger observation
+    // (materialized acceptance index) is ready to consume it once one does.
     new events.Rule(this, 'HospitalEventsRule', {
       eventBus: jivaEventBus,
       eventPattern: {
@@ -227,6 +235,7 @@ export class JivaAwsStack extends cdk.Stack {
           'hospital.acceptance.received',
           'hospital.capacity.updated',
           'hospital.acceptance.expired',
+          'hospital.acceptance.cancelled',
         ],
       },
       targets: [lambdaTarget(hospitalProcessorLambda)],
@@ -263,10 +272,13 @@ export class JivaAwsStack extends cdk.Stack {
       targets: [lambdaTarget(aiProcessorLambda)],
     });
 
+    // Realtime broadcast reaches every connected socket. The feasibility trace is privileged audit
+    // telemetry (other facilities' evaluations) and must never be broadcast, so it is excluded here.
     new events.Rule(this, 'RealtimeBroadcastRule', {
       eventBus: jivaEventBus,
       eventPattern: {
         source: ['jiva.healthcare'],
+        detailType: events.Match.anythingBut('feasibility.trace.recorded'),
       },
       targets: [lambdaTarget(webSocketLambda)],
     });

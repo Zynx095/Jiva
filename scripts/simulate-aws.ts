@@ -1,4 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
+import { requestIdFor } from './lib/requestIds';
+import { reportShadowDisagreements } from './lib/shadowReport';
 
 const API_URL = process.env.API_GATEWAY_URL 
   ? `${process.env.API_GATEWAY_URL.replace(/\/$/, '')}/api/events` 
@@ -141,7 +143,7 @@ async function runAwsScenario() {
     version: '1.0',
     payload: {
       responseId: uuidv4(),
-      requestId: 'req-3',
+      requestId: await requestIdFor(API_URL, caseId, 'HOSP-BLR-004'),
       caseId,
       hospitalId: 'HOSP-BLR-004',
       status: 'REJECTED',
@@ -165,7 +167,7 @@ async function runAwsScenario() {
     version: '1.0',
     payload: {
       responseId: uuidv4(),
-      requestId: 'req-2',
+      requestId: await requestIdFor(API_URL, caseId, 'HOSP-BLR-002'),
       caseId,
       hospitalId: 'HOSP-BLR-002',
       status: 'LIMITED',
@@ -189,7 +191,7 @@ async function runAwsScenario() {
     version: '1.0',
     payload: {
       responseId: uuidv4(),
-      requestId: 'req-1',
+      requestId: await requestIdFor(API_URL, caseId, 'HOSP-BLR-001'),
       caseId,
       hospitalId: 'HOSP-BLR-001',
       status: 'ACCEPTED',
@@ -272,6 +274,7 @@ async function runAwsScenario() {
   }
 
   console.log('\n============================================================');
+  await reportShadowDisagreements(API_URL);
   console.log('       AWS FLAGSHIP SCENARIO COMPLETED SUCCESSFULLY         ');
   console.log(' All events propagated across DynamoDB, EventBridge & UI   ');
   console.log('============================================================\n');

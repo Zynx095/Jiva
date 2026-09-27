@@ -1,6 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
+import { requestIdFor } from './lib/requestIds';
+import { reportShadowDisagreements } from './lib/shadowReport';
 
 const API_URL = 'http://localhost:4000/api/events';
 
@@ -146,7 +148,7 @@ async function runAcceptanceScenario(fullResponse = true) {
       version: '1.0',
       payload: {
         responseId: uuidv4(),
-        requestId: 'req-ignore',
+        requestId: await requestIdFor(API_URL, patientId, 'HOSP-BLR-004'),
         caseId: patientId,
         hospitalId: 'HOSP-BLR-004',
         status: 'REJECTED',
@@ -169,7 +171,7 @@ async function runAcceptanceScenario(fullResponse = true) {
       version: '1.0',
       payload: {
         responseId: uuidv4(),
-        requestId: 'req-ignore',
+        requestId: await requestIdFor(API_URL, patientId, 'HOSP-BLR-002'),
         caseId: patientId,
         hospitalId: 'HOSP-BLR-002',
         status: 'LIMITED',
@@ -192,7 +194,7 @@ async function runAcceptanceScenario(fullResponse = true) {
       version: '1.0',
       payload: {
         responseId: uuidv4(),
-        requestId: 'req-ignore',
+        requestId: await requestIdFor(API_URL, patientId, 'HOSP-BLR-001'),
         caseId: patientId,
         hospitalId: 'HOSP-BLR-001',
         status: 'ACCEPTED',
@@ -229,6 +231,7 @@ async function runAcceptanceScenario(fullResponse = true) {
   }
 
   await sleep(2000);
+  await reportShadowDisagreements(API_URL);
   console.log('--- SCENARIO COMPLETE ---');
 }
 

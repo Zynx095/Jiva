@@ -1,6 +1,10 @@
-import { PatientState, HospitalState, AmbulanceState } from '@jiva/domain-models';
+import { PatientState, HospitalState, AmbulanceState, CareRequirement, HospitalAvailabilityResponse } from '@jiva/domain-models';
 import { AnyEvent } from '@jiva/event-schema';
 import { IStateStore, RecordEventResult } from './types';
+import {
+  CaseHospitalRecord, rebuildFromEvents, shouldAcceptCancellation, shouldAcceptNewestAccepting,
+  shouldAcceptRequest, shouldAcceptRequirement, shouldAcceptResponse, shouldAcceptWideUnavailable,
+} from './materializedAcceptance';
 import fs from 'fs';
 import path from 'path';
 
@@ -172,5 +176,66 @@ export class LocalStateStore implements IStateStore {
 
   getProviderName(): string {
     return 'LocalStateStore';
+  }
+
+  // ---- Materialized acceptance/requirement indexes (see materializedAcceptance.ts) ----
+  private acceptanceRecords = new Map<string, CaseHospitalRecord>();
+  private wideUnavailable = new Map<string, { response?: HospitalAvailabilityResponse; newestAcceptingAt?: string }>();
+  private latestRequirement = new Map<string, CareRequirement>();
+
+  async getAcceptanceRecord(caseId: string, hospitalId: string): Promise<CaseHospitalRecord | undefined> {
+    return this.acceptanceRecords.get(`${caseId}|${hospitalId}`);
+  }
+
+  async putAcceptanceRequest(caseId: string, hospitalId: string, request: { requestId: string; requestedAt: string; expiresAt: string }): Promise<void> {
+    const key = `${caseId}|${hospitalId}`;
+    const rec = this.acceptanceRecords.get(key) || {};
+    if (shouldAcceptRequest(rec.request, request)) this.acceptanceRecords.set(key, { ...rec, request: { ...request } });
+  }
+
+  async putAcceptanceResponse(caseId: string, hospitalId: string, response: HospitalAvailabilityResponse): Promise<'APPLIED' | 'STALE' | 'DUPLICATE'> {
+    const key = `${caseId}|${hospitalId}`;
+    const rec = this.acceptanceRecords.get(key) || {};
+    if (rec.response?.responseId === response.responseId) return 'DUPLICATE';
+    if (!shouldAcceptResponse(rec.response, response)) return 'STALE';
+    this.acceptanceRecords.set(key, { ...rec, response: { ...response, acceptedCapabilities: [...response.acceptedCapabilities], limitations: [...response.limitations] } });
+    const wide = this.wideUnavailable.get(hospitalId) || {};
+    let changed = false;
+    if (shouldAcceptWideUnavailable(wide.response, response)) { wide.response = response; changed = true; }
+    if (shouldAcceptNewestAccepting(wide.newestAcceptingAt, response)) { wide.newestAcceptingAt = response.respondedAt; changed = true; }
+    if (changed) this.wideUnavailable.set(hospitalId, wide);
+    return 'APPLIED';
+  }
+
+  async putAcceptanceCancellation(caseId: string, hospitalId: string, requestId: string, cancelledAt: string): Promise<void> {
+    const key = `${caseId}|${hospitalId}`;
+    const rec = this.acceptanceRecords.get(key);
+    if (!rec?.request || rec.request.requestId !== requestId) return;
+    if (shouldAcceptCancellation(rec.request.cancelledAt, cancelledAt)) {
+      this.acceptanceRecords.set(key, { ...rec, request: { ...rec.request, cancelledAt } });
+    }
+  }
+
+  async getHospitalWideUnavailable(hospitalId: string) {
+    return this.wideUnavailable.get(hospitalId);
+  }
+
+  async getLatestRequirement(caseId: string): Promise<CareRequirement | undefined> {
+    return this.latestRequirement.get(caseId);
+  }
+
+  async putLatestRequirement(caseId: string, requirement: CareRequirement): Promise<void> {
+    if (shouldAcceptRequirement(this.latestRequirement.get(caseId), requirement)) this.latestRequirement.set(caseId, { ...requirement });
+  }
+
+  async listAllEvents(): Promise<AnyEvent[]> {
+    return [...this.eventHistory];
+  }
+
+  async rebuildAcceptanceRecords(): Promise<{ casesHospitalPairs: number; hospitals: number }> {
+    const { byKey, wideByHospital } = rebuildFromEvents(this.eventHistory);
+    this.acceptanceRecords = byKey;
+    this.wideUnavailable = wideByHospital;
+    return { casesHospitalPairs: byKey.size, hospitals: wideByHospital.size };
   }
 }

@@ -11,17 +11,25 @@ import {
   HospitalAcceptanceRequested,
 } from '@jiva/event-schema';
 import { AmbulanceState, CapabilityType, CareRequirement } from '@jiva/domain-models';
+import type { AcceptanceResponsePayload } from './stateTransitions';
 import { evaluateHospitals } from './eligibilityEngine';
 import { mappingProvider } from './mapping';
+import { acceptanceLedger, feasibilityMode, feasibilityShadow } from './feasibility';
+import { caseAcceptanceStatus } from './feasibility/acceptanceLedger';
+import { withTrust } from './feasibility/acceptanceLedger';
+import { observe } from './feasibility/containment';
+import {
+  REQUEST_TTL_MS, applyAcceptanceResponse, applyCapacityUpdate, assessRequiredCapabilities,
+  buildAcceptanceRequest, capacityHasUnavailable, capacityLossAffectsCase, requirementProvenanceOf,
+  selectRequestTargets, selectionRequirement, pickLegacyDestination, UNASSIGNED,
+} from './stateTransitions';
 import { v4 as uuidv4 } from 'uuid';
 
-export { mappingProvider };
+export { mappingProvider, assessRequiredCapabilities };
 
-/** Sentinel used in destination.changed when no eligible accepting hospital exists. */
-export const UNASSIGNED = 'UNASSIGNED';
+export { UNASSIGNED };
 
 const ARRIVAL_RADIUS_METERS = 150;
-const REQUEST_TTL_MS = 15 * 60000;
 
 /**
  * Engine-local runtime state. Everything here is cleared by resetEngines().
@@ -52,6 +60,8 @@ export function resetEngines(): void {
   engine.answered.clear();
   engine.lastRequestIdByHospital.clear();
   engine.ambulanceLocks.clear();
+  acceptanceLedger.reset();
+  feasibilityShadow.reset();
 }
 
 export function hasOutstandingRequest(caseId: string, hospitalId: string): boolean {
@@ -96,14 +106,6 @@ function withAmbulanceLock(ambulanceId: string, fn: () => Promise<void>): Promis
   return next;
 }
 
-/** Deterministic triage assessment: condition + severity -> required capabilities. */
-export function assessRequiredCapabilities(condition: string, severity: string): CapabilityType[] {
-  const caps: CapabilityType[] = ['EMERGENCY' as CapabilityType];
-  if (/trauma|accident|injur|fracture|polytrauma|burn/i.test(condition)) caps.push('TRAUMA' as CapabilityType);
-  if (severity === 'HIGH' || severity === 'CRITICAL') caps.push('ICU' as CapabilityType);
-  return caps;
-}
-
 function distanceMeters(a: { latitude: number; longitude: number }, b: { latitude: number; longitude: number }): number {
   const R = 6371000;
   const toRad = (d: number) => (d * Math.PI) / 180;
@@ -118,25 +120,34 @@ function distanceMeters(a: { latitude: number; longitude: number }, b: { latitud
  * ACCEPTED/LIMITED response for this ambulance's case. Mapping only orders
  * the eligible set by ETA; it never decides eligibility.
  */
-async function selectDestination(amb: AmbulanceState, exclude: Set<string>): Promise<string | undefined> {
+async function selectDestination(amb: AmbulanceState, exclude: Set<string>, reason = 'destination selection'): Promise<string | undefined> {
   const patient = patientsStore.get(amb.assignedPatient || '');
   if (!patient || !amb.currentLocation) return undefined;
-  const requirement: CareRequirement = {
-    requirementId: `sel-${amb.ambulanceId}`,
-    caseId: patient.patientId,
-    requiredCapabilities: patient.careRequirements as CapabilityType[],
-    optionalCapabilities: [],
-    severity: 'HIGH',
-    createdAt: new Date().toISOString(),
-    source: 'routing-engine',
-  };
-  const candidates = await evaluateHospitals(requirement, amb.currentLocation);
-  const pick = candidates.find(c =>
-    c.operationalEligibility === 'ELIGIBLE' &&
-    !exclude.has(c.hospitalId) &&
-    hospitalsStore.get(c.hospitalId)?.operationalState.acceptanceCaseId === patient.patientId
-  );
-  return pick?.hospitalId;
+  const requirement = selectionRequirement(amb.ambulanceId, patient.patientId, patient.careRequirements, new Date().toISOString());
+  const candidates = await evaluateHospitals(requirement, amb.currentLocation, {
+    acceptanceOverride: hospitalId => caseAcceptanceStatus(acceptanceLedger.view(patient.patientId, hospitalId, Date.now()), Date.now()),
+  });
+  // Case-scoped: which candidate is CURRENTLY accepted for THIS case, independent of any other
+  // case's acceptance at the same hospital (fixes the legacy one-slot bug at the decision boundary).
+  const pick = { hospitalId: pickLegacyDestination(candidates, exclude, patient.patientId, id => hospitalsStore.get(id)) };
+  // Shadow only: compares with the legacy pick, never alters it. Contained: nothing in here can
+  // throw into or delay the legacy decision computed above.
+  observe('shadow.destination-selection', () => {
+    if (feasibilityMode() !== 'shadow') return;
+    return feasibilityShadow.evaluate({
+      context: 'destination-selection',
+      requirement: feasibilityShadow.requirementFor(patient.patientId) || requirement,
+      requirementProvenance: 'RULE_DERIVED',
+      trigger: { eventId: 'n/a', eventType: 'destination.selection', sourceId: `routing-engine:${reason}`, sourceType: 'system' },
+      origin: amb.currentLocation,
+      originAsOf: amb.locationAsOf,
+      ambulanceId: amb.ambulanceId,
+      excludedHospitalIds: [...exclude],
+      legacyCandidates: candidates,
+      legacySelection: { hospitalId: pick.hospitalId },
+    });
+  });
+  return pick.hospitalId;
 }
 
 /** Compute a route to `hospitalId`, commit destination state, then publish the change. */
@@ -209,7 +220,7 @@ function ensureDestination(ambulanceId: string, reason: string): Promise<void> {
   return withAmbulanceLock(ambulanceId, async () => {
     const amb = ambulancesStore.get(ambulanceId);
     if (!amb || amb.destinationHospital || !amb.assignedPatient || amb.status === 'ARRIVED') return;
-    const target = await selectDestination(amb, new Set());
+    const target = await selectDestination(amb, new Set(), reason);
     if (epoch !== engine.epoch || !target) return;
     await commitDestination(ambulanceId, target, reason, epoch);
   });
@@ -222,7 +233,7 @@ function rerouteAmbulance(ambulanceId: string, invalidHospitalId: string, reason
     const amb = ambulancesStore.get(ambulanceId);
     if (!amb || amb.destinationHospital !== invalidHospitalId || amb.status === 'ARRIVED') return;
     console.log(`[Rerouting] ${ambulanceId}: destination ${invalidHospitalId} invalid (${reason}).`);
-    const target = await selectDestination(amb, new Set([invalidHospitalId]));
+    const target = await selectDestination(amb, new Set([invalidHospitalId]), reason);
     if (epoch !== engine.epoch) return;
     if (target) {
       await commitDestination(ambulanceId, target, reason, epoch);
@@ -293,6 +304,17 @@ eventBus.on('care.requirement.created', async (event: CareRequirementCreated) =>
   const req = event.payload;
   const patient = patientsStore.get(req.caseId);
   const origin = patient?.currentLocation || { latitude: 12.9716, longitude: 77.5946 };
+  const shadowRequirement: CareRequirement = {
+    requirementId: req.requirementId,
+    caseId: req.caseId,
+    requiredCapabilities: req.requiredCapabilities as CapabilityType[],
+    optionalCapabilities: req.optionalCapabilities as CapabilityType[],
+    severity: req.severity,
+    createdAt: req.createdAt,
+    expiresAt: req.expiresAt,
+    source: event.source.id,
+  };
+  observe('shadow.recordRequirement', () => feasibilityShadow.recordRequirement(shadowRequirement));
 
   const candidates = await evaluateHospitals({
     requirementId: req.requirementId,
@@ -302,7 +324,9 @@ eventBus.on('care.requirement.created', async (event: CareRequirementCreated) =>
     severity: req.severity,
     createdAt: req.createdAt,
     source: event.source.id,
-  }, origin);
+  }, origin, {
+    acceptanceOverride: hospitalId => caseAcceptanceStatus(acceptanceLedger.view(req.caseId, hospitalId, Date.now()), Date.now()),
+  });
   if (epoch !== engine.epoch) return;
 
   await publish({
@@ -325,19 +349,10 @@ eventBus.on('care.requirement.created', async (event: CareRequirementCreated) =>
   });
 
   // Only clinically capable, not operationally unavailable hospitals are asked.
-  for (const c of candidates) {
-    if (c.missingCapabilities.length > 0 || c.operationalEligibility === 'INELIGIBLE') continue;
-    const payload = {
-      requestId: `AR-${uuidv4().substring(0, 8)}`,
-      caseId: req.caseId,
-      hospitalId: c.hospitalId,
-      requiredCapabilities: req.requiredCapabilities,
-      optionalCapabilities: req.optionalCapabilities,
-      ambulanceEtaMinutes: c.etaMinutes,
-      requestedAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + REQUEST_TTL_MS).toISOString(),
-    };
+  for (const c of selectRequestTargets(candidates)) {
+    const payload = buildAcceptanceRequest(req, c, `AR-${uuidv4().substring(0, 8)}`, Date.now());
     engine.requests.set(`${req.caseId}|${c.hospitalId}`, payload);
+    observe('ledger.recordRequest', () => acceptanceLedger.recordRequest(payload));
     await publish({
       eventType: 'hospital.acceptance.requested',
       source: { type: 'system', id: 'acceptance-protocol' },
@@ -345,9 +360,61 @@ eventBus.on('care.requirement.created', async (event: CareRequirementCreated) =>
       payload,
     });
   }
+
+  // Shadow only: evaluated after requests are recorded, compared with the legacy candidates.
+  observe('shadow.candidate-generation', () => {
+    if (feasibilityMode() !== 'shadow' || epoch !== engine.epoch) return;
+    return feasibilityShadow.evaluate({
+      context: 'candidate-generation',
+      requirement: shadowRequirement,
+      requirementProvenance: requirementProvenanceOf(event.source.type),
+      trigger: { eventId: event.eventId, eventType: event.eventType, sourceId: event.source.id, sourceType: event.source.type },
+      origin,
+      originAsOf: patient?.lastUpdated,
+      legacyCandidates: candidates,
+    });
+  });
 });
 
 eventBus.on('hospital.acceptance.received', async (event: HospitalAcceptanceReceived) => {
+  try {
+    applyLegacyAcceptance(event); // the decision: runs first, on its own
+  } finally {
+    // Independent, contained observation AFTER the legacy decision. Its failure (or a malformed
+    // payload that legacy never reads) cannot prevent or undo the legacy result above. It runs in
+    // the same synchronous turn, so the per-(case, hospital) ledger is current before any shadow
+    // evaluation that the legacy handler kicked off asynchronously gets to read it.
+    // NOT observational any more: evaluateHospitals' acceptanceOverride reads this ledger to decide
+    // real eligibility (fixes the legacy one-slot bug), so this write is now part of the core
+    // decision path, exactly like d.store.setHospital(...) below -- never fault-injected/contained.
+    acceptanceLedger.applyResponse(withTrust(event.payload as never, event.metadata));
+    observeHeldDestinations(event.payload?.hospitalId, event);
+  }
+});
+
+/** SHADOW-ONLY: record whether each destination currently held at `hospitalId` is still feasible. */
+function observeHeldDestinations(
+  hospitalId: string | undefined,
+  event: { eventId: string; eventType: string; source: { id: string; type: string } }
+): void {
+  observe('shadow.current-destination', () => {
+    if (feasibilityMode() !== 'shadow' || !hospitalId) return;
+    for (const amb of ambulancesStore.values()) {
+      if (amb.destinationHospital !== hospitalId || !amb.assignedPatient || !amb.currentLocation) continue;
+      void feasibilityShadow.observeDestination({
+        caseId: amb.assignedPatient,
+        hospitalId,
+        requirement: feasibilityShadow.requirementFor(amb.assignedPatient),
+        trigger: { eventId: event.eventId, eventType: event.eventType, sourceId: event.source.id, sourceType: event.source.type },
+        origin: amb.currentLocation,
+        originAsOf: amb.locationAsOf,
+        ambulanceId: amb.ambulanceId,
+      });
+    }
+  });
+}
+
+function applyLegacyAcceptance(event: HospitalAcceptanceReceived): void {
   const p = event.payload;
   if (engine.processedResponseIds.has(p.responseId)) {
     console.warn(`[Acceptance] Duplicate response ${p.responseId} ignored.`);
@@ -355,43 +422,18 @@ eventBus.on('hospital.acceptance.received', async (event: HospitalAcceptanceRece
   }
   const existing = hospitalsStore.get(p.hospitalId);
   if (!existing) return;
-  const op = existing.operationalState;
 
-  // Older than the response already applied -> stale, never overwrite.
-  if (op.acceptanceAsOf && ms(p.respondedAt) < ms(op.acceptanceAsOf)) {
-    console.warn(`[Acceptance] Stale response from ${p.hospitalId} (${p.respondedAt} < ${op.acceptanceAsOf}) ignored.`);
-    return;
-  }
-  // A response that is already past its validity window is not current evidence.
-  if ((p.status === 'ACCEPTED' || p.status === 'LIMITED') && ms(p.validUntil) <= Date.now()) {
-    console.warn(`[Acceptance] Response ${p.responseId} from ${p.hospitalId} arrived already expired; ignored.`);
+  const applied = applyAcceptanceResponse(existing, p as AcceptanceResponsePayload, { sourceType: event.source.type, sourceId: event.source.id }, Date.now());
+  if (applied.kind === 'IGNORED') {
+    console.warn(applied.reason === 'STALE'
+      ? `[Acceptance] Stale response from ${p.hospitalId} (${p.respondedAt} < ${existing.operationalState.acceptanceAsOf}) ignored.`
+      : `[Acceptance] Response ${p.responseId} from ${p.hospitalId} arrived already expired; ignored.`);
     return;
   }
   engine.processedResponseIds.add(p.responseId);
   engine.answered.set(`${p.caseId}|${p.hospitalId}`, p.status);
   engine.lastRequestIdByHospital.set(p.hospitalId, p.requestId);
-
-  hospitalsStore.set(p.hospitalId, {
-    ...existing,
-    operationalState: {
-      ...op,
-      acceptance: p.status,
-      acceptanceAsOf: p.respondedAt,
-      acceptanceCaseId: p.caseId,
-      lastConfirmedAt: p.respondedAt,
-      expiresAt: p.validUntil,
-      source: p.source,
-    },
-    provenance: [...existing.provenance, {
-      sourceType: event.source.type,
-      sourceId: event.source.id,
-      sourceName: 'Acceptance Protocol',
-      retrievedAt: new Date().toISOString(),
-      asOf: p.respondedAt,
-      verificationStatus: p.source,
-      confidence: 1.0,
-    }],
-  });
+  hospitalsStore.set(p.hospitalId, applied.next);
 
   if (p.status === 'ACCEPTED' || p.status === 'LIMITED') {
     for (const amb of ambulancesStore.values()) {
@@ -404,49 +446,38 @@ eventBus.on('hospital.acceptance.received', async (event: HospitalAcceptanceRece
   } else if (p.status === 'UNAVAILABLE') {
     reroutePredicate(() => true, p.hospitalId, `Destination ${p.hospitalId} reported UNAVAILABLE`);
   }
+}
+
+// Cancellation (no producer yet): observed by the per-(case, hospital) ledger only. Legacy state is untouched.
+eventBus.on('hospital.acceptance.cancelled', async (event) => {
+  observe('ledger.applyCancellation', () => acceptanceLedger.applyCancellation(event.payload as never));
 });
 
 eventBus.on('hospital.capacity.updated', async (event: HospitalCapacityUpdated) => {
+  try {
+    applyLegacyCapacity(event);
+  } finally {
+    observeHeldDestinations(event.payload?.hospitalId, event);
+  }
+});
+
+function applyLegacyCapacity(event: HospitalCapacityUpdated): void {
   const p = event.payload;
   const existing = hospitalsStore.get(p.hospitalId);
   if (!existing) return;
-  const op = existing.operationalState;
-  if (op.capacityAsOf && ms(event.timestamp) < ms(op.capacityAsOf)) {
-    console.warn(`[Capacity] Stale capacity update for ${p.hospitalId} (${event.timestamp} < ${op.capacityAsOf}) ignored.`);
+  const applied = applyCapacityUpdate(existing, p, event, Date.now());
+  if (applied.kind === 'IGNORED') {
+    console.warn(`[Capacity] Stale capacity update for ${p.hospitalId} (${event.timestamp} < ${existing.operationalState.capacityAsOf}) ignored.`);
     return;
   }
+  hospitalsStore.set(p.hospitalId, applied.next);
 
-  hospitalsStore.set(p.hospitalId, {
-    ...existing,
-    operationalState: {
-      ...op,
-      emergency: p.emergencyStatus,
-      trauma: p.traumaStatus,
-      icu: p.icuStatus,
-      ventilator: p.ventilatorStatus,
-      capacityAsOf: event.timestamp,
-    },
-    provenance: [...existing.provenance, {
-      sourceType: event.source.type,
-      sourceId: event.source.id,
-      sourceName: 'Capacity Update',
-      retrievedAt: new Date().toISOString(),
-      asOf: event.timestamp,
-      verificationStatus: (event.metadata?.sourceType as any) || 'UNVERIFIED',
-      confidence: event.metadata?.confidence ?? 1.0,
-    }],
-  });
-
-  if (p.emergencyStatus === 'UNAVAILABLE' || p.icuStatus === 'UNAVAILABLE' || p.traumaStatus === 'UNAVAILABLE') {
+  if (capacityHasUnavailable(p)) {
     // Only reroute when the lost capability is one the case actually needs.
-    reroutePredicate(a => {
-      const reqs = patientsStore.get(a.assignedPatient || '')?.careRequirements || [];
-      return p.emergencyStatus === 'UNAVAILABLE' ||
-        (p.icuStatus === 'UNAVAILABLE' && reqs.includes('ICU')) ||
-        (p.traumaStatus === 'UNAVAILABLE' && reqs.includes('TRAUMA'));
-    }, p.hospitalId, `Destination ${p.hospitalId} capacity became UNAVAILABLE`);
+    reroutePredicate(a => capacityLossAffectsCase(p, patientsStore.get(a.assignedPatient || '')?.careRequirements || []),
+      p.hospitalId, `Destination ${p.hospitalId} capacity became UNAVAILABLE`);
   }
-});
+}
 
 eventBus.on('ambulance.dispatched', async (event: AmbulanceDispatched) => {
   const { ambulanceId, caseId } = event.payload;

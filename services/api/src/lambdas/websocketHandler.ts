@@ -43,6 +43,8 @@ export const handler = async (event: any) => {
 
   // 3. EventBridge Broadcast Trigger (when called from an EventBridge rule to broadcast to all connected WebSockets)
   if (event.detail && event['detail-type']) {
+    // Defense in depth: feasibility trace events are privileged audit telemetry, never broadcast.
+    if (event['detail-type'] === 'feasibility.trace.recorded') return { statusCode: 200, body: 'Skipped' };
     const endpoint = process.env.WEBSOCKET_ENDPOINT;
     if (!endpoint) return { statusCode: 200 };
 

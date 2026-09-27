@@ -11,9 +11,9 @@ export interface RouteScore {
   }
 }
 
-import { evaluateHospitals } from './eligibilityEngine';
+import { evaluateHospitals, EvaluationDeps } from './eligibilityEngine';
 
-export async function calculateBestHospitals(patientLocation: GeoPoint, careRequirements: string[]) {
+export async function calculateBestHospitals(patientLocation: GeoPoint, careRequirements: string[], deps: EvaluationDeps = {}) {
   const req: CareRequirement = {
     requirementId: 'sys-req',
     caseId: 'sys-case',
@@ -24,7 +24,7 @@ export async function calculateBestHospitals(patientLocation: GeoPoint, careRequ
     source: 'system'
   };
 
-  const candidates = await evaluateHospitals(req, patientLocation);
+  const candidates = await evaluateHospitals(req, patientLocation, deps);
   
   // Return the first eligible, or if none, we return the first pending?
   // We need to return candidates with scores so the calling engine can decide.

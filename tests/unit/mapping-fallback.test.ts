@@ -2,20 +2,24 @@ import { FallbackMappingProvider, FallbackLogger } from '../../packages/mapping/
 import { MockMappingProvider } from '../../packages/mapping/src/providers/MockMappingProvider';
 import { MappingProvider } from '../../packages/mapping/src/providers/MappingProvider';
 import { createMappingProvider } from '../../packages/mapping/src/factory';
-import { RouteRequest, RouteResult } from '../../packages/mapping/src/types';
+import { ETAResult, Location, RouteRequest, RouteResult } from '../../packages/mapping/src/types';
+import type { GeoPoint } from '../../packages/domain-models/src';
 
 class FailingProvider implements MappingProvider {
   constructor(readonly name: string) {}
   async calculateRoute(request: RouteRequest): Promise<RouteResult> {
     throw new Error(`${this.name} connection refused`);
   }
-  async calculateETA() {
+  async calculateETA(): Promise<ETAResult> {
     throw new Error(`${this.name} connection refused`);
   }
-  async geocode() {
+  async geocode(): Promise<GeoPoint> {
     throw new Error(`${this.name} connection refused`);
   }
-  async reverseGeocode() {
+  async reverseGeocode(): Promise<Location> {
+    throw new Error(`${this.name} connection refused`);
+  }
+  async calculateDistance(): Promise<{ distanceMeters: number }> {
     throw new Error(`${this.name} connection refused`);
   }
 }

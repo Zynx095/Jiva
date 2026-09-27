@@ -4,6 +4,14 @@ export const EventMetadataSchema = z.object({
   confidence: z.number().min(0).max(1).optional(),
   sourceType: z.string(),
   freshnessSeconds: z.number().optional(),
+  /**
+   * Provenance derived by the TRUSTED ingestion adapter (never by the client): any value sent by a
+   * client is discarded and re-derived. See services/api/src/evidenceTrust.ts.
+   */
+  trustedEvidence: z.object({
+    status: z.enum(['SYNTHETIC_DEMO', 'HOSPITAL_CONFIRMED', 'AUTHORIZED_FEED', 'UNVERIFIED']),
+    environment: z.enum(['DEMO', 'PRODUCTION']),
+  }).optional(),
 });
 
 export const EventSourceSchema = z.object({

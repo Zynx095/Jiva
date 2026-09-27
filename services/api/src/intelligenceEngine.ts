@@ -59,6 +59,8 @@ export function initializeIntelligenceEngine() {
 
   eventBus.on('*', (event: AnyEvent) => {
     if (event.eventType === 'ambulance.location.updated') return; // high-frequency, not useful context
+    // Engine audit telemetry is not AI context (keeps advisory input independent of the engine's own trace).
+    if (event.eventType === 'feasibility.trace.recorded') return;
     history.push(event);
     if (history.length > MAX_HISTORY) history.shift();
   });

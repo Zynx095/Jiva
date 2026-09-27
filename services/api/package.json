@@ -15,6 +15,7 @@
     "@jiva/config": "*",
     "@jiva/domain-models": "*",
     "@jiva/event-schema": "*",
+    "@jiva/feasibility": "*",
     "@jiva/intelligence": "^1.0.0",
     "@jiva/mapping": "*",
     "@jiva/realtime": "*",

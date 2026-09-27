@@ -52,8 +52,8 @@ async function testEventOrdering() {
   if (current?.status !== 'EN_ROUTE_TO_HOSPITAL') {
     throw new Error(`Out-of-order event B overwritten newer state C! Status was ${current?.status}`);
   }
-  if (current?.currentLocation.latitude !== 12.9800) {
-    throw new Error(`Location was overwritten by older event! Latitude was ${current?.currentLocation.latitude}`);
+  if (current?.currentLocation?.latitude !== 12.9800) {
+    throw new Error(`Location was overwritten by older event! Latitude was ${current?.currentLocation?.latitude}`);
   }
 
   console.log('✓ Event ordering test passed: older event B arriving after C was safely ignored without overwriting state.\n');

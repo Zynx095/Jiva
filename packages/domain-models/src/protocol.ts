@@ -66,7 +66,13 @@ export interface HospitalAvailabilityResponse {
   respondedAt: string;
   validUntil: string;
   responderRole: string;
+  /** CLIENT-CLAIMED provenance. Informational only; the feasibility engine never trusts it. */
   source: 'HOSPITAL_CONFIRMED' | 'AUTHORIZED_FEED' | 'SYNTHETIC_DEMO';
+  /**
+   * Provenance derived by the trusted ingestion adapter (see services/api/src/evidenceTrust.ts).
+   * Absent means the response never passed through a trusted adapter: treated as UNVERIFIED.
+   */
+  trustedSource?: DataStatus;
 }
 
 export interface HospitalCandidate {

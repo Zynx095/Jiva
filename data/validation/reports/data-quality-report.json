@@ -6,7 +6,9 @@
   "facilitiesWithHistoricalBeds": 1,
   "facilitiesWithCurrentOperationalData": 0,
   "facilitiesWithUnknownCapacity": 7,
+  "facilitiesWithEvidenceMapping": 7,
+  "digitalTwinsMaterialized": 7,
   "unverifiedFields": 0,
-  "historicalFields": 0,
+  "historicalFields": 1,
   "errors": []
 }

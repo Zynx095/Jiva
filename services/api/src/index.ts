@@ -1,3 +1,5 @@
+import { hashPolicy } from '@jiva/feasibility';
+import { stampTrustedEvidence } from './evidenceTrust';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -9,6 +11,7 @@ import {
   hasOutstandingRequest, outstandingRequestsForHospital,
 } from './stateEngines';
 import { initializeIntelligenceEngine, resetIntelligence, getAiStatus } from './intelligenceEngine';
+import { feasibilityShadow, feasibilityMode } from './feasibility';
 import { preloadData, stateStore, localStoreInstance } from './stateStore';
 import { config } from '@jiva/config';
 import { DemoAuthProvider, CognitoAuthProvider, AuthContext } from '@jiva/auth';
@@ -150,6 +153,27 @@ app.get('/api/events/history', requireRole('MANAGEMENT', 'ADMIN'), async (req, r
   res.json(await stateStore.listRecentEvents(limit));
 });
 
+// Care Feasibility Engine (SHADOW MODE): read-only traces and legacy/engine disagreements.
+app.get('/api/feasibility/shadow', requireRole('MANAGEMENT', 'ADMIN'), (req, res) => {
+  const caseId = req.query.caseId ? String(req.query.caseId) : undefined;
+  res.json({
+    mode: feasibilityMode(),
+    policy: {
+      version: feasibilityShadow.policy.version,
+      hash: hashPolicy(feasibilityShadow.policy),
+      evidenceEnvironment: feasibilityShadow.policy.evidenceEnvironment,
+      label: feasibilityShadow.policy.label,
+    },
+    disagreements: feasibilityShadow.getDisagreements(caseId),
+    traces: feasibilityShadow.getTraces(caseId),
+    // Shadow-only observations: whether the destination an ambulance currently holds is still feasible.
+    destinationObservations: feasibilityShadow.getDestinationObservations(caseId),
+    // Shadow-side failures (errors / timeouts). The legacy decision flow never depends on these.
+    failures: feasibilityShadow.getFailures(caseId),
+    soak: feasibilityShadow.getSoakSummary(),
+  });
+});
+
 app.get('/api/cases/:id/timeline', async (req: AuthenticatedRequest, res) => {
   const auth = req.auth!;
   if (!canReadCase(auth, String(req.params.id))) return res.status(403).json({ error: 'forbidden' });
@@ -191,12 +215,14 @@ app.post('/api/events', async (req: AuthenticatedRequest, res) => {
     return res.status(409).json({ error: 'no_outstanding_request', message: 'No open acceptance request for this case and hospital.' });
   }
 
-  const recordResult = await stateStore.recordEvent(event);
+  // Trust boundary: provenance is derived here from the authenticated principal, never from the payload.
+  const stamped = stampTrustedEvidence(event, req.auth!);
+  const recordResult = await stateStore.recordEvent(stamped);
   if (recordResult.isDuplicate) {
     return res.status(200).json({ status: 'duplicate_ignored', eventId: event.eventId });
   }
 
-  await eventBus.publish(event);
+  await eventBus.publish(stamped);
   res.status(202).json({ status: 'accepted', eventId: event.eventId });
 });
 

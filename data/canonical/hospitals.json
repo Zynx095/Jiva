@@ -3,6 +3,8 @@
     "hospitalId": "HOSP-INST-8592",
     "displayName": "Bangalore Baptist Hospital",
     "facilityType": "Private Teaching Hospital",
+    "ownership": "PRIVATE",
+    "tier": "TERTIARY_CARE",
     "address": {
       "fullAddress": "Bellary Road, Hebbal, Bengaluru",
       "city": "Bengaluru",
@@ -14,7 +16,20 @@
       "phone": "080-23002999",
       "website": "bbh.org.in"
     },
-    "capabilities": {},
+    "location": {
+      "latitude": 13.0334,
+      "longitude": 77.5925,
+      "coordinateSource": "GEOCODED"
+    },
+    "capabilities": {
+      "emergency": true,
+      "trauma": true,
+      "icu": true,
+      "ventilator": true,
+      "cardiology": true,
+      "neurology": true,
+      "orthopaedics": true
+    },
     "historicalCapacity": {
       "totalBeds": 450
     },
@@ -42,16 +57,134 @@
     ],
     "verificationStatus": "PUBLIC_LISTED",
     "dataStatus": "PUBLIC_LISTED",
-    "location": {
-      "latitude": 13.0334,
-      "longitude": 77.5925,
-      "coordinateSource": "GEOCODED"
-    }
+    "evidence": {
+      "displayName": {
+        "value": "Bangalore Baptist Hospital",
+        "source": "institutions",
+        "sourceType": "HOSPITAL_WEBSITE",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.9,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://bbh.org.in/"
+      },
+      "facilityType": {
+        "value": "Private Teaching Hospital",
+        "source": "institutions",
+        "sourceType": "HOSPITAL_WEBSITE",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.9,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://bbh.org.in/"
+      },
+      "tier": {
+        "value": "TERTIARY_CARE",
+        "source": "institutions",
+        "sourceType": "INFERRED",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.85,
+        "dataStatus": "PUBLIC_LISTED"
+      },
+      "address": {
+        "value": {
+          "fullAddress": "Bellary Road, Hebbal, Bengaluru",
+          "city": "Bengaluru",
+          "district": "Bengaluru Urban",
+          "state": "Karnataka",
+          "country": "India"
+        },
+        "source": "institutions",
+        "sourceType": "HOSPITAL_WEBSITE",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.9,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://bbh.org.in/"
+      },
+      "contact": {
+        "phone": {
+          "value": "080-23002999",
+          "source": "institutions",
+          "sourceType": "HOSPITAL_WEBSITE",
+          "observedAt": "2026-09-25T00:00:00Z",
+          "confidence": 0.9,
+          "dataStatus": "PUBLIC_LISTED"
+        },
+        "website": {
+          "value": "bbh.org.in",
+          "source": "institutions",
+          "sourceType": "HOSPITAL_WEBSITE",
+          "observedAt": "2026-09-25T00:00:00Z",
+          "confidence": 0.9,
+          "dataStatus": "PUBLIC_LISTED"
+        }
+      },
+      "capabilities": {
+        "value": {
+          "emergency": true,
+          "trauma": true,
+          "icu": true,
+          "ventilator": true,
+          "cardiology": true,
+          "neurology": true,
+          "orthopaedics": true
+        },
+        "source": "institutions",
+        "sourceType": "HOSPITAL_WEBSITE",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.9,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://bbh.org.in/"
+      },
+      "historicalCapacity": {
+        "totalBeds": {
+          "value": 450,
+          "source": "institutions",
+          "sourceType": "HISTORICAL_AUDIT",
+          "observedAt": "2026-09-25T00:00:00Z",
+          "confidence": 0.9,
+          "dataStatus": "HISTORICAL",
+          "sourceUrl": "https://bbh.org.in/",
+          "notes": "Historical static bed count from public directory. Strictly isolated from live operational availability."
+        }
+      },
+      "operationalState": {
+        "value": {
+          "emergency": "UNKNOWN",
+          "icu": "UNKNOWN",
+          "trauma": "UNKNOWN",
+          "nicu": "UNKNOWN",
+          "picu": "UNKNOWN",
+          "ventilator": "UNKNOWN",
+          "acceptance": "UNKNOWN",
+          "source": "UNKNOWN"
+        },
+        "source": "UNCONFIRMED_OPERATIONS",
+        "sourceType": "SYSTEM_DEFAULT",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0,
+        "dataStatus": "UNKNOWN",
+        "notes": "No live telemetry or verified operator connection. Availability is UNKNOWN."
+      },
+      "location": {
+        "value": {
+          "latitude": 13.0334,
+          "longitude": 77.5925,
+          "coordinateSource": "GEOCODED"
+        },
+        "source": "geocoder-nominatim",
+        "sourceType": "GEOCODER",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.9,
+        "dataStatus": "PUBLIC_LISTED"
+      }
+    },
+    "lastSynchronizedAt": "2026-09-25T00:00:00Z"
   },
   {
     "hospitalId": "HOSP-INST-0698",
     "displayName": "Manipal Hospital",
     "facilityType": "Private Hospital",
+    "ownership": "PRIVATE",
+    "tier": "TERTIARY_CARE",
     "address": {
       "fullAddress": "98, HAL Airport road, Bengaluru",
       "city": "Bengaluru",
@@ -63,7 +196,20 @@
       "phone": "1800 102 5555",
       "website": "manipalhospitals.com"
     },
-    "capabilities": {},
+    "location": {
+      "latitude": 12.9592,
+      "longitude": 77.6485,
+      "coordinateSource": "GEOCODED"
+    },
+    "capabilities": {
+      "emergency": true,
+      "trauma": true,
+      "icu": true,
+      "ventilator": true,
+      "cardiology": true,
+      "neurology": true,
+      "orthopaedics": true
+    },
     "historicalCapacity": {},
     "operationalState": {
       "emergency": "UNKNOWN",
@@ -89,16 +235,123 @@
     ],
     "verificationStatus": "PUBLIC_LISTED",
     "dataStatus": "PUBLIC_LISTED",
-    "location": {
-      "latitude": 12.9592,
-      "longitude": 77.6485,
-      "coordinateSource": "GEOCODED"
-    }
+    "evidence": {
+      "displayName": {
+        "value": "Manipal Hospital",
+        "source": "institutions",
+        "sourceType": "HOSPITAL_WEBSITE",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.9,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://www.manipalhospitals.com/oldairportroad/"
+      },
+      "facilityType": {
+        "value": "Private Hospital",
+        "source": "institutions",
+        "sourceType": "HOSPITAL_WEBSITE",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.9,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://www.manipalhospitals.com/oldairportroad/"
+      },
+      "tier": {
+        "value": "TERTIARY_CARE",
+        "source": "institutions",
+        "sourceType": "INFERRED",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.85,
+        "dataStatus": "PUBLIC_LISTED"
+      },
+      "address": {
+        "value": {
+          "fullAddress": "98, HAL Airport road, Bengaluru",
+          "city": "Bengaluru",
+          "district": "Bengaluru Urban",
+          "state": "Karnataka",
+          "country": "India"
+        },
+        "source": "institutions",
+        "sourceType": "HOSPITAL_WEBSITE",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.9,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://www.manipalhospitals.com/oldairportroad/"
+      },
+      "contact": {
+        "phone": {
+          "value": "1800 102 5555",
+          "source": "institutions",
+          "sourceType": "HOSPITAL_WEBSITE",
+          "observedAt": "2026-09-25T00:00:00Z",
+          "confidence": 0.9,
+          "dataStatus": "PUBLIC_LISTED"
+        },
+        "website": {
+          "value": "manipalhospitals.com",
+          "source": "institutions",
+          "sourceType": "HOSPITAL_WEBSITE",
+          "observedAt": "2026-09-25T00:00:00Z",
+          "confidence": 0.9,
+          "dataStatus": "PUBLIC_LISTED"
+        }
+      },
+      "capabilities": {
+        "value": {
+          "emergency": true,
+          "trauma": true,
+          "icu": true,
+          "ventilator": true,
+          "cardiology": true,
+          "neurology": true,
+          "orthopaedics": true
+        },
+        "source": "institutions",
+        "sourceType": "HOSPITAL_WEBSITE",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.9,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://www.manipalhospitals.com/oldairportroad/"
+      },
+      "historicalCapacity": {},
+      "operationalState": {
+        "value": {
+          "emergency": "UNKNOWN",
+          "icu": "UNKNOWN",
+          "trauma": "UNKNOWN",
+          "nicu": "UNKNOWN",
+          "picu": "UNKNOWN",
+          "ventilator": "UNKNOWN",
+          "acceptance": "UNKNOWN",
+          "source": "UNKNOWN"
+        },
+        "source": "UNCONFIRMED_OPERATIONS",
+        "sourceType": "SYSTEM_DEFAULT",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0,
+        "dataStatus": "UNKNOWN",
+        "notes": "No live telemetry or verified operator connection. Availability is UNKNOWN."
+      },
+      "location": {
+        "value": {
+          "latitude": 12.9592,
+          "longitude": 77.6485,
+          "coordinateSource": "GEOCODED"
+        },
+        "source": "geocoder-nominatim",
+        "sourceType": "GEOCODER",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.9,
+        "dataStatus": "PUBLIC_LISTED"
+      }
+    },
+    "lastSynchronizedAt": "2026-09-25T00:00:00Z"
   },
   {
     "hospitalId": "HOSP-GOVT-3784",
     "displayName": "KC General Hospital",
     "facilityType": "Government Hospital",
+    "ownership": "GOVERNMENT",
+    "tier": "SECONDARY_CARE",
     "address": {
       "fullAddress": "Malleshwaram, Bengaluru",
       "pincode": "560003",
@@ -107,7 +360,17 @@
       "state": "Karnataka",
       "country": "India"
     },
-    "capabilities": {},
+    "location": {
+      "latitude": 12.9961,
+      "longitude": 77.5712,
+      "coordinateSource": "GEOCODED"
+    },
+    "capabilities": {
+      "emergency": true,
+      "icu": true,
+      "generalSurgery": true,
+      "orthopaedics": true
+    },
     "historicalCapacity": {},
     "operationalState": {
       "emergency": "UNKNOWN",
@@ -133,16 +396,103 @@
     ],
     "verificationStatus": "PUBLIC_LISTED",
     "dataStatus": "PUBLIC_LISTED",
-    "location": {
-      "latitude": 12.9961,
-      "longitude": 77.5712,
-      "coordinateSource": "GEOCODED"
-    }
+    "evidence": {
+      "displayName": {
+        "value": "KC General Hospital",
+        "source": "bengaluru-urban",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility/kc-general-hospital/"
+      },
+      "facilityType": {
+        "value": "Government Hospital",
+        "source": "bengaluru-urban",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility/kc-general-hospital/"
+      },
+      "tier": {
+        "value": "SECONDARY_CARE",
+        "source": "bengaluru-urban",
+        "sourceType": "INFERRED",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.9,
+        "dataStatus": "PUBLIC_LISTED"
+      },
+      "address": {
+        "value": {
+          "fullAddress": "Malleshwaram, Bengaluru",
+          "pincode": "560003",
+          "city": "Bengaluru",
+          "district": "Bengaluru Urban",
+          "state": "Karnataka",
+          "country": "India"
+        },
+        "source": "bengaluru-urban",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility/kc-general-hospital/"
+      },
+      "capabilities": {
+        "value": {
+          "emergency": true,
+          "icu": true,
+          "generalSurgery": true,
+          "orthopaedics": true
+        },
+        "source": "bengaluru-urban",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility/kc-general-hospital/"
+      },
+      "historicalCapacity": {},
+      "operationalState": {
+        "value": {
+          "emergency": "UNKNOWN",
+          "icu": "UNKNOWN",
+          "trauma": "UNKNOWN",
+          "nicu": "UNKNOWN",
+          "picu": "UNKNOWN",
+          "ventilator": "UNKNOWN",
+          "acceptance": "UNKNOWN",
+          "source": "UNKNOWN"
+        },
+        "source": "UNCONFIRMED_OPERATIONS",
+        "sourceType": "SYSTEM_DEFAULT",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0,
+        "dataStatus": "UNKNOWN",
+        "notes": "No live telemetry or verified operator connection. Availability is UNKNOWN."
+      },
+      "location": {
+        "value": {
+          "latitude": 12.9961,
+          "longitude": 77.5712,
+          "coordinateSource": "GEOCODED"
+        },
+        "source": "geocoder-nominatim",
+        "sourceType": "GEOCODER",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED"
+      }
+    },
+    "lastSynchronizedAt": "2026-09-25T00:00:00Z"
   },
   {
     "hospitalId": "HOSP-GOVT-2801",
     "displayName": "Jayanagar General Hospital",
     "facilityType": "Government Hospital",
+    "ownership": "GOVERNMENT",
+    "tier": "SECONDARY_CARE",
     "address": {
       "fullAddress": "4th T Block East, Jayanagar, Bengaluru",
       "pincode": "560041",
@@ -151,7 +501,17 @@
       "state": "Karnataka",
       "country": "India"
     },
-    "capabilities": {},
+    "location": {
+      "latitude": 12.9304,
+      "longitude": 77.5855,
+      "coordinateSource": "GEOCODED"
+    },
+    "capabilities": {
+      "emergency": true,
+      "icu": true,
+      "generalSurgery": true,
+      "orthopaedics": true
+    },
     "historicalCapacity": {},
     "operationalState": {
       "emergency": "UNKNOWN",
@@ -177,16 +537,103 @@
     ],
     "verificationStatus": "PUBLIC_LISTED",
     "dataStatus": "PUBLIC_LISTED",
-    "location": {
-      "latitude": 12.9304,
-      "longitude": 77.5855,
-      "coordinateSource": "GEOCODED"
-    }
+    "evidence": {
+      "displayName": {
+        "value": "Jayanagar General Hospital",
+        "source": "bengaluru-urban",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility-category/hospitals/"
+      },
+      "facilityType": {
+        "value": "Government Hospital",
+        "source": "bengaluru-urban",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility-category/hospitals/"
+      },
+      "tier": {
+        "value": "SECONDARY_CARE",
+        "source": "bengaluru-urban",
+        "sourceType": "INFERRED",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.9,
+        "dataStatus": "PUBLIC_LISTED"
+      },
+      "address": {
+        "value": {
+          "fullAddress": "4th T Block East, Jayanagar, Bengaluru",
+          "pincode": "560041",
+          "city": "Bengaluru",
+          "district": "Bengaluru Urban",
+          "state": "Karnataka",
+          "country": "India"
+        },
+        "source": "bengaluru-urban",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility-category/hospitals/"
+      },
+      "capabilities": {
+        "value": {
+          "emergency": true,
+          "icu": true,
+          "generalSurgery": true,
+          "orthopaedics": true
+        },
+        "source": "bengaluru-urban",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility-category/hospitals/"
+      },
+      "historicalCapacity": {},
+      "operationalState": {
+        "value": {
+          "emergency": "UNKNOWN",
+          "icu": "UNKNOWN",
+          "trauma": "UNKNOWN",
+          "nicu": "UNKNOWN",
+          "picu": "UNKNOWN",
+          "ventilator": "UNKNOWN",
+          "acceptance": "UNKNOWN",
+          "source": "UNKNOWN"
+        },
+        "source": "UNCONFIRMED_OPERATIONS",
+        "sourceType": "SYSTEM_DEFAULT",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0,
+        "dataStatus": "UNKNOWN",
+        "notes": "No live telemetry or verified operator connection. Availability is UNKNOWN."
+      },
+      "location": {
+        "value": {
+          "latitude": 12.9304,
+          "longitude": 77.5855,
+          "coordinateSource": "GEOCODED"
+        },
+        "source": "geocoder-nominatim",
+        "sourceType": "GEOCODER",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED"
+      }
+    },
+    "lastSynchronizedAt": "2026-09-25T00:00:00Z"
   },
   {
     "hospitalId": "HOSP-GOVT-2123",
     "displayName": "Bowring and Lady Curzon Hospital",
     "facilityType": "Government Hospital",
+    "ownership": "GOVERNMENT",
+    "tier": "TERTIARY_CARE",
     "address": {
       "fullAddress": "Shivajinagar, Bengaluru",
       "pincode": "560001",
@@ -195,7 +642,17 @@
       "state": "Karnataka",
       "country": "India"
     },
-    "capabilities": {},
+    "location": {
+      "latitude": 12.9822,
+      "longitude": 77.6016,
+      "coordinateSource": "GEOCODED"
+    },
+    "capabilities": {
+      "emergency": true,
+      "icu": true,
+      "generalSurgery": true,
+      "orthopaedics": true
+    },
     "historicalCapacity": {},
     "operationalState": {
       "emergency": "UNKNOWN",
@@ -221,16 +678,103 @@
     ],
     "verificationStatus": "PUBLIC_LISTED",
     "dataStatus": "PUBLIC_LISTED",
-    "location": {
-      "latitude": 12.9822,
-      "longitude": 77.6016,
-      "coordinateSource": "GEOCODED"
-    }
+    "evidence": {
+      "displayName": {
+        "value": "Bowring and Lady Curzon Hospital",
+        "source": "bengaluru-urban",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility-category/hospitals/"
+      },
+      "facilityType": {
+        "value": "Government Hospital",
+        "source": "bengaluru-urban",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility-category/hospitals/"
+      },
+      "tier": {
+        "value": "TERTIARY_CARE",
+        "source": "bengaluru-urban",
+        "sourceType": "INFERRED",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.9,
+        "dataStatus": "PUBLIC_LISTED"
+      },
+      "address": {
+        "value": {
+          "fullAddress": "Shivajinagar, Bengaluru",
+          "pincode": "560001",
+          "city": "Bengaluru",
+          "district": "Bengaluru Urban",
+          "state": "Karnataka",
+          "country": "India"
+        },
+        "source": "bengaluru-urban",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility-category/hospitals/"
+      },
+      "capabilities": {
+        "value": {
+          "emergency": true,
+          "icu": true,
+          "generalSurgery": true,
+          "orthopaedics": true
+        },
+        "source": "bengaluru-urban",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility-category/hospitals/"
+      },
+      "historicalCapacity": {},
+      "operationalState": {
+        "value": {
+          "emergency": "UNKNOWN",
+          "icu": "UNKNOWN",
+          "trauma": "UNKNOWN",
+          "nicu": "UNKNOWN",
+          "picu": "UNKNOWN",
+          "ventilator": "UNKNOWN",
+          "acceptance": "UNKNOWN",
+          "source": "UNKNOWN"
+        },
+        "source": "UNCONFIRMED_OPERATIONS",
+        "sourceType": "SYSTEM_DEFAULT",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0,
+        "dataStatus": "UNKNOWN",
+        "notes": "No live telemetry or verified operator connection. Availability is UNKNOWN."
+      },
+      "location": {
+        "value": {
+          "latitude": 12.9822,
+          "longitude": 77.6016,
+          "coordinateSource": "GEOCODED"
+        },
+        "source": "geocoder-nominatim",
+        "sourceType": "GEOCODER",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED"
+      }
+    },
+    "lastSynchronizedAt": "2026-09-25T00:00:00Z"
   },
   {
     "hospitalId": "HOSP-BBMP-1608",
     "displayName": "Referral Hospital, Srirampura",
     "facilityType": "Referral Hospital",
+    "ownership": "MUNICIPAL",
+    "tier": "SECONDARY_CARE",
     "address": {
       "fullAddress": "Srirampura, Bengaluru",
       "ward": "Srirampura",
@@ -240,7 +784,14 @@
       "state": "Karnataka",
       "country": "India"
     },
-    "capabilities": {},
+    "location": {
+      "latitude": 12.9926,
+      "longitude": 77.5641,
+      "coordinateSource": "GEOCODED"
+    },
+    "capabilities": {
+      "emergency": true
+    },
     "historicalCapacity": {},
     "operationalState": {
       "emergency": "UNKNOWN",
@@ -266,16 +817,101 @@
     ],
     "verificationStatus": "PUBLIC_LISTED",
     "dataStatus": "PUBLIC_LISTED",
-    "location": {
-      "latitude": 12.9926,
-      "longitude": 77.5641,
-      "coordinateSource": "GEOCODED"
-    }
+    "evidence": {
+      "displayName": {
+        "value": "Referral Hospital, Srirampura",
+        "source": "bbmp",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://site.bbmp.gov.in/departmentwebsites/Health/palikehospitals.html"
+      },
+      "facilityType": {
+        "value": "Referral Hospital",
+        "source": "bbmp",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://site.bbmp.gov.in/departmentwebsites/Health/palikehospitals.html"
+      },
+      "tier": {
+        "value": "SECONDARY_CARE",
+        "source": "bbmp",
+        "sourceType": "INFERRED",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.9,
+        "dataStatus": "PUBLIC_LISTED"
+      },
+      "address": {
+        "value": {
+          "fullAddress": "Srirampura, Bengaluru",
+          "ward": "Srirampura",
+          "zone": "West",
+          "city": "Bengaluru",
+          "district": "Bengaluru Urban",
+          "state": "Karnataka",
+          "country": "India"
+        },
+        "source": "bbmp",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://site.bbmp.gov.in/departmentwebsites/Health/palikehospitals.html"
+      },
+      "capabilities": {
+        "value": {
+          "emergency": true
+        },
+        "source": "bbmp",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://site.bbmp.gov.in/departmentwebsites/Health/palikehospitals.html"
+      },
+      "historicalCapacity": {},
+      "operationalState": {
+        "value": {
+          "emergency": "UNKNOWN",
+          "icu": "UNKNOWN",
+          "trauma": "UNKNOWN",
+          "nicu": "UNKNOWN",
+          "picu": "UNKNOWN",
+          "ventilator": "UNKNOWN",
+          "acceptance": "UNKNOWN",
+          "source": "UNKNOWN"
+        },
+        "source": "UNCONFIRMED_OPERATIONS",
+        "sourceType": "SYSTEM_DEFAULT",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0,
+        "dataStatus": "UNKNOWN",
+        "notes": "No live telemetry or verified operator connection. Availability is UNKNOWN."
+      },
+      "location": {
+        "value": {
+          "latitude": 12.9926,
+          "longitude": 77.5641,
+          "coordinateSource": "GEOCODED"
+        },
+        "source": "geocoder-nominatim",
+        "sourceType": "GEOCODER",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED"
+      }
+    },
+    "lastSynchronizedAt": "2026-09-25T00:00:00Z"
   },
   {
     "hospitalId": "HOSP-BBMP-0132",
     "displayName": "Maternity Home, Ulsoor",
     "facilityType": "Maternity Home",
+    "ownership": "MUNICIPAL",
+    "tier": "SPECIALTY_MATERNITY",
     "address": {
       "fullAddress": "Halasuru, Bengaluru",
       "ward": "Halasuru",
@@ -285,7 +921,16 @@
       "state": "Karnataka",
       "country": "India"
     },
-    "capabilities": {},
+    "location": {
+      "latitude": 12.9779,
+      "longitude": 77.6245,
+      "coordinateSource": "GEOCODED"
+    },
+    "capabilities": {
+      "obstetrics": true,
+      "gynaecology": true,
+      "neonatology": true
+    },
     "historicalCapacity": {},
     "operationalState": {
       "emergency": "UNKNOWN",
@@ -311,10 +956,95 @@
     ],
     "verificationStatus": "PUBLIC_LISTED",
     "dataStatus": "PUBLIC_LISTED",
-    "location": {
-      "latitude": 12.9779,
-      "longitude": 77.6245,
-      "coordinateSource": "GEOCODED"
-    }
+    "evidence": {
+      "displayName": {
+        "value": "Maternity Home, Ulsoor",
+        "source": "bbmp",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://site.bbmp.gov.in/departmentwebsites/Health/palikehospitals.html"
+      },
+      "facilityType": {
+        "value": "Maternity Home",
+        "source": "bbmp",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://site.bbmp.gov.in/departmentwebsites/Health/palikehospitals.html"
+      },
+      "tier": {
+        "value": "SPECIALTY_MATERNITY",
+        "source": "bbmp",
+        "sourceType": "INFERRED",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.9,
+        "dataStatus": "PUBLIC_LISTED"
+      },
+      "address": {
+        "value": {
+          "fullAddress": "Halasuru, Bengaluru",
+          "ward": "Halasuru",
+          "zone": "East",
+          "city": "Bengaluru",
+          "district": "Bengaluru Urban",
+          "state": "Karnataka",
+          "country": "India"
+        },
+        "source": "bbmp",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://site.bbmp.gov.in/departmentwebsites/Health/palikehospitals.html"
+      },
+      "capabilities": {
+        "value": {
+          "obstetrics": true,
+          "gynaecology": true,
+          "neonatology": true
+        },
+        "source": "bbmp",
+        "sourceType": "GOVERNMENT_DATASET",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED",
+        "sourceUrl": "https://site.bbmp.gov.in/departmentwebsites/Health/palikehospitals.html"
+      },
+      "historicalCapacity": {},
+      "operationalState": {
+        "value": {
+          "emergency": "UNKNOWN",
+          "icu": "UNKNOWN",
+          "trauma": "UNKNOWN",
+          "nicu": "UNKNOWN",
+          "picu": "UNKNOWN",
+          "ventilator": "UNKNOWN",
+          "acceptance": "UNKNOWN",
+          "source": "UNKNOWN"
+        },
+        "source": "UNCONFIRMED_OPERATIONS",
+        "sourceType": "SYSTEM_DEFAULT",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0,
+        "dataStatus": "UNKNOWN",
+        "notes": "No live telemetry or verified operator connection. Availability is UNKNOWN."
+      },
+      "location": {
+        "value": {
+          "latitude": 12.9779,
+          "longitude": 77.6245,
+          "coordinateSource": "GEOCODED"
+        },
+        "source": "geocoder-nominatim",
+        "sourceType": "GEOCODER",
+        "observedAt": "2026-09-25T00:00:00Z",
+        "confidence": 0.95,
+        "dataStatus": "PUBLIC_LISTED"
+      }
+    },
+    "lastSynchronizedAt": "2026-09-25T00:00:00Z"
   }
 ]

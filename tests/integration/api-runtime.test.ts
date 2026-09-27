@@ -150,6 +150,24 @@ async function rbac() {
   check('H3 (never asked) cannot fake acceptance → 409', (await post(P.h3, response('CASE-BLR-876', 'HOSP-BLR-003', 'ACCEPTED'))).status === 409);
   check('hospital 1 own capacity → 202', (await post(P.h1, capacity('HOSP-BLR-001', 'AVAILABLE'))).status === 202);
   check('management cannot reset (admin only) → 403', (await req('POST', '/api/demo/reset', P.mgmt)).status === 403);
+
+  // Care Feasibility Engine (shadow): read-only inspection endpoint + telemetry event cannot be forged
+  check('feasibility shadow: anonymous → 401', (await req('GET', '/api/feasibility/shadow')).status === 401);
+  for (const [name, persona] of [['patient', P.pat1], ['hospital', P.h1], ['ambulance', P.a1]] as const) {
+    check(`feasibility shadow: ${name} → 403`, (await req('GET', '/api/feasibility/shadow', persona)).status === 403);
+  }
+  const shadowMgmt = await req('GET', '/api/feasibility/shadow', P.mgmt);
+  check('feasibility shadow: management → 200 (mode shadow, prototype policy)', shadowMgmt.status === 200 && shadowMgmt.json?.mode === 'shadow' && /prototype/i.test(shadowMgmt.json?.policy?.label || ''), JSON.stringify(shadowMgmt.json?.policy));
+  check('feasibility shadow: admin → 200', (await req('GET', '/api/feasibility/shadow', P.admin)).status === 200);
+  const forgedTrace = ev('feasibility.trace.recorded', {
+    traceId: 't', decisionId: 'd', caseId: 'CASE-BLR-876', mode: 'SHADOW', authority: 'NONE', context: 'x', evaluatedAt: new Date().toISOString(), engineVersion: 'x',
+    snapshot: { snapshotId: 's', snapshotHash: 'h' }, auditHash: 'a', policy: { version: 'v', hash: 'a'.repeat(64), evidenceEnvironment: 'DEMO', label: 'l', rules: {} },
+    requirement: { requirementId: 'r', requiredCapabilities: [], provenance: 'RULE_DERIVED' }, trigger: { eventId: 'e', eventType: 't', sourceType: 'system' },
+    outcome: 'AWAITING_ACCEPTANCE', coverage: { evaluated: 0, withUsableOperationalEvidence: 0, withSyntheticEvidence: 0, withFinancialEvidence: 0, withInsuranceEvidence: 0 }, candidates: [], detailLevel: 'FULL',
+  }, { type: 'system', id: 'feasibility-shadow' });
+  for (const [name, persona] of [['admin', P.admin], ['management', P.mgmt], ['hospital', P.h1]] as const) {
+    check(`forged feasibility.trace.recorded from ${name} → 403`, (await post(persona, forgedTrace)).status === 403);
+  }
   check('CORS: foreign origin not allowed', (await fetch(API + '/api/health', { headers: { Origin: 'http://evil.example' } })).headers.get('access-control-allow-origin') !== '*');
 }
 
@@ -163,7 +181,7 @@ async function realtimeAuth() {
   check('unknown persona socket rejected', forged.error === 'unauthenticated');
   forged.s.close();
 
-  const pat1 = await socketFor(P.pat1), pat2 = await socketFor(P.pat2), h3 = await socketFor(P.h3), h1 = await socketFor(P.h1), mg = await socketFor(P.mgmt), a2 = await socketFor('demo-amb-2');
+  const pat1 = await socketFor(P.pat1), pat2 = await socketFor(P.pat2), h3 = await socketFor(P.h3), h1 = await socketFor(P.h1), mg = await socketFor(P.mgmt), a2 = await socketFor('demo-amb-2'), a1 = await socketFor(P.a1), adm = await socketFor(P.admin);
   await openCase('CASE-BLR-876');
   await post(P.mgmt, dispatch('AMB-BLR-001', 'CASE-BLR-876'));
   await openCase('CASE-BLR-877');
@@ -179,7 +197,21 @@ async function realtimeAuth() {
   check('H1 receives its acceptance requests', h1.events.some(e => e.eventType === 'hospital.acceptance.requested' && e.payload.hospitalId === 'HOSP-BLR-001'));
   check('H1 does not receive requests to other hospitals', !h1.events.some(e => e.eventType === 'hospital.acceptance.requested' && e.payload.hospitalId !== 'HOSP-BLR-001'));
   check('unrelated ambulance receives no case events', !a2.events.some(e => /CASE-BLR-87/.test(JSON.stringify(e))));
-  for (const x of [pat1, pat2, h3, h1, mg, a2]) x.s.close();
+  // feasibility trace events: privileged audit telemetry only
+  const TRACE = 'feasibility.trace.recorded';
+  check('feasibility: management receives trace events in realtime', mg.events.some(e => e.eventType === TRACE));
+  check('feasibility: admin receives trace events in realtime', adm.events.some(e => e.eventType === TRACE));
+  check('feasibility: trace events are marked SHADOW / authority NONE', mg.events.filter(e => e.eventType === TRACE).every(e => e.payload.mode === 'SHADOW' && e.payload.authority === 'NONE'));
+  for (const [name, sock] of [['patient of the case', pat1], ['other patient', pat2], ['hospital asked (H1)', h1], ['hospital not asked (H3)', h3], ['ambulance ASSIGNED to the case', a1], ['unrelated ambulance', a2]] as const) {
+    check(`feasibility: ${name} never receives trace events`, !sock.events.some(e => e.eventType === TRACE));
+  }
+  const ledger = await req('GET', '/api/events/history?limit=500', P.mgmt);
+  check('feasibility: trace events are recorded in the audit ledger', ledger.json.some((e: any) => e.eventType === TRACE));
+  const ownTl = await req('GET', '/api/cases/CASE-BLR-876/timeline', P.pat1);
+  check('feasibility: patient timeline excludes trace events', ownTl.status === 200 && !ownTl.json.some((e: any) => e.eventType === TRACE));
+  const shadowNow = await req('GET', '/api/feasibility/shadow?caseId=CASE-BLR-876', P.mgmt);
+  check('feasibility: shadow endpoint exposes traces for the case (no decision authority)', shadowNow.status === 200 && shadowNow.json.traces.length > 0 && shadowNow.json.traces.every((t: any) => t.caseId === 'CASE-BLR-876'));
+  for (const x of [pat1, pat2, h3, h1, mg, a2, a1, adm]) x.s.close();
 }
 
 async function orderingAndProtocol() {

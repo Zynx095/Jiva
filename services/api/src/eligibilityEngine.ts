@@ -1,14 +1,41 @@
 import { HospitalState, GeoPoint, CareRequirement, HospitalCandidate, CapabilityType } from '@jiva/domain-models';
+import type { CaseAcceptanceStatus } from './feasibility/acceptanceLedger';
 import { hospitalsStore } from './stateStore';
 import { mappingProvider } from './mapping';
+import type { MappingProvider } from '@jiva/mapping';
+
+/**
+ * Optional dependencies so the SAME legacy evaluation can run outside the local in-memory
+ * stores (AWS lambdas read hospitals from DynamoDB). Defaults preserve local behaviour exactly.
+ */
+export interface EvaluationDeps {
+  hospitals?: Iterable<HospitalState>;
+  mapping?: Pick<MappingProvider, 'calculateRoute'>;
+  nowMs?: number;
+  /**
+   * CASE-SCOPED acceptance status (fixes the legacy one-slot bug at the exact decision boundary:
+   * this is where "is this hospital accepted for THIS case" is decided). When supplied, this
+   * REPLACES `hospital.operationalState.acceptance/acceptanceCaseId/expiresAt` as the source of
+   * acceptance truth for the requirement's case: the shared slot only ever holds the LAST writer
+   * across every case, so without this override case B's acceptance at a hospital silently strips
+   * case A's own eligibility there. Backed by the per-(case, hospital) acceptance ledger /
+   * materialized index (see acceptanceLedger.ts / materializedAcceptance.ts), which already keeps
+   * cases independent. Clinical capability and hospital-wide ED-unavailable checks are untouched
+   * (those are legitimately hospital-wide facts, not per-case).
+   */
+  acceptanceOverride?: (hospitalId: string) => CaseAcceptanceStatus | Promise<CaseAcceptanceStatus>;
+}
 
 export async function evaluateHospitals(
   requirement: CareRequirement,
-  ambulanceLocation: GeoPoint
+  ambulanceLocation: GeoPoint,
+  deps: EvaluationDeps = {}
 ): Promise<HospitalCandidate[]> {
   const candidates: HospitalCandidate[] = [];
+  const mapping = deps.mapping || mappingProvider;
+  const nowMs = deps.nowMs ?? Date.now();
 
-  const promises = Array.from(hospitalsStore.values()).map(async (hospital) => {
+  const promises = Array.from(deps.hospitals || hospitalsStore.values()).map(async (hospital) => {
     const missingCapabilities: CapabilityType[] = [];
     let capabilityMatch = 0;
 
@@ -27,15 +54,31 @@ export async function evaluateHospitals(
     const isCapable = missingCapabilities.length === 0;
 
     let operationalEligibility: 'ELIGIBLE' | 'PENDING_ACCEPTANCE' | 'INELIGIBLE' = 'INELIGIBLE';
-    const acceptance = hospital.operationalState.acceptance;
 
     let reason = '';
-
     const op = hospital.operationalState;
+
+    // An acceptance only counts for the emergency it was given for (legacy shared-slot semantics).
+    const legacySlot = (): [string, boolean, boolean] => [
+      op.acceptance,
+      !!op.expiresAt && nowMs > new Date(op.expiresAt).getTime(),
+      !op.acceptanceCaseId || op.acceptanceCaseId === requirement.caseId,
+    ];
+    let acceptance: string, acceptanceExpired: boolean, acceptanceForThisCase: boolean;
+    if (deps.acceptanceOverride) {
+      // Case-scoped read (the actual fix). If it fails, this NEVER blocks the legacy decision: it
+      // degrades to the pre-existing shared-slot check (same behaviour as if no override existed).
+      try {
+        const cs = await deps.acceptanceOverride(hospital.hospitalId);
+        [acceptance, acceptanceExpired, acceptanceForThisCase] = [cs.status, cs.expired, true];
+      } catch (err) {
+        console.warn(`[Eligibility] Case-scoped acceptance read failed for ${hospital.hospitalId} (falling back to the shared slot): ${err instanceof Error ? err.message : String(err)}`);
+        [acceptance, acceptanceExpired, acceptanceForThisCase] = legacySlot();
+      }
+    } else {
+      [acceptance, acceptanceExpired, acceptanceForThisCase] = legacySlot();
+    }
     const expiresAt = op.expiresAt;
-    const acceptanceExpired = !!expiresAt && Date.now() > new Date(expiresAt).getTime();
-    // An acceptance only counts for the emergency it was given for.
-    const acceptanceForThisCase = !op.acceptanceCaseId || op.acceptanceCaseId === requirement.caseId;
     const operationallyUnavailable = op.emergency === 'UNAVAILABLE';
 
     if (!isCapable) {
@@ -71,7 +114,7 @@ export async function evaluateHospitals(
     
     if (hospital.location && ambulanceLocation) {
       try {
-        const route = await mappingProvider.calculateRoute({
+        const route = await mapping.calculateRoute({
            origin: ambulanceLocation,
            destination: { latitude: hospital.location.latitude, longitude: hospital.location.longitude },
            travelMode: 'DRIVING'
@@ -90,7 +133,7 @@ export async function evaluateHospitals(
       requiredCapabilitiesSatisfied,
       missingCapabilities,
       operationalEligibility,
-      acceptanceStatus: (hospital.operationalState.acceptance === 'UNKNOWN') ? 'PENDING' : hospital.operationalState.acceptance,
+      acceptanceStatus: (acceptance === 'UNKNOWN') ? 'PENDING' : acceptance as HospitalCandidate['acceptanceStatus'],
       distanceKm,
       etaMinutes,
       reason

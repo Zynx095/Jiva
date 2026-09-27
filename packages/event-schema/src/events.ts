@@ -135,6 +135,23 @@ export const HospitalAcceptanceExpiredSchema = BaseEventSchema.extend({
   })
 });
 
+/**
+ * A request JIVA withdraws before it is answered (or after, when the case no longer needs that
+ * hospital). System-generated only (not in EXTERNAL_EVENT_TYPES). The feasibility ledger treats a
+ * cancelled request as unusable: no response to it can resolve any unknown. NO PRODUCER EXISTS YET:
+ * deciding WHEN to cancel is a legacy-flow change and is deliberately not implemented.
+ */
+export const HospitalAcceptanceCancelledSchema = BaseEventSchema.extend({
+  eventType: z.literal('hospital.acceptance.cancelled'),
+  payload: z.object({
+    requestId: z.string(),
+    caseId: z.string(),
+    hospitalId: z.string(),
+    cancelledAt: z.string().datetime(),
+    reason: z.enum(['CASE_CLOSED', 'DESTINATION_FINALIZED_ELSEWHERE', 'REQUIREMENT_CHANGED', 'OPERATOR_WITHDRAWN']),
+  })
+});
+
 // 4. Routing Events
 export const RouteCalculatedSchema = BaseEventSchema.extend({
   eventType: z.literal('route.calculated'),
@@ -211,6 +228,107 @@ export const AiSummaryGeneratedSchema = BaseEventSchema.extend({
   })
 });
 
+// 5b. Feasibility trace (OBSERVABILITY ONLY).
+// Audit telemetry emitted by the Care Feasibility Engine AFTER it has produced a result.
+// It is never an input to any engine, never triggers acceptance/dispatch/routing, and is
+// system-generated only. Payload carries enumerated codes, identifiers, timestamps and hashes —
+// no patient condition/location/financial data and no free text supplied by hospitals.
+export const FEASIBILITY_TRACE_EVENT = 'feasibility.trace.recorded' as const;
+
+/**
+ * STRUCTURED provenance only: every field is an enum, a number, a timestamp or a schema path built
+ * by the engine. There is deliberately NO free-text `source` field, and the object is strict, so a
+ * producer cannot smuggle client-supplied text through it.
+ */
+const TraceEvidenceRefSchema = z.object({
+  path: z.string().regex(/^candidates\[\d+\]\.[A-Za-z.]+$/),
+  evidenceClass: z.enum(['FACILITY_LOCATION', 'LISTED_CAPABILITY', 'OPERATIONAL_CAPACITY', 'ACCEPTANCE_RESPONSE', 'AMBULANCE_POSITION', 'ROUTE_ETA', 'FINANCIAL', 'INSURANCE']),
+  dataStatus: z.enum(['CURRENT', 'HISTORICAL', 'PUBLIC_LISTED', 'HOSPITAL_CONFIRMED', 'AUTHORIZED_FEED', 'SYNTHETIC_DEMO', 'UNKNOWN', 'NOT_DISCLOSED', 'UNVERIFIED']),
+  freshness: z.enum(['FRESH', 'STALE', 'UNTIMED']),
+  observedAt: z.string().datetime().optional(),
+  validUntil: z.string().datetime().optional(),
+  ageSeconds: z.number().optional(),
+  confidence: z.number().min(0).max(1).optional(),
+}).strict();
+
+const TraceConstraintSchema = z.object({
+  ruleId: z.string(),
+  outcome: z.enum(['PASS', 'FAIL', 'UNKNOWN', 'NOT_APPLICABLE']),
+  reasonCode: z.string(),
+  resolvableByAcceptance: z.boolean(),
+  evidenceRefs: z.array(TraceEvidenceRefSchema).optional(),
+});
+
+const TraceCandidateSchema = z.object({
+  hospitalId: z.string(),
+  verdict: z.enum(['ELIGIBLE', 'PENDING_ACCEPTANCE', 'INDETERMINATE', 'INELIGIBLE']),
+  orderPosition: z.number(),
+  orderKey: z.object({
+    verdictRank: z.number(),
+    acceptanceKindRank: z.number(),
+    etaKnown: z.boolean(),
+    etaSeconds: z.number().nullable(),
+    distanceMeters: z.number().nullable(),
+    hospitalId: z.string(),
+  }),
+  blockingReasons: z.array(z.string()),
+  pendingOn: z.enum(['ACCEPTANCE_REQUEST', 'ACCEPTANCE_RESPONSE']).optional(),
+  excludedFromSelection: z.boolean(),
+  constraints: z.array(TraceConstraintSchema),
+  factors: z.array(z.object({
+    factorId: z.string(),
+    level: z.enum(['KNOWN', 'ESTIMATED', 'UNKNOWN', 'NOT_DISCLOSED']),
+    affectsOrdering: z.boolean(),
+    reasonCode: z.string().optional(),
+  })),
+});
+
+export const FeasibilityTraceRecordedSchema = BaseEventSchema.extend({
+  eventType: z.literal(FEASIBILITY_TRACE_EVENT),
+  payload: z.object({
+    traceId: z.string(),
+    decisionId: z.string(),
+    caseId: z.string(),
+    /** Always SHADOW / NONE in this phase: the engine has no decision authority. */
+    mode: z.literal('SHADOW'),
+    authority: z.literal('NONE'),
+    context: z.string(),
+    evaluatedAt: z.string(),
+    engineVersion: z.string(),
+    snapshot: z.object({ snapshotId: z.string(), snapshotHash: z.string() }),
+    auditHash: z.string(),
+    policy: z.object({
+      version: z.string(),
+      /** sha256 of the canonicalized effective policy; bound into snapshotHash and auditHash. */
+      hash: z.string().regex(/^[0-9a-f]{64}$/),
+      evidenceEnvironment: z.enum(['DEMO', 'PRODUCTION']),
+      label: z.string(),
+      rules: z.record(z.object({ maxAgeSeconds: z.number().nullable(), onStale: z.enum(['UNKNOWN', 'WARN']) })),
+    }),
+    requirement: z.object({
+      requirementId: z.string(),
+      requiredCapabilities: z.array(z.string()),
+      /** Count of requested capability codes that are not recognised (their text is never emitted). */
+      unrecognizedCapabilityCount: z.number().optional(),
+      provenance: z.enum(['RULE_DERIVED', 'CLINICIAN_CONFIRMED']),
+    }),
+    trigger: z.object({ eventId: z.string(), eventType: z.string(), sourceType: z.enum(['hospital', 'ambulance', 'patient', 'system', 'clinician', 'laboratory', 'unknown']) }),
+    outcome: z.enum(['SELECTED', 'AWAITING_ACCEPTANCE', 'NO_FEASIBLE_CANDIDATE']),
+    selectedHospitalId: z.string().optional(),
+    coverage: z.object({
+      evaluated: z.number(),
+      withUsableOperationalEvidence: z.number(),
+      withSyntheticEvidence: z.number(),
+      withFinancialEvidence: z.number(),
+      withInsuranceEvidence: z.number(),
+    }),
+    candidates: z.array(TraceCandidateSchema),
+    /** Candidates dropped (lowest-ranked first) to keep the event within the bus size limit. */
+    candidatesOmitted: z.number().optional(),
+    detailLevel: z.enum(['FULL', 'SUMMARY']),
+  }),
+});
+
 // 6. Demo / operations events
 export const DemoResetSchema = BaseEventSchema.extend({
   eventType: z.literal('demo.reset'),
@@ -232,12 +350,14 @@ export const AnyEventSchema = z.discriminatedUnion('eventType', [
   HospitalAcceptanceRequestedSchema,
   HospitalAcceptanceReceivedSchema,
   HospitalAcceptanceExpiredSchema,
+  HospitalAcceptanceCancelledSchema,
   RouteCalculatedSchema,
   RouteRecalculatedSchema,
   DestinationChangedSchema,
   AiHandoffGeneratedSchema,
   AiAnomalyExplainedSchema,
   AiSummaryGeneratedSchema,
+  FeasibilityTraceRecordedSchema,
   DemoResetSchema
 ]);
 
@@ -249,6 +369,7 @@ export type CareRequirementCreated = z.infer<typeof CareRequirementCreatedSchema
 export type HospitalCandidateGenerated = z.infer<typeof HospitalCandidateGeneratedSchema>;
 export type HospitalAcceptanceRequested = z.infer<typeof HospitalAcceptanceRequestedSchema>;
 export type HospitalAcceptanceReceived = z.infer<typeof HospitalAcceptanceReceivedSchema>;
+export type HospitalAcceptanceCancelled = z.infer<typeof HospitalAcceptanceCancelledSchema>;
 export type HospitalAcceptanceExpired = z.infer<typeof HospitalAcceptanceExpiredSchema>;
 export type RouteCalculated = z.infer<typeof RouteCalculatedSchema>;
 export type RouteRecalculated = z.infer<typeof RouteRecalculatedSchema>;
@@ -257,5 +378,6 @@ export type AiHandoffGenerated = z.infer<typeof AiHandoffGeneratedSchema>;
 export type AiAnomalyExplained = z.infer<typeof AiAnomalyExplainedSchema>;
 export type AiSummaryGenerated = z.infer<typeof AiSummaryGeneratedSchema>;
 export type AmbulanceArrived = z.infer<typeof AmbulanceArrivedSchema>;
+export type FeasibilityTraceRecorded = z.infer<typeof FeasibilityTraceRecordedSchema>;
 export type DemoReset = z.infer<typeof DemoResetSchema>;
 export type AnyEvent = z.infer<typeof AnyEventSchema>;

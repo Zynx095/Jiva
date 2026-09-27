@@ -3,53 +3,14 @@ import { AnyEvent } from '@jiva/event-schema';
 import { AmbulanceState, HospitalState, PatientState } from '@jiva/domain-models';
 import { ambulancesStore } from './stateStore';
 import { relatedCasesForHospital } from './stateEngines';
+import { isPrivileged, PRIVILEGED_ONLY_EVENT_TYPES } from './authorizationPolicy';
 
 /**
  * Server-side authorization policy. Single source of truth for REST reads,
  * event submission and realtime (Socket.IO) delivery.
  */
 
-const isPrivileged = (auth: AuthContext) => auth.role === 'ADMIN' || auth.role === 'MANAGEMENT';
-
-/** Event types an external client may submit. Everything else is system-generated only. */
-export const EXTERNAL_EVENT_TYPES = new Set([
-  'patient.emergency.created',
-  'ambulance.dispatched',
-  'ambulance.location.updated',
-  'hospital.acceptance.received',
-  'hospital.capacity.updated',
-]);
-
-/** Returns null if allowed, otherwise a reason string. */
-export function authorizeEventSubmission(auth: AuthContext, event: AnyEvent): string | null {
-  if (!EXTERNAL_EVENT_TYPES.has(event.eventType)) {
-    return `Event type ${event.eventType} is system-generated and cannot be submitted`;
-  }
-  const src = event.source;
-  switch (event.eventType) {
-    case 'patient.emergency.created':
-      if (isPrivileged(auth)) return null;
-      if (auth.role === 'PATIENT' && event.patientId && event.patientId === auth.caseId && src.type === 'patient') return null;
-      return 'Only management or the patient themself may report this emergency';
-    case 'ambulance.dispatched':
-      return isPrivileged(auth) ? null : 'Only dispatch (MANAGEMENT/ADMIN) may dispatch ambulances';
-    case 'ambulance.location.updated': {
-      const id = event.payload.ambulanceId;
-      if (src.type !== 'ambulance' || src.id !== id) return 'Event source must be the reporting ambulance';
-      if (auth.role === 'ADMIN' || (auth.role === 'AMBULANCE' && auth.ambulanceId === id)) return null;
-      return 'Only the ambulance itself may report its location';
-    }
-    case 'hospital.acceptance.received':
-    case 'hospital.capacity.updated': {
-      const id = event.payload.hospitalId;
-      if (src.type !== 'hospital' || src.id !== id) return 'Event source must be the responding hospital';
-      if (auth.role === 'ADMIN' || (auth.role === 'HOSPITAL' && auth.hospitalId === id)) return null;
-      return 'A hospital may only report on its own facility';
-    }
-    default:
-      return 'Forbidden';
-  }
-}
+export { EXTERNAL_EVENT_TYPES, PRIVILEGED_ONLY_EVENT_TYPES, authorizeEventSubmission } from './authorizationPolicy';
 
 function ambulanceCase(ambulanceId?: string): string | undefined {
   return ambulanceId ? ambulancesStore.get(ambulanceId)?.assignedPatient : undefined;
@@ -112,6 +73,9 @@ function eventCase(event: any): string | undefined {
 /** Realtime delivery filter: may this principal receive this event? */
 export function canReceiveEvent(auth: AuthContext, event: AnyEvent): boolean {
   if (event.eventType === 'demo.reset') return true;
+  // Audit telemetry: privileged principals only. Checked before any case-based rule so that a
+  // patient/ambulance/hospital related to the case never receives other facilities' evaluation.
+  if (PRIVILEGED_ONLY_EVENT_TYPES.has(event.eventType)) return isPrivileged(auth);
   if (isPrivileged(auth)) return true;
   const p: any = (event as any).payload || {};
   const caseId = eventCase(event);

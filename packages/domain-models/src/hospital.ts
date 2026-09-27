@@ -12,7 +12,10 @@ export interface DataProvenance {
   effectiveFrom?: string;
   effectiveTo?: string;
   asOf?: string;
+  /** As claimed by the submitter (legacy field). NOT trusted by the feasibility engine. */
   verificationStatus: DataStatus;
+  /** Derived by the trusted ingestion adapter; the only status the feasibility engine reads for live evidence. */
+  trustedStatus?: DataStatus;
   confidence: number;
   notes?: string;
 }
@@ -50,6 +53,7 @@ export interface Capabilities {
   nicu?: boolean;
   picu?: boolean;
   hdu?: boolean;
+  ventilator?: boolean;
   cardiology?: boolean;
   cardiacSurgery?: boolean;
   neurology?: boolean;

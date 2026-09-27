@@ -21,6 +21,7 @@
  */
 import { v4 as uuidv4 } from 'uuid';
 
+import { reportShadowDisagreements } from './lib/shadowReport';
 const API = process.env.API_URL || 'http://localhost:4000';
 const STEP = parseInt(process.env.SIM_STEP_MS || '2500', 10);
 const CASE = 'CASE-BLR-876';
@@ -62,13 +63,22 @@ async function waitFor<T>(label: string, fn: () => Promise<T | undefined>, timeo
 const ambulance = async () => (await call(PERSONA.dispatch, 'GET', '/api/ambulances')).find((a: any) => a.ambulanceId === AMB);
 const hospital = async (id: string) => (await call(PERSONA.dispatch, 'GET', '/api/hospitals')).find((h: any) => h.hospitalId === id);
 
-function respond(hospitalId: string, status: 'ACCEPTED' | 'LIMITED' | 'REJECTED', limitations: string[] = []) {
+/** The id of the acceptance request this hospital actually received for the case (a response must name it). */
+async function requestIdFor(hospitalId: string): Promise<string> {
+  const history: any[] = await call(PERSONA.dispatch, 'GET', '/api/events/history?limit=500');
+  const req = history.find(e => e.eventType === 'hospital.acceptance.requested' && e.payload.caseId === CASE && e.payload.hospitalId === hospitalId);
+  if (!req) throw new Error(`No acceptance request found for ${hospitalId}`);
+  return req.payload.requestId;
+}
+
+async function respond(hospitalId: string, status: 'ACCEPTED' | 'LIMITED' | 'REJECTED', limitations: string[] = []) {
+  const requestId = await requestIdFor(hospitalId);
   return send(PERSONA[hospitalId], {
     eventType: 'hospital.acceptance.received',
     source: { type: 'hospital', id: hospitalId },
     payload: {
       responseId: `RESP-${uuidv4().substring(0, 8)}`,
-      requestId: 'AR-demo',
+      requestId,
       caseId: CASE,
       hospitalId,
       status,
@@ -179,6 +189,11 @@ async function main() {
     return hist.some((e: any) => e.eventType === 'ai.summary.generated') ? hist.filter((e: any) => e.eventType.startsWith('ai.')) : undefined;
   }, 8000).catch(() => []);
   step(`AI sidecar events: ${ai.map((e: any) => e.eventType).join(', ') || 'none (AI is optional)'}`);
+  const unexpected = await reportShadowDisagreements(API);
+  if (unexpected > 0) {
+    console.error(`\n✗ FLAGSHIP INVARIANT VIOLATED: ${unexpected} unexpected shadow disagreement(s) (expected 0).`);
+    process.exit(1);
+  }
   console.log(`\n✓ SCENARIO COMPLETE in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 }
 

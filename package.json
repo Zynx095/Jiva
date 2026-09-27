@@ -11,10 +11,10 @@
   "scripts": {
     "dev": "node scripts/dev-all.mjs",
     "dev:api": "tsx services/api/src/index.ts",
-    "build": "npm run build --workspaces --if-present",
-    "typecheck": "npm run build --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present && npm run build:lambdas",
+    "typecheck": "npm run build --workspaces --if-present && npm run typecheck:tests",
     "test": "npm run test:unit && npm run test:integration",
-    "test:unit": "tsx tests/unit/idempotency.test.ts && tsx tests/unit/event-ordering.test.ts && tsx tests/unit/rbac.test.ts && tsx tests/unit/security-prompt-injection.test.ts && tsx tests/unit/mapping-provider.test.ts && tsx tests/unit/mapping-fallback.test.ts",
+    "test:unit": "tsx tests/unit/idempotency.test.ts && tsx tests/unit/event-ordering.test.ts && tsx tests/unit/rbac.test.ts && tsx tests/unit/security-prompt-injection.test.ts && tsx tests/unit/mapping-provider.test.ts && tsx tests/unit/mapping-fallback.test.ts && tsx tests/unit/intelligence-foundation.test.ts && tsx tests/unit/canonical-data-ingestion.test.ts && tsx tests/unit/feasibility-engine.test.ts && tsx tests/unit/feasibility-ledger-shadow.test.ts && tsx tests/unit/feasibility-aws-parity.test.ts && tsx tests/unit/feasibility-trace-event.test.ts && tsx tests/unit/feasibility-remediation.test.ts && tsx tests/unit/feasibility-containment.test.ts && tsx tests/unit/feasibility-promotion-prep.test.ts && tsx tests/unit/aws-ingestion-rbac.test.ts && tsx tests/unit/aws-lambda-parity.test.ts",
     "test:integration": "tsx tests/integration/parity.test.ts && tsx tests/integration/mapping-parity.test.ts && tsx tests/integration/api-runtime.test.ts",
     "demo:check": "tsx scripts/demo-check.ts",
     "aws:bootstrap": "tsx scripts/aws-manage.ts bootstrap",
@@ -35,7 +35,9 @@
     "data:validate": "tsx scripts/data-validate.ts",
     "data:build": "npm run data:fetch && npm run data:normalize && npm run data:validate",
     "start:prod": "node scripts/dev-all.mjs --prod",
-    "demo:reset": "tsx scripts/demo-reset.ts"
+    "demo:reset": "tsx scripts/demo-reset.ts",
+    "typecheck:tests": "tsc -p tests/tsconfig.json",
+    "build:lambdas": "node scripts/bundle-lambdas.mjs"
   },
   "devDependencies": {
     "@types/node": "^20.5.1",
