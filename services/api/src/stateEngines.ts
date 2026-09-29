@@ -1,5 +1,5 @@
 import { eventBus } from './eventBus';
-import { patientsStore, hospitalsStore, ambulancesStore } from './stateStore';
+import { patientsStore, hospitalsStore, ambulancesStore, localStoreInstance } from './stateStore';
 import {
   AnyEvent,
   PatientEmergencyCreated,
@@ -9,12 +9,13 @@ import {
   CareRequirementCreated,
   HospitalAcceptanceReceived,
   HospitalAcceptanceRequested,
+  HospitalAcceptanceCancelled,
 } from '@jiva/event-schema';
 import { AmbulanceState, CapabilityType, CareRequirement } from '@jiva/domain-models';
 import type { AcceptanceResponsePayload } from './stateTransitions';
 import { evaluateHospitals } from './eligibilityEngine';
 import { mappingProvider } from './mapping';
-import { acceptanceLedger, feasibilityMode, feasibilityShadow } from './feasibility';
+import { acceptanceLedger, decisionAuthority, feasibilityMode, feasibilityShadow } from './feasibility';
 import { caseAcceptanceStatus } from './feasibility/acceptanceLedger';
 import { withTrust } from './feasibility/acceptanceLedger';
 import { observe } from './feasibility/containment';
@@ -62,6 +63,7 @@ export function resetEngines(): void {
   engine.ambulanceLocks.clear();
   acceptanceLedger.reset();
   feasibilityShadow.reset();
+  decisionAuthority.reset();
 }
 
 export function hasOutstandingRequest(caseId: string, hospitalId: string): boolean {
@@ -124,30 +126,20 @@ async function selectDestination(amb: AmbulanceState, exclude: Set<string>, reas
   const patient = patientsStore.get(amb.assignedPatient || '');
   if (!patient || !amb.currentLocation) return undefined;
   const requirement = selectionRequirement(amb.ambulanceId, patient.patientId, patient.careRequirements, new Date().toISOString());
-  const candidates = await evaluateHospitals(requirement, amb.currentLocation, {
-    acceptanceOverride: hospitalId => caseAcceptanceStatus(acceptanceLedger.view(patient.patientId, hospitalId, Date.now()), Date.now()),
+
+  const authorityResult = await decisionAuthority.selectDestination({
+    ambulance: amb,
+    patient,
+    requirement,
+    hospitals: [...hospitalsStore.values()],
+    mapping: mappingProvider,
+    acceptanceView: acceptanceLedger,
+    exclude,
+    reason,
+    nowMs: Date.now(),
   });
-  // Case-scoped: which candidate is CURRENTLY accepted for THIS case, independent of any other
-  // case's acceptance at the same hospital (fixes the legacy one-slot bug at the decision boundary).
-  const pick = { hospitalId: pickLegacyDestination(candidates, exclude, patient.patientId, id => hospitalsStore.get(id)) };
-  // Shadow only: compares with the legacy pick, never alters it. Contained: nothing in here can
-  // throw into or delay the legacy decision computed above.
-  observe('shadow.destination-selection', () => {
-    if (feasibilityMode() !== 'shadow') return;
-    return feasibilityShadow.evaluate({
-      context: 'destination-selection',
-      requirement: feasibilityShadow.requirementFor(patient.patientId) || requirement,
-      requirementProvenance: 'RULE_DERIVED',
-      trigger: { eventId: 'n/a', eventType: 'destination.selection', sourceId: `routing-engine:${reason}`, sourceType: 'system' },
-      origin: amb.currentLocation,
-      originAsOf: amb.locationAsOf,
-      ambulanceId: amb.ambulanceId,
-      excludedHospitalIds: [...exclude],
-      legacyCandidates: candidates,
-      legacySelection: { hospitalId: pick.hospitalId },
-    });
-  });
-  return pick.hospitalId;
+
+  return authorityResult.finalDecision.selectedHospitalId;
 }
 
 /** Compute a route to `hospitalId`, commit destination state, then publish the change. */
@@ -302,6 +294,26 @@ eventBus.on('patient.emergency.created', async (event: PatientEmergencyCreated) 
 eventBus.on('care.requirement.created', async (event: CareRequirementCreated) => {
   const epoch = engine.epoch;
   const req = event.payload;
+
+  // Cancel prior outstanding requests for this case if care requirements changed:
+  for (const [, r] of Array.from(engine.requests.entries())) {
+    if (r.caseId === req.caseId) {
+      await publish({
+        eventType: 'hospital.acceptance.cancelled',
+        source: { type: 'system', id: 'acceptance-protocol' },
+        patientId: req.caseId,
+        causationId: event.eventId,
+        payload: {
+          requestId: r.requestId,
+          caseId: req.caseId,
+          hospitalId: r.hospitalId,
+          cancelledAt: req.createdAt,
+          reason: 'REQUIREMENT_CHANGED',
+        },
+      });
+    }
+  }
+
   const patient = patientsStore.get(req.caseId);
   const origin = patient?.currentLocation || { latitude: 12.9716, longitude: 77.5946 };
   const shadowRequirement: CareRequirement = {
@@ -448,9 +460,17 @@ function applyLegacyAcceptance(event: HospitalAcceptanceReceived): void {
   }
 }
 
-// Cancellation (no producer yet): observed by the per-(case, hospital) ledger only. Legacy state is untouched.
-eventBus.on('hospital.acceptance.cancelled', async (event) => {
-  observe('ledger.applyCancellation', () => acceptanceLedger.applyCancellation(event.payload as never));
+eventBus.on('hospital.acceptance.cancelled', async (event: HospitalAcceptanceCancelled) => {
+  const p = event.payload;
+  observe('ledger.applyCancellation', () => acceptanceLedger.applyCancellation(p));
+  await localStoreInstance.putAcceptanceCancellation(p.caseId, p.hospitalId, p.requestId, p.cancelledAt);
+
+  const reqKey = `${p.caseId}|${p.hospitalId}`;
+  const existingReq = engine.requests.get(reqKey);
+  if (existingReq && existingReq.requestId === p.requestId) {
+    engine.requests.delete(reqKey);
+    engine.answered.delete(reqKey);
+  }
 });
 
 eventBus.on('hospital.capacity.updated', async (event: HospitalCapacityUpdated) => {
@@ -538,6 +558,28 @@ eventBus.on('ambulance.location.updated', async (event: AmbulanceLocationUpdated
       patientId: updated.assignedPatient,
       payload: { ambulanceId, hospitalId: dest.hospitalId, caseId: updated.assignedPatient },
     });
+
+    // Close case acceptance holds when patient arrives at destination:
+    if (updated.assignedPatient) {
+      const caseId = updated.assignedPatient;
+      for (const [, r] of Array.from(engine.requests.entries())) {
+        if (r.caseId === caseId) {
+          await publish({
+            eventType: 'hospital.acceptance.cancelled',
+            source: { type: 'system', id: 'acceptance-protocol' },
+            patientId: caseId,
+            causationId: r.requestId,
+            payload: {
+              requestId: r.requestId,
+              caseId,
+              hospitalId: r.hospitalId,
+              cancelledAt: event.timestamp,
+              reason: 'CASE_CLOSED',
+            },
+          });
+        }
+      }
+    }
   }
 });
 
