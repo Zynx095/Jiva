@@ -66,14 +66,18 @@ export async function evaluateHospitals(
     ];
     let acceptance: string, acceptanceExpired: boolean, acceptanceForThisCase: boolean;
     if (deps.acceptanceOverride) {
-      // Case-scoped read (the actual fix). If it fails, this NEVER blocks the legacy decision: it
-      // degrades to the pre-existing shared-slot check (same behaviour as if no override existed).
+      // Case-scoped read (the actual fix). If it fails, this NEVER blocks the legacy decision, but it
+      // also must never silently trust the shared slot: that slot is the LAST writer across every
+      // case, so treating an unreadable case-scoped answer as "check the shared slot instead" could
+      // report this hospital ACCEPTED for this case when the shared acceptance actually belongs to a
+      // different case. Unknown/unavailable evidence degrades to UNKNOWN (fail-safe: never eligible,
+      // requires a fresh acceptance request), matching the full engine's containment posture.
       try {
         const cs = await deps.acceptanceOverride(hospital.hospitalId);
         [acceptance, acceptanceExpired, acceptanceForThisCase] = [cs.status, cs.expired, true];
       } catch (err) {
-        console.warn(`[Eligibility] Case-scoped acceptance read failed for ${hospital.hospitalId} (falling back to the shared slot): ${err instanceof Error ? err.message : String(err)}`);
-        [acceptance, acceptanceExpired, acceptanceForThisCase] = legacySlot();
+        console.warn(`[Eligibility] Case-scoped acceptance read failed for ${hospital.hospitalId} (treating as UNKNOWN, not the shared slot): ${err instanceof Error ? err.message : String(err)}`);
+        [acceptance, acceptanceExpired, acceptanceForThisCase] = ['UNKNOWN', false, true];
       }
     } else {
       [acceptance, acceptanceExpired, acceptanceForThisCase] = legacySlot();
