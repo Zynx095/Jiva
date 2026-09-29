@@ -1,0 +1,212 @@
+{
+  "reportType": "JIVA_CANARY_SOAK_REPORT",
+  "subphase": "6.4",
+  "timestamp": "2026-09-28T16:45:42.158Z",
+  "status": "READY_FOR_HUMAN_PROMOTION_REVIEW",
+  "environment": "LOCAL_CANARY_SOAK_SYNTHETIC_DEMO",
+  "scale": {
+    "durationMs": 945,
+    "casesCount": 20,
+    "eventsProcessed": 127,
+    "evaluationsTotal": 60,
+    "concurrency": 20
+  },
+  "metrics": {
+    "evaluationsTotal": 60,
+    "byMode": {
+      "LEGACY": 0,
+      "SHADOW": 0,
+      "CANARY": 60,
+      "AUTHORITATIVE": 0
+    },
+    "agreedCount": 55,
+    "disagreedCount": 5,
+    "byDisagreementClass": {
+      "AGREEMENT": 55,
+      "EXPECTED_POLICY_DIFFERENCE": 0,
+      "UNEXPECTED_DIFFERENCE": 0,
+      "MISSING_EVIDENCE": 0,
+      "LEGACY_ONLY": 5,
+      "FEASIBILITY_ONLY": 0,
+      "TIMEOUT": 0,
+      "ENGINE_ERROR": 0
+    },
+    "timeouts": 0,
+    "errors": 0,
+    "fallbacksTriggered": 0,
+    "byFallbackReason": {
+      "NONE": 0,
+      "CIRCUIT_BREAKER_OPEN": 0,
+      "FEASIBILITY_TIMEOUT": 0,
+      "FEASIBILITY_EXCEPTION": 0,
+      "FEASIBILITY_MALFORMED": 0,
+      "UNEXPECTED_DISAGREEMENT": 0,
+      "KILL_SWITCH_ACTIVE": 0,
+      "PROMOTION_GATE_REJECTED": 0
+    },
+    "canaryEvaluations": 60,
+    "authoritativeEvaluations": 0,
+    "circuitBreakerTrips": 0,
+    "killSwitchTrips": 0
+  },
+  "promotionGateEvaluation": {
+    "authorized": false,
+    "satisfiedGates": [
+      "ZERO_UNEXPECTED_DISAGREEMENTS",
+      "ZERO_TIMEOUTS",
+      "ZERO_ENGINE_ERRORS",
+      "DETERMINISTIC_REPLAY_VERIFIED",
+      "KILL_SWITCH_VERIFIED",
+      "CIRCUIT_BREAKER_VERIFIED",
+      "CASE_ISOLATION_VERIFIED",
+      "MINIMUM_SOAK_EVALUATIONS_MET"
+    ],
+    "blockingReasons": [
+      "FEASIBILITY_AUTHORITY_ACKNOWLEDGED environment variable is not explicitly true"
+    ]
+  },
+  "comparisonsSample": [
+    {
+      "caseId": "CASE-BLR-801",
+      "scenario": "ACCEPTED",
+      "legacySelectedHospitalId": "HOSP-BLR-001",
+      "finalSelectedHospitalId": "HOSP-BLR-001",
+      "effectiveMode": "CANARY",
+      "agreement": false,
+      "disagreementClass": "LEGACY_ONLY",
+      "disagreementReasons": [
+        "RESPONSE_EVIDENCE_NOT_TRUSTED"
+      ],
+      "snapshotHash": "d96a16b084bef0f8e3a3f9ca2e6647189b2d9c46f42546e5b579ea1f3c4b32e5",
+      "policyHash": "06e7edf06a771caec46ac32e19f153744062f9905260e851e8113893509500d0",
+      "auditHash": "2de1208956f8ec04e6c14e023707dcc0e6a811dec565e8f57511c879dff2982b",
+      "fallback": false,
+      "evaluatedAt": "2026-09-28T16:45:41.212Z"
+    },
+    {
+      "caseId": "CASE-BLR-802",
+      "scenario": "ACCEPTED",
+      "legacySelectedHospitalId": "HOSP-BLR-001",
+      "finalSelectedHospitalId": "HOSP-BLR-001",
+      "effectiveMode": "CANARY",
+      "agreement": false,
+      "disagreementClass": "LEGACY_ONLY",
+      "disagreementReasons": [
+        "RESPONSE_EVIDENCE_NOT_TRUSTED"
+      ],
+      "snapshotHash": "5f487d388724c4c222276a52a26e4b3be9f0dddfa1810ac56899720a0da1d94f",
+      "policyHash": "06e7edf06a771caec46ac32e19f153744062f9905260e851e8113893509500d0",
+      "auditHash": "ac9c44ee09f8b79618fd240deee2977fe91b7332e0bf5c26d36ecd61b60e4a75",
+      "fallback": false,
+      "evaluatedAt": "2026-09-28T16:45:41.212Z"
+    },
+    {
+      "caseId": "CASE-BLR-803",
+      "scenario": "LIMITED_NO_ICU",
+      "legacySelectedHospitalId": "HOSP-BLR-001",
+      "finalSelectedHospitalId": "HOSP-BLR-001",
+      "effectiveMode": "CANARY",
+      "agreement": false,
+      "disagreementClass": "LEGACY_ONLY",
+      "disagreementReasons": [
+        "RESPONSE_EVIDENCE_NOT_TRUSTED"
+      ],
+      "snapshotHash": "a95d456808d863738832a016ef90c646a20ba01a9a4b10cf5904f3dff477b16f",
+      "policyHash": "06e7edf06a771caec46ac32e19f153744062f9905260e851e8113893509500d0",
+      "auditHash": "1268265634ac4ee37ae3eb014504920b50143a9a1fdb005b7e46946b7737b70c",
+      "fallback": false,
+      "evaluatedAt": "2026-09-28T16:45:41.212Z"
+    },
+    {
+      "caseId": "CASE-BLR-804",
+      "scenario": "REJECTED",
+      "effectiveMode": "CANARY",
+      "agreement": true,
+      "disagreementClass": "AGREEMENT",
+      "disagreementReasons": [],
+      "snapshotHash": "8084edcb31c033e66d2d44a768f76f507d8468bb620dd9cb69104ad97cb200c1",
+      "policyHash": "06e7edf06a771caec46ac32e19f153744062f9905260e851e8113893509500d0",
+      "auditHash": "45b4f5668214e377d30b7801ec8a8020b4c151da6f4ee420012a36226a8d3f6d",
+      "fallback": false,
+      "evaluatedAt": "2026-09-28T16:45:41.212Z"
+    },
+    {
+      "caseId": "CASE-BLR-805",
+      "scenario": "UNAVAILABLE",
+      "effectiveMode": "CANARY",
+      "agreement": true,
+      "disagreementClass": "AGREEMENT",
+      "disagreementReasons": [],
+      "snapshotHash": "2b20391e86084fe73d0dd30f7ba421822ba553dde4ec1a3f7e03adf1ef6174b4",
+      "policyHash": "06e7edf06a771caec46ac32e19f153744062f9905260e851e8113893509500d0",
+      "auditHash": "7a2437fddc074aa2ccc067d476f6d34e04b72e12ca3533b8749ad0c061a11523",
+      "fallback": false,
+      "evaluatedAt": "2026-09-28T16:45:41.212Z"
+    },
+    {
+      "caseId": "CASE-BLR-806",
+      "scenario": "ACCEPTED_THEN_EXPIRED",
+      "effectiveMode": "CANARY",
+      "agreement": true,
+      "disagreementClass": "AGREEMENT",
+      "disagreementReasons": [],
+      "snapshotHash": "94ac91ab4a86763847904387361afeeb32d930a4cbb4f0ee5efa6d03d669398b",
+      "policyHash": "06e7edf06a771caec46ac32e19f153744062f9905260e851e8113893509500d0",
+      "auditHash": "b4dbdb5c738a1aebe088d0c0c5311f67e7bf48e1e3736a23089e0420cb940118",
+      "fallback": false,
+      "evaluatedAt": "2026-09-28T16:45:41.212Z"
+    },
+    {
+      "caseId": "CASE-BLR-807",
+      "scenario": "ACCEPTED_THEN_CANCELLED",
+      "effectiveMode": "CANARY",
+      "agreement": true,
+      "disagreementClass": "AGREEMENT",
+      "disagreementReasons": [],
+      "snapshotHash": "ba3e9cc7e54c8055940559a621c2e3c825f27453bbc67a6cade47d13034b719a",
+      "policyHash": "06e7edf06a771caec46ac32e19f153744062f9905260e851e8113893509500d0",
+      "auditHash": "ae572802084e30db1fbfbeefea52820554e773889f5d0fcba8164157b302f778",
+      "fallback": false,
+      "evaluatedAt": "2026-09-28T16:45:41.212Z"
+    },
+    {
+      "caseId": "CASE-BLR-808",
+      "scenario": "ACCEPTED",
+      "effectiveMode": "CANARY",
+      "agreement": true,
+      "disagreementClass": "AGREEMENT",
+      "disagreementReasons": [],
+      "snapshotHash": "94da7ea66cbb37b2a84ad617adf86b8ed842efd8d1707131481c789b875af01f",
+      "policyHash": "06e7edf06a771caec46ac32e19f153744062f9905260e851e8113893509500d0",
+      "auditHash": "1d27742b4595c0f5613601e74c68ad5cbd62e353c35ca2b7ad0cf46f2533cc00",
+      "fallback": false,
+      "evaluatedAt": "2026-09-28T16:45:41.212Z"
+    },
+    {
+      "caseId": "CASE-BLR-809",
+      "scenario": "LIMITED_NO_VENT",
+      "effectiveMode": "CANARY",
+      "agreement": true,
+      "disagreementClass": "AGREEMENT",
+      "disagreementReasons": [],
+      "snapshotHash": "b7f25dae9af2efb2005280dce71445c63ca7da1f29d19cf1d648ee97959e2543",
+      "policyHash": "06e7edf06a771caec46ac32e19f153744062f9905260e851e8113893509500d0",
+      "auditHash": "2e68113ba6bf9265daed7310dde2c9e4b0d3e5e79ffb671850658d92c192a319",
+      "fallback": false,
+      "evaluatedAt": "2026-09-28T16:45:41.212Z"
+    },
+    {
+      "caseId": "CASE-BLR-810",
+      "scenario": "ACCEPTED",
+      "effectiveMode": "CANARY",
+      "agreement": true,
+      "disagreementClass": "AGREEMENT",
+      "disagreementReasons": [],
+      "snapshotHash": "626c0b76ece1c80d40cac851fc555a5134f6fbf6521055e95fcaabb93341d453",
+      "policyHash": "06e7edf06a771caec46ac32e19f153744062f9905260e851e8113893509500d0",
+      "auditHash": "7f8677648e383a809981f2a8e82c310c982860d6308cc2ff8dc76217078e664b",
+      "fallback": false,
+      "evaluatedAt": "2026-09-28T16:45:41.212Z"
+    }
+  ]
+}
