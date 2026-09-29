@@ -1,5 +1,5 @@
 import { hashPolicy } from '@jiva/feasibility';
-import { stampTrustedEvidence } from './evidenceTrust';
+import { stampTrustedEvidence, evidenceEnvironment } from './evidenceTrust';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -11,10 +11,11 @@ import {
   hasOutstandingRequest, outstandingRequestsForHospital,
 } from './stateEngines';
 import { initializeIntelligenceEngine, resetIntelligence, getAiStatus } from './intelligenceEngine';
-import { feasibilityShadow, feasibilityMode } from './feasibility';
+import { feasibilityShadow, feasibilityMode, decisionAuthority } from './feasibility';
 import { preloadData, stateStore, localStoreInstance } from './stateStore';
 import { config } from '@jiva/config';
 import { DemoAuthProvider, CognitoAuthProvider, AuthContext } from '@jiva/auth';
+import { authenticateRequest } from './authVerification';
 import { LocalSocketIoAdapter } from '@jiva/realtime';
 import { AnyEvent, AnyEventSchema } from '@jiva/event-schema';
 import {
@@ -65,21 +66,19 @@ interface AuthenticatedRequest extends Request {
 /**
  * Local mode uses DEMO-ONLY persona authentication (see @jiva/auth demoAuth.ts).
  * With ENABLE_COGNITO=true, claims forwarded by API Gateway's Cognito authorizer are used.
+ *
+ * PRODUCTION DEPLOYMENT BOUNDARY (Policy 2): this standalone Express server is a LOCAL/DEMO
+ * entry point only. The production path is API Gateway + Cognito + Lambda (see
+ * services/api/src/lambdas/core/ingestionCore.ts:authenticateFromApiGateway), which never wires
+ * DemoAuthProvider at all. If this process is ever run with JIVA_ENVIRONMENT=production/prod
+ * (evidenceEnvironment() would derive PRODUCTION for it), unsigned demo persona headers are
+ * refused outright -- an accidental production deployment of this Express server must not grant
+ * real RBAC access via a demo header, even though evidenceTrust.ts already prevents a demo persona
+ * from ever producing trusted (SYNTHETIC_DEMO) evidence in that environment.
  */
-function authenticate(headers: Record<string, string | string[] | undefined>): AuthContext | undefined {
-  if (config.auth.enableCognito && typeof headers['x-cognito-claims'] === 'string') {
-    try {
-      const result = CognitoAuthProvider.parseClaims(JSON.parse(headers['x-cognito-claims']));
-      if (result.authenticated) return result.context;
-    } catch { /* fall through */ }
-  }
-  const demo = DemoAuthProvider.authenticate(headers);
-  return demo.authenticated ? demo.context : undefined;
-}
-
-const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  const auth = authenticate(req.headers);
-  if (!auth) return res.status(401).json({ error: 'unauthenticated', message: 'Provide a demo persona via x-jiva-demo-user (demo mode) or a Cognito token.' });
+const requireAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  const auth = await authenticateRequest(req.headers);
+  if (!auth) return res.status(401).json({ error: 'unauthenticated', message: 'Provide a demo persona via x-jiva-demo-user (demo mode) or a valid Cognito JWT token.' });
   req.auth = auth;
   next();
 };
@@ -171,6 +170,12 @@ app.get('/api/feasibility/shadow', requireRole('MANAGEMENT', 'ADMIN'), (req, res
     // Shadow-side failures (errors / timeouts). The legacy decision flow never depends on these.
     failures: feasibilityShadow.getFailures(caseId),
     soak: feasibilityShadow.getSoakSummary(),
+    authority: {
+      mode: decisionAuthority.mode,
+      killSwitch: decisionAuthority.killSwitch.isActive(),
+      circuitBreaker: decisionAuthority.circuitBreaker.getState(),
+      metrics: decisionAuthority.getMetrics(),
+    },
   });
 });
 
@@ -253,11 +258,13 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 
 // ------------------------------------------------------------------ realtime
 
-io.use((socket, next) => {
+io.use(async (socket, next) => {
   const handshake = socket.handshake.auth || {};
-  const auth = handshake.demoUser
+  // Same production boundary as authenticateRequest() above: a demo handshake must never authenticate
+  // this process when it is (mis)configured as PRODUCTION.
+  const auth = handshake.demoUser && evidenceEnvironment() !== 'PRODUCTION'
     ? DemoAuthProvider.resolvePersona(handshake.demoUser).context
-    : authenticate(socket.handshake.headers as Record<string, string>);
+    : await authenticateRequest(socket.handshake.headers as Record<string, string>);
   if (!auth) return next(new Error('unauthenticated'));
   socket.data.auth = auth;
   next();
