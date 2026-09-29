@@ -77,10 +77,22 @@ export class JivaAwsStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    // Policy 2 (production identity/trust, Option B): hospitalId/ambulanceId/caseId are the
+    // identity-binding claims the trust chain relies on (authorizeEventSubmission compares
+    // auth.hospitalId/ambulanceId/caseId against the payload; evidenceTrust derives HOSPITAL_CONFIRMED
+    // from auth.role alone). They stay `mutable: true` so an ADMIN can still correct them via
+    // AdminUpdateUserAttributes (an IAM-privileged, non-app-client API, unaffected by writeAttributes),
+    // but are deliberately left OUT of this app client's self-service writable set: an authenticated
+    // user can no longer call UpdateUserAttributes (or the hosted UI's "edit profile") to change their
+    // own hospitalId/ambulanceId/caseId and thereby claim a different hospital/ambulance/case's
+    // authority. Binding remains admin-managed only. Email stays self-service writable as before.
+    const selfServiceWritableAttributes = new cognito.ClientAttributes().withStandardAttributes({ email: true });
+
     const userPoolClient = new cognito.UserPoolClient(this, 'JivaWebClient', {
       userPool,
       userPoolClientName: 'jiva-web-client',
       authFlows: { userPassword: true, userSrp: true },
+      writeAttributes: selfServiceWritableAttributes,
     });
 
     // Roles as User Pool Groups
