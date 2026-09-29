@@ -154,6 +154,13 @@ export function ruleRequiredCapability(ctx: RuleContext, h: HospitalInput): Cons
   const confirmed = new Set<string>(accepting ? accepting.response.acceptedCapabilities : []);
   const syntheticBlocked = capEv.dataStatus === 'SYNTHETIC_DEMO' && ctx.policy.evidenceEnvironment !== 'DEMO';
   const capsUnusable = capEv.dataStatus === 'UNKNOWN' || capEv.dataStatus === 'NOT_DISCLOSED' || syntheticBlocked;
+  // Policy 1 (Option B): a positive listing may only produce PASS from PUBLIC_LISTED/
+  // HOSPITAL_CONFIRMED/AUTHORIZED_FEED (or SYNTHETIC_DEMO in DEMO). HISTORICAL/UNVERIFIED listings
+  // still stand as a fact -- an explicit `false` on them still FAILs -- but a positive listing on
+  // its own is not strong enough evidence for PASS; it falls to UNKNOWN unless a current, usable
+  // acceptance response independently confirms the capability (CAPABILITY_CONFIRMED_BY_RESPONSE).
+  const CAPABILITY_PASS_GRADE: ReadonlySet<DataStatus> = new Set<DataStatus>(['PUBLIC_LISTED', 'HOSPITAL_CONFIRMED', 'AUTHORIZED_FEED']);
+  const canPassFromListing = capEv.dataStatus === 'SYNTHETIC_DEMO' ? !syntheticBlocked : CAPABILITY_PASS_GRADE.has(capEv.dataStatus);
 
   const matched: string[] = [];
   const missing: string[] = [];
@@ -163,6 +170,7 @@ export function ruleRequiredCapability(ctx: RuleContext, h: HospitalInput): Cons
   if (accepting && confirmed.size > 0) refs.push(accepting.ref);
 
   const conflicts: string[] = [];
+  let underGraded = false;
   for (const cap of required) {
     if (!isCapabilityType(cap)) {
       unknown.push(cap);
@@ -183,8 +191,12 @@ export function ruleRequiredCapability(ctx: RuleContext, h: HospitalInput): Cons
       matched.push(cap);
       continue;
     }
-    if (listed === true) matched.push(cap);
-    else unknown.push(cap);
+    if (listed === true && canPassFromListing) {
+      matched.push(cap);
+    } else {
+      unknown.push(cap);
+      if (listed === true) underGraded = true;
+    }
   }
 
   const staleNote = capFresh.freshness === 'STALE' ? ' (listing past its review horizon; flagged, still used as a static fact)' : '';
@@ -198,8 +210,11 @@ export function ruleRequiredCapability(ctx: RuleContext, h: HospitalInput): Cons
     rationale = `Explicitly not provided per ${src}: ${missing.join(', ')}.${conflicts.length ? ` Contradicted by a positive response for ${conflicts.join(', ')}; the explicit listing is not overridden.` : ''}`;
   } else if (unknown.length > 0) {
     outcome = 'UNKNOWN';
-    reason = unknown.some(c => !isCapabilityType(c)) ? 'UNRECOGNIZED_CAPABILITY' : syntheticBlocked ? 'EVIDENCE_NOT_OPERATIONAL_GRADE' : capsUnusable ? 'NOT_DISCLOSED' : 'NOT_LISTED';
-    rationale = `No evidence either way for: ${unknown.join(', ')} (${src}). Unknown is not treated as absent.${notes.length ? ' ' + notes.join('; ') : ''}`;
+    reason = unknown.some(c => !isCapabilityType(c)) ? 'UNRECOGNIZED_CAPABILITY'
+      : syntheticBlocked ? 'EVIDENCE_NOT_OPERATIONAL_GRADE'
+      : underGraded ? 'EVIDENCE_NOT_OPERATIONAL_GRADE'
+      : capsUnusable ? 'NOT_DISCLOSED' : 'NOT_LISTED';
+    rationale = `No evidence either way for: ${unknown.join(', ')} (${src}). Unknown is not treated as absent.${underGraded ? ' Listed, but the evidence grade is not strong enough to PASS on its own (requires PUBLIC_LISTED, HOSPITAL_CONFIRMED, or AUTHORIZED_FEED; a current acceptance response can still confirm it).' : ''}${notes.length ? ' ' + notes.join('; ') : ''}`;
   } else {
     outcome = 'PASS';
     reason = matched.some(c => confirmed.has(c)) ? 'CAPABILITY_CONFIRMED_BY_RESPONSE' : 'CAPABILITY_LISTED';

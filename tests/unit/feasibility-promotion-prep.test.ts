@@ -2,7 +2,7 @@
  * PROMOTION PREPARATION (the engine stays shadow-only). Pins facts an authoritative mode would depend on:
  *  - DynamoDB case history is paginated, never silently truncated
  *  - the 500-event history window is NOT safe for hospital-wide UNAVAILABLE (documented blocker, demonstrated)
- *  - static capability listings: exact current behaviour (a policy decision is pending; this pins it)
+ *  - static capability listings: Policy 1 (Option B) behaviour, approved and pinned
  *  - acceptance cancellation: schema, ledger, engine, replay equivalence, not externally submittable
  *  - official simulations never send a placeholder requestId
  *  - soak counters classify forced errors / timeouts / policy mismatch
@@ -81,18 +81,19 @@ async function main() {
   });
 
   // ============================================================ static capability policy (pinned)
-  await check('capability policy (CURRENT, pinned): a static listing satisfies the capability rule when HISTORICAL / UNVERIFIED / PUBLIC_LISTED; only UNKNOWN / NOT_DISCLOSED are unusable', async () => {
+  await check('capability policy (Policy 1 / Option B, pinned): a static listing satisfies the capability rule only for PUBLIC_LISTED / HOSPITAL_CONFIRMED / AUTHORIZED_FEED; HISTORICAL / UNVERIFIED / UNKNOWN / NOT_DISCLOSED are unusable on their own', async () => {
     const outcomes: Record<string, string> = {};
-    for (const ds of ['HISTORICAL', 'UNVERIFIED', 'PUBLIC_LISTED', 'HOSPITAL_CONFIRMED', 'UNKNOWN', 'NOT_DISCLOSED']) {
+    for (const ds of ['HISTORICAL', 'UNVERIFIED', 'PUBLIC_LISTED', 'HOSPITAL_CONFIRMED', 'AUTHORIZED_FEED', 'UNKNOWN', 'NOT_DISCLOSED']) {
       const h: any = hospital('H-1', 1);
       h.evidence = { capabilities: { value: { emergency: true, trauma: true, icu: true }, source: 'src', sourceType: 'X', observedAt: iso(-100), confidence: 0.5, dataStatus: ds } };
       const r = await evaluateDual({ hospitals: [h], events: [] });
       outcomes[ds] = `${rule(r, 'H-1', 'HC-CLIN-01').outcome}/${rule(r, 'H-1', 'HC-CLIN-01').reasonCode}`;
     }
     eq(outcomes, {
-      HISTORICAL: 'PASS/CAPABILITY_LISTED', UNVERIFIED: 'PASS/CAPABILITY_LISTED', PUBLIC_LISTED: 'PASS/CAPABILITY_LISTED', HOSPITAL_CONFIRMED: 'PASS/CAPABILITY_LISTED',
+      HISTORICAL: 'UNKNOWN/EVIDENCE_NOT_OPERATIONAL_GRADE', UNVERIFIED: 'UNKNOWN/EVIDENCE_NOT_OPERATIONAL_GRADE',
+      PUBLIC_LISTED: 'PASS/CAPABILITY_LISTED', HOSPITAL_CONFIRMED: 'PASS/CAPABILITY_LISTED', AUTHORIZED_FEED: 'PASS/CAPABILITY_LISTED',
       UNKNOWN: 'UNKNOWN/NOT_DISCLOSED', NOT_DISCLOSED: 'UNKNOWN/NOT_DISCLOSED',
-    }, 'exact current behaviour');
+    }, 'Policy 1 (Option B) pinned behaviour');
     // but a listing alone can never make a hospital ELIGIBLE: acceptance and live status are still required
     const h: any = hospital('H-1', 1); h.evidence = { capabilities: { value: { emergency: true, trauma: true, icu: true }, source: 's', sourceType: 'X', observedAt: iso(-100), confidence: 0.1, dataStatus: 'UNVERIFIED' } };
     const r = await evaluateDual({ hospitals: [h], events: [] });
