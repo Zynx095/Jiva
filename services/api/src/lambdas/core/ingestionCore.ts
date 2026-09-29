@@ -77,8 +77,20 @@ export function createIngestionHandler(d: IngestionDeps) {
     if (denial) return json(403, { error: 'forbidden', message: denial });
 
     if (parsedEvent.eventType === 'hospital.acceptance.received') {
-      const ledger = await loadLedger(d.store, parsedEvent.payload.caseId);
-      if (ledger.view(parsedEvent.payload.caseId, parsedEvent.payload.hospitalId, now).requestState !== 'OUTSTANDING') {
+      let isOutstanding = false;
+      if (d.store.getAcceptanceRecord) {
+        const rec = await d.store.getAcceptanceRecord(parsedEvent.payload.caseId, parsedEvent.payload.hospitalId);
+        if (rec?.request) {
+          isOutstanding = !rec.request.cancelledAt && Date.parse(rec.request.expiresAt) > now;
+        } else {
+          const ledger = await loadLedger(d.store, parsedEvent.payload.caseId);
+          isOutstanding = ledger.view(parsedEvent.payload.caseId, parsedEvent.payload.hospitalId, now).requestState === 'OUTSTANDING';
+        }
+      } else {
+        const ledger = await loadLedger(d.store, parsedEvent.payload.caseId);
+        isOutstanding = ledger.view(parsedEvent.payload.caseId, parsedEvent.payload.hospitalId, now).requestState === 'OUTSTANDING';
+      }
+      if (!isOutstanding) {
         return json(409, { error: 'no_outstanding_request', message: 'No open acceptance request for this case and hospital.' });
       }
     }

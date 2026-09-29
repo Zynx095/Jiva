@@ -119,6 +119,9 @@ export class LocalStateStore implements IStateStore {
     this.ambulances.clear();
     this.eventHistory = [];
     this.processedEventIds.clear();
+    this.acceptanceRecords.clear();
+    this.wideUnavailable.clear();
+    this.latestRequirement.clear();
     await this.preloadData();
   }
 
@@ -198,7 +201,9 @@ export class LocalStateStore implements IStateStore {
     const rec = this.acceptanceRecords.get(key) || {};
     if (rec.response?.responseId === response.responseId) return 'DUPLICATE';
     if (!shouldAcceptResponse(rec.response, response)) return 'STALE';
-    this.acceptanceRecords.set(key, { ...rec, response: { ...response, acceptedCapabilities: [...response.acceptedCapabilities], limitations: [...response.limitations] } });
+    const acceptedCaps = Array.isArray(response.acceptedCapabilities) ? [...response.acceptedCapabilities] : [];
+    const limits = Array.isArray(response.limitations) ? [...response.limitations] : [];
+    this.acceptanceRecords.set(key, { ...rec, response: { ...response, acceptedCapabilities: acceptedCaps, limitations: limits } });
     const wide = this.wideUnavailable.get(hospitalId) || {};
     let changed = false;
     if (shouldAcceptWideUnavailable(wide.response, response)) { wide.response = response; changed = true; }
