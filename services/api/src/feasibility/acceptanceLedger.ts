@@ -278,6 +278,14 @@ export function caseAcceptanceStatus(view: CaseAcceptanceView, nowMs: number): C
   if (wide && Date.parse(wide.validUntil) > nowMs) return { status: 'UNAVAILABLE', expired: false };
   const r = view.response;
   if (!r) return { status: 'UNKNOWN', expired: false };
+  // A positive response can only stand on a live request: once the request it depends on is
+  // cancelled, the case's standing offer is withdrawn and the response can no longer resolve
+  // eligibility, mirroring the full engine's responseUsability() (packages/feasibility/src/rules.ts,
+  // `RESPONSE_REQUEST_CANCELLED`). Negative responses (REJECTED/UNAVAILABLE) still stand: they only
+  // ever make the legacy decision more conservative, never eligible.
+  if ((r.status === 'ACCEPTED' || r.status === 'LIMITED') && view.requestState === 'REQUEST_CANCELLED') {
+    return { status: 'UNKNOWN', expired: false };
+  }
   const expired = Date.parse(r.validUntil) <= nowMs;
   return { status: r.status, expired };
 }

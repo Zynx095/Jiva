@@ -81,8 +81,6 @@ export function createHospitalHandler(d: LambdaDeps) {
         await reroutePredicate(d, () => true, p.hospitalId, `Destination ${p.hospitalId} reported UNAVAILABLE`);
       }
     } else if (jivaEvent.eventType === 'hospital.acceptance.cancelled') {
-      // No producer emits this yet (see docs/feasibility-promotion-readiness.md, S5); the ledger
-      // observation is wired so it is ready when one does. Legacy has no handler for it at all.
       const p = jivaEvent.payload as { requestId: string; caseId: string; hospitalId: string; cancelledAt: string };
       await observeValue('materialize.cancellation', () => d.store.putAcceptanceCancellation?.(p.caseId, p.hospitalId, p.requestId, p.cancelledAt), undefined);
     } else if (jivaEvent.eventType === 'hospital.capacity.updated') {
