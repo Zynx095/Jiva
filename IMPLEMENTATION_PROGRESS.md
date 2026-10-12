@@ -23,8 +23,8 @@ phase's acceptance criteria were met **and** verified; frontend-only progress is
 | 2 | Ambulance emergency intake | ✅ Done | see Phase 2 section |
 | 3 | Real hospital directory and map coverage | ✅ Done | see Phase 3 section |
 | 4 | Hospital referrals and explicit acceptance | ✅ Done | see Phase 4 section |
-| 5 | Arrival, handover, encounter creation | ⏳ | |
-| 6 | Doctor assignment | ⏳ | |
+| 5 | Arrival, handover, encounter creation | ✅ Done | see Phases 5–6 section |
+| 6 | Doctor assignment | ✅ Done | see Phases 5–6 section |
 | 7 | Clinical records and prescriptions | ⏳ | |
 | 8 | Diagnostic documents and secure file storage | ⏳ | |
 | 9 | Patient dashboard and in-hospital experience | ⏳ | |
@@ -261,3 +261,57 @@ Phase 2 — ambulance emergency intake (command endpoint, engine handling of str
 - The AWS stack has no expiry engine (no scheduled lambda), so referral and acceptance expiry exist only locally — pre-existing, now documented.
 - `UNAVAILABLE` keeps its legacy hospital-wide meaning (until the answer's validity ends); there is no per-service "unavailable for this case only" answer.
 - A crew is not re-optimised to a closer hospital that accepts later (destination stability is intentional, unchanged).
+
+---
+
+## Phases 5–6 — Arrival, handover, encounter; doctor assignment (✅ 2026-10-13)
+
+Implemented together: the encounter lifecycle and the doctor assignment share one projector, one command surface and one access model, so they were built, tested and committed as one unit.
+
+### Audit of the existing implementation
+
+| Item | Finding |
+|---|---|
+| Arrival | Only the GPS geofence (150 m of the destination): `ambulance.arrived` from the telemetry engine, case → `ARRIVED`, the case's referrals withdrawn (`CASE_CLOSED`). No hospital involvement. |
+| Handover / encounter | None. The crew stayed `ARRIVED` with the case forever (never released); nothing marked the start of hospital care. |
+| Patient app | On the GPS signal: "You have arrived — the emergency team takes over your care" (care asserted from a coordinate). |
+| Doctors | `doctors.csv` (repository root): 10 rows — `doctor_id, first_name, last_name, specialization, phone_number, years_experience, hospital_branch, email`. Specialties Dermatology (3), Pediatrics (5), Oncology (2); branches "Westside Clinic" (3), "Eastside Clinic" (3), "Central Hospital" (4) — **none is a JIVA hospital**, none is emergency care, and every row carries a phone number and e-mail address. Not imported (see decisions). |
+
+### Routing-adjacent change (documented before making it)
+
+- **Limitation:** arrival effects lived inline in the GPS handler, outside the per-ambulance routing lock, so a reroute computed concurrently could overwrite an arrival (pre-existing race); and the case-scoped expiry (Phase 4) would still announce "acceptance expired" — and try to re-evaluate — after the patient had arrived.
+- **Change:** the effects moved unchanged into `markAmbulanceArrived` (shared by the geofence and the hospital record), which now runs under the same per-ambulance lock as destination commits and re-validates there: a geofence hit counts only while the unit is still heading to that hospital; a hospital record counts while the unit carries that case and wins over the routed destination (diversion: the unit is recorded at the receiving hospital and its route dropped). The expiry loop skips answers whose referral was withdrawn. Selection, eligibility, the decision authority and the ledger are untouched.
+- **Risks considered:** lock deadlock (the bus does not await handlers; reroutes queue behind the lock), timing of the GPS arrival (the existing runtime suite, which drives GPS arrivals, still passes 124/0), AWS parity (the AWS stack has no arrival detection — pre-existing).
+- **Tests:** journey suite — the GPS geofence alone creates no encounter; diversion scenario; full runtime suite unchanged.
+
+### What changed
+
+| Area | Files | Summary |
+|---|---|---|
+| Event contracts | `packages/event-schema/src/clinical.ts` | Encounter and clinical payloads gain an optional, server-derived `dataStatus` (`SYNTHETIC_DEMO` for demo personas, `HOSPITAL_CONFIRMED` for real hospital staff). |
+| Projection | `services/api/src/clinical/encounters.ts` | Pure transitions (`encounterFromArrival`, `applyHandover`, `applyDoctorAssignment`) re-check every precondition, so a replayed or out-of-order event cannot corrupt an encounter. Arrival → encounter `ARRIVED`, case `ARRIVED`, linked to the encounter and pointing at the receiving hospital, crew unit `ARRIVED` (`ambulance.arrived`, basis `HOSPITAL_CONFIRMED`), referrals withdrawn; the GPS time is kept on the encounter as evidence only. Handover → encounter `IN_CARE`, case `HANDED_OVER`, crew released (`AVAILABLE`, no case, no destination, no route). Assignment → current doctor + history (who, when, why; the previous assignment is closed). |
+| Commands and reads | `services/api/src/routes/encounters.ts`, `clinical/{views,roster}.ts`, `commands/support.ts`, `index.ts` | `POST /api/hospitals/:hospitalId/arrivals` — coordinator of that hospital only; the case must be routed there or hold a standing answer of that hospital for that case (otherwise 404 `not_routed_here`, the same answer as for an unknown case — no existence oracle); never a second encounter (409 `already_recorded` / `encounter_elsewhere`); `arrivedAt` not in the future, not before the report, at most 12 h back. `POST /api/encounters/:id/handover` — the same hospital's coordinator; the encounter must be `ARRIVED` (409 `already_handed_over`); not before the arrival. `POST /api/encounters/:id/doctor` — coordinator; the encounter must be `IN_CARE`; an active clinician of the same hospital (422 `practitioner_not_eligible`); the first assignment is `INITIAL_ASSIGNMENT`, later ones `REASSIGNMENT` / `SHIFT_HANDOVER` / `SPECIALTY_REFERRAL`; 409 `already_assigned`. All three: strict bodies, idempotent `clientRequestId` (422 on reuse with another body), per-case lock, canonical event validated against the contract, content-free audit entries for allowed and denied attempts. `GET /api/encounters[?caseId]` and `GET /api/encounters/:id` with the view decided by the policy (hospital staff and the assigned clinician: full; the patient: own encounter with the doctor's name and specialty, no staff identities; the crew of the case and network coordination: summary; anyone else: 404). `GET /api/hospitals/:id/clinicians` (staff of that hospital; includes current workload). Async command failures now answer 500 instead of hanging the request (Express 4; also applied to the emergency intake). |
+| Recipient copies | `services/api/src/authorization.ts`, `index.ts` | `eventForRecipient`: encounter and clinical events name the staff member who recorded them only to staff of the same hospital; the patient, the crew and network coordination receive the role only (realtime, ledger and timeline reads). |
+| Demo roster | `data/synthetic/bengaluru/clinicians.json` | 7 synthetic clinicians across the 4 synthetic hospitals (one inactive), ids matching the demo clinician personas; loaded **only in demo mode** and labelled `SYNTHETIC_DEMO`. Outside demo mode the roster is empty and no doctor can be assigned — JIVA never invents staff. |
+| Hospital app | `apps/hospital-web/src/{Department.tsx,App.tsx,useHospital.ts,api.ts}` | "Patients on the way" → **Record arrival** (the confirmation states that care starts only at handover; GPS is shown as evidence only); "Patient arrived but not listed here?" by case reference (diversions); **In your department**: encounters awaiting handover → **Record handover** (confirmation: the crew is released) and patients in care → **Responsible doctor** (assign / change with a reason; eligible = active roster with workload, inactive count shown; assignment history with the role of who recorded it). API errors are shown as sentences; retries reuse the request id. |
+| Crew app | `apps/ambulance-web/src/App.tsx` | The next action distinguishes "At the hospital (GPS) — the hospital records arrival and handover" from "The hospital recorded your arrival"; on the handover record the unit returns to Available with a "Handover recorded" card. |
+| Patient app | `apps/patient-web/src/{App.tsx,usePatient.ts}` | Reads its encounter; the headline and the journey ("Arrival recorded by the hospital", "In hospital care") follow the hospital's records only. A GPS arrival says "You have reached the hospital — the hospital will confirm your arrival and take over your care". |
+| Command Center | `apps/management-web/src/{derive.ts,App.tsx}`, `components/{Kpis,Details}.tsx` | Cases at a hospital (arrived or handed over) are no longer "open"; KPI hint "N at hospital · M in hospital care"; case detail "At the hospital" (summary: hospital, status, arrival, handover, provenance — no doctor, no clinical content) and "Released after handover". |
+| Shared UI | `packages/ui/src/lib/{encounters,status,events}.ts` | Encounter types and status, the `HANDED_OVER` case status, assignment reasons, event copy per audience; the GPS arrival is described as a geofence signal, not as care. |
+
+### Tests
+
+| Command | Result |
+|---|---|
+| `tsx tests/unit/encounter-transitions.test.ts` (new) | ✅ 4 checks: arrival → encounter with actor, referral, GPS evidence and provenance; handover never twice, never before arrival, never for another case; assignment only after handover and only to an active clinician of the same hospital; history, reassignment, stale and repeated assignments |
+| `tsx tests/integration/clinical-journey.test.ts` (+Phase 5: 52, +Phase 6: 25) | ✅ 158 passed: every non-coordinator role and other hospitals refused (401/403/404); an unknown case answers like a case not routed here; future times and a body `hospitalId` rejected; idempotent retry; duplicate arrival and handover 409; crew `ARRIVED` with `basis: HOSPITAL_CONFIRMED`; referrals withdrawn; per-role views (patient without staff ids, summaries, 404 for another hospital and an unassigned clinician); handover → `HANDED_OVER`, crew released and able to take a new case, the hospital keeps seeing its patient; realtime to patient, crew, hospital and management only, role-only copies for non-staff (ledger too); a forged encounter event through `/api/events` → 403; GPS alone → no encounter, the hospital record keeps the GPS time; diversion to a hospital that accepted; roster access and labels; assignment rules, who/when/why, the doctor gains and the previous doctor loses access (and is told), the patient sees the doctor, management does not; workload |
+| `npm run typecheck` / `test:unit` (31 suites) / `test:integration` / `build:lambdas` | ✅ all exit 0 (runtime 124/0, journey 158/0) |
+| Browser | ⚠️ Not run for these phases: the environment stopped the long-running dev stack (`npm run dev`) for low memory, and it was not restarted. The UI is verified by the strict typecheck and the production builds of all four apps; the behaviour behind it by the API suites above. |
+
+### Decisions and limitations
+
+- **Who may record an arrival:** the coordinator of the destination hospital, or of a hospital whose answer for this case still stands (a diversion is a physical fact the receiving hospital records). Any other hospital is refused, so no hospital can open an encounter — and gain access — for a case it has nothing to do with.
+- **The handover releases the crew**, which then loses access to the case (it keeps a "handover recorded" note only).
+- **`doctors.csv` is not imported:** it does not belong to JIVA's hospitals, covers no emergency specialty and carries contact details. A small synthetic roster aligned with the demo personas replaces it in demo mode; production needs a hospital staff-directory integration (not built).
+- No correction workflow for arrival or handover records (an erroneous record needs an administrative amendment flow — not built). No shift or availability model: "active" is the only eligibility signal. No break-glass access.
+- Arrival, handover and assignment exist only in the local API: the AWS stack has no routes, functions or tables for encounters (nothing deployed; revisited in Phases 12 and 14).

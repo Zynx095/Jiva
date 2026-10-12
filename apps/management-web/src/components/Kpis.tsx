@@ -3,7 +3,9 @@ import type { PanelTab } from '../types';
 
 export interface KpiValues {
   open: number;
+  /** Cases at a hospital (arrived or handed over) and, of those, in hospital care (handover recorded). */
   arrived: number;
+  inCare: number;
   onJob: number;
   idle: number;
   awaiting: number;
@@ -28,7 +30,7 @@ export function Kpis({ v, tab, statusFilter, onOpen }: {
           icon="siren"
           value={v.open}
           tone={v.open > 0 ? 'danger' : undefined}
-          hint={v.arrived ? `${v.arrived} handed over at hospital` : 'Cases still being coordinated'}
+          hint={v.arrived ? `${v.arrived} at hospital · ${v.inCare} in hospital care` : 'Cases still being coordinated'}
           onClick={() => onOpen('incidents')}
           active={tab === 'incidents'}
         />

@@ -33,6 +33,7 @@ import {
   caseFacts,
   caseResponses,
   hospitalDisplayStatus,
+  isAtHospital,
   isAwaiting,
   isOnJob,
   isOpenCase,
@@ -228,7 +229,8 @@ export default function App() {
     }
     return {
       open: derived.openCases.size,
-      arrived: net.patients.filter((p) => p.currentStatus === 'ARRIVED').length,
+      arrived: net.patients.filter(isAtHospital).length,
+      inCare: net.patients.filter((p) => p.currentStatus === 'HANDED_OVER').length,
       onJob: net.ambulances.filter(isOnJob).length,
       idle: net.ambulances.filter((a) => a.status === 'AVAILABLE').length,
       awaiting,

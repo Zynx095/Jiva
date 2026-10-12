@@ -184,10 +184,39 @@ export function describeEvent(e: JivaEvent, name: NameResolver, audience: Audien
       const speed = num(p, 'speedKmh');
       return { ...base, title: patient ? 'Ambulance position updated' : `${A} position updated`, detail: speed !== undefined ? `${Math.round(speed)} km/h` : undefined, tone: 'neutral', icon: 'pin', category: 'ambulance', quiet: true };
     }
-    case 'ambulance.arrived':
+    case 'ambulance.arrived': {
+      // GPS geofence = derived signal; only the hospital's own record (encounter.arrival.recorded) confirms arrival.
+      const confirmed = str(p, 'basis') === 'HOSPITAL_CONFIRMED';
+      if (confirmed) {
+        return { ...base, title: patient ? `${H(hospitalId)} confirmed your arrival` : `${A} at ${H(hospitalId)} · arrival confirmed`, detail: 'Recorded by the hospital', tone: 'ok', icon: 'pin', category: 'ambulance', quiet: true };
+      }
       return patient
-        ? { ...base, title: `You arrived at ${H(hospitalId)}`, detail: 'The emergency team takes over from here.', tone: 'ok', icon: 'pin', category: 'ambulance', notable: true }
-        : { ...base, title: `${A} arrived at ${H(hospitalId)}`, tone: 'ok', icon: 'pin', category: 'ambulance', notable: true };
+        ? { ...base, title: `Your ambulance reached ${H(hospitalId)}`, detail: 'The hospital confirms your arrival and takes over your care.', tone: 'ok', icon: 'pin', category: 'ambulance', notable: true }
+        : { ...base, title: `${A} reached ${H(hospitalId)}`, detail: "GPS geofence · awaiting the hospital's arrival record", tone: 'ok', icon: 'pin', category: 'ambulance', notable: true };
+    }
+    case 'encounter.arrival.recorded':
+      return audience === 'patient'
+        ? { ...base, title: `${H(hospitalId)} confirmed your arrival`, detail: 'The emergency team is taking over from the ambulance crew.', tone: 'ok', icon: 'hospital', category: 'case', notable: true }
+        : audience === 'crew'
+          ? { ...base, title: `${H(hospitalId)} confirmed your arrival`, detail: 'Hand the patient over to the emergency team.', tone: 'ok', icon: 'hospital', category: 'case', notable: true }
+          : audience === 'hospital'
+            ? { ...base, title: `Arrival recorded${caseId ? ` · ${caseId}` : ''}`, detail: 'Awaiting handover from the crew', tone: 'ok', icon: 'hospital', category: 'case', notable: true }
+            : { ...base, title: `${caseId ?? 'Patient'} arrived at ${H(hospitalId)}`, detail: 'Recorded by the hospital · awaiting handover', tone: 'ok', icon: 'hospital', category: 'case', notable: true };
+    case 'encounter.handover.recorded':
+      return audience === 'patient'
+        ? { ...base, title: `You are in the care of ${H(hospitalId)}`, detail: 'The ambulance crew handed you over to the hospital team.', tone: 'ok', icon: 'stethoscope', category: 'case', notable: true }
+        : audience === 'crew'
+          ? { ...base, title: `Handover to ${H(hospitalId)} recorded`, detail: 'Your unit is released for the next call.', tone: 'ok', icon: 'checkCircle', category: 'case', notable: true }
+          : audience === 'hospital'
+            ? { ...base, title: `Handover recorded${caseId ? ` · ${caseId}` : ''}`, detail: 'The patient is in your care; the crew is released', tone: 'ok', icon: 'stethoscope', category: 'case', notable: true }
+            : { ...base, title: `${caseId ?? 'Patient'} handed over to ${H(hospitalId)}`, detail: dotJoin([ambulanceId && `${ambulanceId} released`]), tone: 'ok', icon: 'stethoscope', category: 'case', notable: true };
+    case 'encounter.doctor.assigned': {
+      const reason = str(p, 'reason');
+      const reasonText: Record<string, string> = { INITIAL_ASSIGNMENT: 'First assignment', REASSIGNMENT: 'Reassigned', SHIFT_HANDOVER: 'Shift handover', SPECIALTY_REFERRAL: 'Specialty referral' };
+      return patient
+        ? { ...base, title: str(p, 'previousPractitionerId') ? 'Your doctor changed' : 'A doctor was assigned to your care', detail: reason ? reasonText[reason] : undefined, tone: 'ok', icon: 'user', category: 'case', notable: true }
+        : { ...base, title: `Doctor ${str(p, 'previousPractitionerId') ? 'reassigned' : 'assigned'}${caseId ? ` · ${caseId}` : ''}`, detail: reason ? reasonText[reason] : undefined, tone: 'ok', icon: 'user', category: 'case', notable: true };
+    }
     case 'destination.changed': {
       const dest = str(p, 'hospitalId');
       const reason = humanizeReason(str(p, 'reason'), name);

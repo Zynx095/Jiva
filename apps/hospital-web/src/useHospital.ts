@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AmbulanceState, HospitalState, PatientState } from '@jiva/domain-models';
-import type { ConnectionState, JivaEvent } from '@jiva/ui/src';
+import type { ConnectionState, EncounterRecord, JivaEvent, RosterEntry } from '@jiva/ui/src';
 import { apiGet, socket } from './api';
 
 export interface AcceptanceRequest {
@@ -30,6 +30,8 @@ export function useHospital(onLiveEvent?: (e: JivaEvent) => void) {
   const [requests, setRequests] = useState<AcceptanceRequest[]>([]);
   const [patients, setPatients] = useState<PatientState[]>([]);
   const [ambulances, setAmbulances] = useState<AmbulanceState[]>([]);
+  const [encounters, setEncounters] = useState<EncounterRecord[]>([]);
+  const [roster, setRoster] = useState<RosterEntry[]>([]);
   const [events, setEvents] = useState<JivaEvent[]>([]);
   const [connection, setConnection] = useState<ConnectionState>(socket.connected ? 'live' : 'connecting');
   const [lastSync, setLastSync] = useState<number | null>(null);
@@ -51,17 +53,21 @@ export function useHospital(onLiveEvent?: (e: JivaEvent) => void) {
         return;
       }
       setHospitalId(me.hospitalId);
-      const [hosps, reqs, pats, ambs] = await Promise.all([
+      const [hosps, reqs, pats, ambs, encs, staff] = await Promise.all([
         apiGet<HospitalState[]>('/api/hospitals'),
         apiGet<AcceptanceRequest[]>(`/api/hospitals/${me.hospitalId}/requests`),
         apiGet<PatientState[]>('/api/patients'),
         apiGet<AmbulanceState[]>('/api/ambulances'),
+        apiGet<EncounterRecord[]>('/api/encounters'),
+        apiGet<RosterEntry[]>(`/api/hospitals/${me.hospitalId}/clinicians`).catch(() => [] as RosterEntry[]),
       ]);
       setHospital(hosps.find((h) => h.hospitalId === me.hospitalId) || null);
       setHospitals(hosps);
       setRequests(reqs);
       setPatients(pats);
       setAmbulances(ambs);
+      setEncounters(encs);
+      setRoster(staff);
       setError(null);
       setLoaded(true);
       setLastSync(Date.now());
@@ -119,5 +125,5 @@ export function useHospital(onLiveEvent?: (e: JivaEvent) => void) {
     };
   }, [refresh, loadHistory, scheduleRefresh]);
 
-  return { hospitalId, hospital, hospitals, requests, patients, ambulances, events, connection, lastSync, loaded, error, refresh };
+  return { hospitalId, hospital, hospitals, requests, patients, ambulances, encounters, roster, events, connection, lastSync, loaded, error, refresh };
 }

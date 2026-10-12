@@ -24,8 +24,12 @@ import {
   timeAgo,
   timeUntil,
   capacityLine,
+  encounterArrivedAt,
+  encounterHandedOverAt,
+  encounterStatus,
   referralDetail,
   referralStatus,
+  type EncounterRecord,
   type ReferralOverview,
   type TimelineItem,
 } from '@jiva/ui/src';
@@ -91,6 +95,8 @@ export function CaseDetail({ id }: { id: string }) {
               <EntityLink icon="ambulance" onClick={() => m.select({ kind: 'ambulance', id: amb.ambulanceId })}>
                 {amb.ambulanceId} · {ambulanceStatus(amb.status).label}
               </EntityLink>
+            ) : p.currentStatus === 'HANDED_OVER' ? (
+              <span className="text-ink-600">Released after handover</span>
             ) : (
               <span className="text-warn-700">Not assigned</span>
             )}
@@ -141,6 +147,8 @@ export function CaseDetail({ id }: { id: string }) {
           </p>
         )}
       </Block>
+
+      <EncounterSummary caseId={id} />
 
       <ReferralEvidence caseId={id} />
 
@@ -385,6 +393,51 @@ function Missing({ what }: { what: string }) {
   return <EmptyState icon="help" title={`This ${what} is no longer listed`} description="It may have been cleared by a demo reset. Go back to the network overview." />;
 }
 
+
+/* ------------------------------------------------------------------ encounter */
+
+/**
+ * Where the patient is in hospital care, as recorded by the hospital (GET /api/encounters, summary view
+ * for network coordination: no clinical content, no doctor, no staff identities).
+ */
+function EncounterSummary({ caseId }: { caseId: string }) {
+  const m = useModel();
+  const [list, setList] = useState<EncounterRecord[] | null>(null);
+  const caseEvents = m.events.filter((e) => e.patientId === caseId || e.payload.caseId === caseId).length;
+  useEffect(() => {
+    let live = true;
+    apiGet<EncounterRecord[]>(`/api/encounters?caseId=${encodeURIComponent(caseId)}`)
+      .then((l) => live && setList(l))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [caseId, caseEvents]);
+
+  const e = list?.[0];
+  if (!e) return null;
+  const handedOverAt = encounterHandedOverAt(e);
+  return (
+    <Block title="At the hospital">
+      <JivaCard padded className="space-y-1">
+        <dl className="divide-y divide-ink-100">
+          <DataRow label="Hospital">
+            <EntityLink onClick={() => m.select({ kind: 'hospital', id: e.hospitalId })}>{m.name(e.hospitalId) ?? e.hospitalName ?? e.hospitalId}</EntityLink>
+          </DataRow>
+          <DataRow label="Status">
+            <JivaStatus meta={encounterStatus(e.status)} />
+          </DataRow>
+          <DataRow label="Arrival recorded">{formatClock(encounterArrivedAt(e))}</DataRow>
+          <DataRow label="Handover">{handedOverAt ? formatClock(handedOverAt) : <span className="text-warn-700">Not recorded yet</span>}</DataRow>
+          <DataRow label="Record">
+            <JivaStatus meta={dataStatus(e.dataStatus)} />
+          </DataRow>
+        </dl>
+        <p className="text-xs text-ink-500">Recorded by the hospital. Clinical details stay with the hospital's care team.</p>
+      </JivaCard>
+    </Block>
+  );
+}
 
 /* ------------------------------------------------------------------ referral evidence */
 

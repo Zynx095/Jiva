@@ -1,8 +1,11 @@
 import { caseResponses, eventAmbulanceId, eventCaseId, hospitalShortName, isAwaiting } from '@jiva/ui/src';
 import type { AmbulanceState, CandidateSummary, CaseResponse, HospitalState, JivaEvent, PatientState } from './types';
 
-/** Open = still being coordinated (not handed over, not closed). */
-export const isOpenCase = (p: PatientState) => p.currentStatus !== 'DISCHARGED' && p.currentStatus !== 'ARRIVED';
+/** At a hospital: the GPS or the hospital placed the patient there (ARRIVED), or the hospital recorded the handover. */
+export const isAtHospital = (p: PatientState) => p.currentStatus === 'ARRIVED' || p.currentStatus === 'HANDED_OVER';
+
+/** Open = still being coordinated (not at a hospital yet, not closed). */
+export const isOpenCase = (p: PatientState) => p.currentStatus !== 'DISCHARGED' && !isAtHospital(p);
 
 export const isOnJob = (a: AmbulanceState) => a.status !== 'AVAILABLE' && a.status !== 'UNAVAILABLE';
 

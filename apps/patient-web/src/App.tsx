@@ -62,8 +62,12 @@ export default function App() {
         toast.show({ title: 'A hospital confirmed it can receive you', description: nameRef.current(String(p.newHospitalId)), tone: 'ok', icon: 'checkCircle', groupKey: 'dest' });
       } else if (e.eventType === 'ambulance.dispatched') {
         toast.show({ title: 'An ambulance is on the way', tone: 'ok', icon: 'ambulance', groupKey: 'amb' });
-      } else if (e.eventType === 'ambulance.arrived') {
-        toast.show({ title: 'You have arrived', description: 'The emergency team takes over from here.', tone: 'ok', icon: 'pin', groupKey: 'arrived' });
+      } else if (e.eventType === 'ambulance.arrived' && p.basis !== 'HOSPITAL_CONFIRMED') {
+        toast.show({ title: 'You have reached the hospital', description: 'The hospital will confirm your arrival and take over your care.', tone: 'ok', icon: 'pin', groupKey: 'arrived' });
+      } else if (e.eventType === 'encounter.arrival.recorded') {
+        toast.show({ title: 'The hospital recorded your arrival', description: 'The ambulance crew is handing you over to the emergency team.', tone: 'ok', icon: 'hospital', groupKey: 'arrived' });
+      } else if (e.eventType === 'encounter.handover.recorded') {
+        toast.show({ title: 'You are in hospital care', description: 'The ambulance crew handed you over to the hospital team.', tone: 'ok', icon: 'stethoscope', groupKey: 'arrived' });
       }
     },
     [toast],
@@ -71,7 +75,7 @@ export default function App() {
 
   const pt = usePatient(onLive);
   const now = useNow(5000);
-  const { patient, ambulance, hospital } = pt;
+  const { patient, ambulance, hospital, encounter } = pt;
 
   const names = useMemo(() => new Map(pt.hospitals.map((h) => [h.hospitalId, h.displayName])), [pt.hospitals]);
   const name = useCallback((id: string) => names.get(id), [names]);
@@ -82,24 +86,34 @@ export default function App() {
   const route = ambulance?.activeRoute && ambulance.activeRoute.hospitalId === ambulance.destinationHospital ? ambulance.activeRoute : undefined;
   const acceptance = hospital?.operationalState?.acceptance;
   const confirmed = acceptance === 'ACCEPTED' || acceptance === 'LIMITED';
-  const arrived = ambulance?.status === 'ARRIVED' || patient?.currentStatus === 'ARRIVED';
+  // Only the hospital's own records move the patient into hospital care: the arrival record opens the
+  // encounter and the handover record puts the patient in the hospital's care. GPS alone never does.
+  const arrivalConfirmed = !!encounter;
+  const inCare = encounter?.status === 'IN_CARE';
+  const arrived = arrivalConfirmed || ambulance?.status === 'ARRIVED' || patient?.currentStatus === 'ARRIVED' || patient?.currentStatus === 'HANDED_OVER';
+  const hospitalShort = hospital ? hospitalShortName(hospital.displayName, hospital.address?.locality) : encounter?.hospitalName ?? 'the hospital';
   const eta = arrived ? 0 : minutesFromSeconds(route?.durationSeconds);
   const summary = pt.events.find((e) => e.eventType === 'ai.summary.generated');
 
   const journey = [
     { label: 'Emergency reported', done: !!patient },
-    { label: 'Ambulance on the way', done: !!ambulance },
+    { label: 'Ambulance on the way', done: !!ambulance || arrived },
     { label: 'Hospital confirmed', done: confirmed || arrived },
     { label: 'Travelling to hospital', done: ambulance?.status === 'EN_ROUTE_TO_HOSPITAL' || arrived },
-    { label: 'Arrived', done: arrived },
+    { label: 'Arrival recorded by the hospital', done: arrivalConfirmed },
+    { label: 'In hospital care', done: inCare },
   ];
   const currentStep = journey.findIndex((s) => !s.done);
 
   const headline = !patient
     ? { title: 'No active emergency', body: 'If you need urgent help, call 108.', icon: 'checkCircle' as IconName }
-    : arrived
-      ? { title: 'You have arrived', body: `At ${hospital?.displayName ?? 'the hospital'}. The emergency team takes over your care.`, icon: 'pin' as IconName }
-      : hospital && confirmed
+    : inCare
+      ? { title: `In the care of ${hospitalShort}`, body: 'The ambulance crew handed you over to the hospital team. Your care team will add updates here.', icon: 'stethoscope' as IconName }
+      : arrivalConfirmed
+        ? { title: `${hospitalShort} recorded your arrival`, body: 'The ambulance crew is handing you over to the emergency team.', icon: 'hospital' as IconName }
+        : arrived
+          ? { title: 'You have reached the hospital', body: `At ${hospital?.displayName ?? 'the hospital'}. The hospital will confirm your arrival and take over your care.`, icon: 'pin' as IconName }
+          : hospital && confirmed
         ? { title: `On the way to ${hospitalShortName(hospital.displayName, hospital.address?.locality)}`, body: `Ambulance ${ambulance?.ambulanceId ?? ''} is taking you to a hospital that confirmed it can receive you.`, icon: 'ambulance' as IconName }
         : ambulance
           ? { title: 'Help is on the way', body: `Ambulance ${ambulance.ambulanceId} is coming. We are confirming which hospital can treat you now.`, icon: 'ambulance' as IconName }

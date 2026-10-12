@@ -119,7 +119,9 @@ export function patientStatus(status?: string): StatusMeta {
     case 'IN_TRANSIT':
       return { label: 'In transit', tone: 'ok', icon: 'navigation' };
     case 'ARRIVED':
-      return { label: 'Arrived', tone: 'ok', icon: 'pin' };
+      return { label: 'Arrived', tone: 'ok', icon: 'pin', hint: 'At the hospital. Hospital care is confirmed when the hospital records the handover.' };
+    case 'HANDED_OVER':
+      return { label: 'In hospital care', tone: 'ok', icon: 'stethoscope', hint: 'The hospital recorded the handover from the ambulance crew.' };
     case 'ADMITTED':
       return { label: 'Admitted', tone: 'ok', icon: 'hospital' };
     case 'DISCHARGED':

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AmbulanceState, HospitalState, PatientState } from '@jiva/domain-models';
 import {
   AppHeader,
@@ -41,6 +41,7 @@ import {
 } from '@jiva/ui/src';
 import { PERSONA, sendEvent } from './api';
 import { useHospital, type AcceptanceRequest } from './useHospital';
+import { ArrivalByReference, DepartmentSection, RecordArrivalButton } from './Department';
 
 type Decision = 'ACCEPTED' | 'LIMITED' | 'REJECTED' | 'UNAVAILABLE';
 
@@ -95,8 +96,14 @@ export default function App() {
         toast.show({ title: `${String(p.ambulanceId)} is heading here`, description: 'An ambulance was routed to your hospital.', tone: 'ok', icon: 'ambulance', groupKey: `dest:${String(p.ambulanceId)}` });
       } else if (e.eventType === 'route.recalculated' && p.oldHospitalId === me && p.newHospitalId !== me) {
         toast.show({ title: `${String(p.ambulanceId)} rerouted elsewhere`, description: 'It is no longer heading to your hospital.', tone: 'warn', icon: 'route', groupKey: `dest:${String(p.ambulanceId)}` });
-      } else if (e.eventType === 'ambulance.arrived' && p.hospitalId === me) {
-        toast.show({ title: `${String(p.ambulanceId)} has arrived`, description: `${String(p.caseId ?? '')} is at your emergency department.`, tone: 'ok', icon: 'pin', groupKey: `arr:${String(p.ambulanceId)}` });
+      } else if (e.eventType === 'ambulance.arrived' && p.hospitalId === me && p.basis !== 'HOSPITAL_CONFIRMED') {
+        toast.show({ title: `${String(p.ambulanceId)} is at your hospital`, description: `GPS places ${String(p.caseId ?? 'the patient')} at your hospital. Record the arrival when the patient is with your team.`, tone: 'ok', icon: 'pin', groupKey: `arr:${String(p.caseId ?? p.ambulanceId)}` });
+      } else if (e.eventType === 'encounter.arrival.recorded' && p.hospitalId === me) {
+        toast.show({ title: `Arrival recorded · ${String(p.caseId)}`, description: 'Record the handover when the crew hands the patient over.', tone: 'ok', icon: 'hospital', groupKey: `arr:${String(p.caseId)}` });
+      } else if (e.eventType === 'encounter.handover.recorded' && p.hospitalId === me) {
+        toast.show({ title: `${String(p.caseId)} is in your care`, description: 'Handover recorded; the crew is released.', tone: 'ok', icon: 'stethoscope', groupKey: `arr:${String(p.caseId)}` });
+      } else if (e.eventType === 'encounter.doctor.assigned' && p.hospitalId === me) {
+        toast.show({ title: `Doctor ${p.previousPractitionerId ? 'changed' : 'assigned'} · ${String(p.caseId)}`, tone: 'ok', icon: 'user', groupKey: `doc:${String(p.caseId)}` });
       }
     },
     [toast],
@@ -114,7 +121,9 @@ export default function App() {
   }, [open.length]);
 
   const patientById = useMemo(() => new Map(hs.patients.map((p) => [p.patientId, p])), [hs.patients]);
-  const incoming = hs.ambulances.filter((a) => a.destinationHospital === hs.hospitalId);
+  // Once the arrival is recorded, the patient moves from "on the way" to "in your department".
+  const encounterCases = useMemo(() => new Set(hs.encounters.map((e) => e.caseId)), [hs.encounters]);
+  const incoming = hs.ambulances.filter((a) => a.destinationHospital === hs.hospitalId && !(a.assignedPatient && encounterCases.has(a.assignedPatient)));
   const handoffs = hs.events.filter((e) => e.eventType === 'ai.handoff.generated');
   const recentAnswers = hs.events.filter((e) => e.eventType === 'hospital.acceptance.received');
   const names = useMemo(() => new Map(hs.hospitals.map((h) => [h.hospitalId, hospitalShortName(h.displayName, h.address?.locality)])), [hs.hospitals]);
@@ -238,12 +247,21 @@ export default function App() {
               <ul className="grid gap-3 md:grid-cols-2">
                 {incoming.map((a) => (
                   <li key={a.ambulanceId}>
-                    <IncomingCard a={a} patient={a.assignedPatient ? patientById.get(a.assignedPatient) : undefined} now={now} hasBrief={handoffs.some((h) => h.payload.patientId === a.assignedPatient)} />
+                    <IncomingCard
+                      a={a}
+                      patient={a.assignedPatient ? patientById.get(a.assignedPatient) : undefined}
+                      now={now}
+                      hasBrief={handoffs.some((h) => h.payload.patientId === a.assignedPatient)}
+                      action={a.assignedPatient ? <RecordArrivalButton hospitalId={hs.hospitalId} caseId={a.assignedPatient} ambulanceId={a.ambulanceId} gpsArrived={a.status === 'ARRIVED'} onDone={() => void hs.refresh()} /> : undefined}
+                    />
                   </li>
                 ))}
               </ul>
             )}
+            {hs.hospitalId && <ArrivalByReference hospitalId={hs.hospitalId} onDone={() => void hs.refresh()} />}
           </section>
+
+          <DepartmentSection encounters={hs.encounters} patients={patientById} roster={hs.roster} now={now} onChanged={() => void hs.refresh()} />
 
           <section aria-labelledby="answers-title" className="space-y-3">
             <h2 id="answers-title" className="text-lg font-semibold tracking-[-0.01em] text-ink-900">
@@ -554,7 +572,7 @@ function ConfirmationCard({ c, hospitalId, hospital, ambulances, now }: { c: Con
   );
 }
 
-function IncomingCard({ a, patient, now, hasBrief }: { a: AmbulanceState; patient?: PatientState; now: number; hasBrief: boolean }) {
+function IncomingCard({ a, patient, now, hasBrief, action }: { a: AmbulanceState; patient?: PatientState; now: number; hasBrief: boolean; action?: ReactNode }) {
   const route = routeOf(a);
   const arrived = a.status === 'ARRIVED';
   return (
@@ -568,7 +586,7 @@ function IncomingCard({ a, patient, now, hasBrief }: { a: AmbulanceState; patien
       </div>
       <div className="mt-3 flex items-end justify-between gap-3">
         <div>
-          <p className="text-xs text-ink-500">{arrived ? 'Arrived' : 'Arrives in'}</p>
+          <p className="text-xs text-ink-500">{arrived ? 'At your hospital (GPS)' : 'Arrives in'}</p>
           <p className="text-2xl font-semibold tabular-nums tracking-[-0.02em] text-ink-900">{arrived ? 'Now' : route ? `${minutesFromSeconds(route.durationSeconds)} min` : '—'}</p>
         </div>
         <div className="text-right text-xs text-ink-500">
@@ -583,6 +601,12 @@ function IncomingCard({ a, patient, now, hasBrief }: { a: AmbulanceState; patien
           <Icon name="brief" size={13} /> Handoff brief available below
         </p>
       )}
+      {action ? (
+        <div className="mt-3 flex items-center justify-between gap-2 border-t border-ink-100 pt-3">
+          <span className="text-xs text-ink-500">{arrived ? 'GPS is evidence only — confirm the arrival.' : 'When the patient reaches your department:'}</span>
+          {action}
+        </div>
+      ) : null}
     </JivaCard>
   );
 }

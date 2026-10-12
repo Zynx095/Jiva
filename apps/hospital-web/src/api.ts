@@ -40,3 +40,26 @@ export async function sendEvent(event: Record<string, unknown>): Promise<string 
     return 'Cannot reach the JIVA API. Check the connection and try again.';
   }
 }
+
+export interface CommandResponse<T = Record<string, unknown>> {
+  status: number;
+  body: T & { error?: string; message?: string; issues?: Array<{ path: string; message: string }> };
+}
+
+/**
+ * POST a command (arrival, handover, doctor assignment) and return the status and JSON body. Throws only
+ * when JIVA could not be reached; a retry with the same clientRequestId is then safe (idempotent).
+ */
+export async function postCommand<T = Record<string, unknown>>(path: string, body: unknown): Promise<CommandResponse<T>> {
+  const res = await apiPost(path, body);
+  const json = (await res.json().catch(() => ({}))) as CommandResponse<T>['body'];
+  return { status: res.status, body: json };
+}
+
+/** One sentence for a rejected command, or null when it succeeded. */
+export function commandError(r: CommandResponse): string | null {
+  if (r.status >= 200 && r.status < 300) return null;
+  if (r.status === 400) return r.body.issues?.map((i) => i.message).join('; ') || 'The request was not valid.';
+  if (r.status === 403) return `Not allowed: ${r.body.message || 'this persona cannot do this for this hospital'}.`;
+  return r.body.message || r.body.error || `JIVA rejected the request (${r.status}).`;
+}

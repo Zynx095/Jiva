@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AmbulanceState, HospitalState, PatientState } from '@jiva/domain-models';
-import type { ConnectionState, JivaEvent } from '@jiva/ui/src';
+import type { ConnectionState, EncounterRecord, JivaEvent } from '@jiva/ui/src';
 import { apiGet, socket } from './api';
 
 type LoadState = 'loading' | 'ready' | 'error';
@@ -18,6 +18,8 @@ export function usePatient(onLiveEvent?: (e: JivaEvent) => void) {
   const [patient, setPatient] = useState<PatientState | null>(null);
   const [ambulance, setAmbulance] = useState<AmbulanceState | null>(null);
   const [hospital, setHospital] = useState<HospitalState | null>(null);
+  // The hospital's own record of this patient's stay (arrival, handover, doctor). Only the hospital creates it.
+  const [encounter, setEncounter] = useState<EncounterRecord | null>(null);
   const [hospitals, setHospitals] = useState<HospitalState[]>([]);
   const [events, setEvents] = useState<JivaEvent[]>([]);
   const [load, setLoad] = useState<LoadState>('loading');
@@ -33,17 +35,22 @@ export function usePatient(onLiveEvent?: (e: JivaEvent) => void) {
 
   const fetchState = useCallback(async () => {
     try {
-      const [pats, ambs, hosps] = await Promise.all([
+      const [pats, ambs, hosps, encs] = await Promise.all([
         apiGet<PatientState[]>('/api/patients'),
         apiGet<AmbulanceState[]>('/api/ambulances'),
         apiGet<HospitalState[]>('/api/hospitals'),
+        apiGet<EncounterRecord[]>('/api/encounters'),
       ]);
       const me = pats[0] || null;
       const myAmb = ambs[0] || null;
+      const enc = encs[0] || null;
       setPatient(me);
       setAmbulance(myAmb);
+      setEncounter(enc);
       setHospitals(hosps);
-      setHospital(myAmb?.destinationHospital ? hosps.find((h) => h.hospitalId === myAmb.destinationHospital) || null : null);
+      // The hospital that recorded the arrival, else the ambulance's destination.
+      const hospitalId = enc?.hospitalId ?? myAmb?.destinationHospital;
+      setHospital(hospitalId ? hosps.find((h) => h.hospitalId === hospitalId) || null : null);
       setLoad('ready');
       setSyncedAt(Date.now());
       if (me && me.patientId !== caseRef.current) {
@@ -97,5 +104,5 @@ export function usePatient(onLiveEvent?: (e: JivaEvent) => void) {
     };
   }, [fetchState]);
 
-  return { patient, ambulance, hospital, hospitals, events, load, connection, syncedAt, refresh: fetchState };
+  return { patient, ambulance, hospital, encounter, hospitals, events, load, connection, syncedAt, refresh: fetchState };
 }

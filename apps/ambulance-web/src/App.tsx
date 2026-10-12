@@ -85,6 +85,8 @@ export default function App() {
   const toast = useToast();
   const [reroute, setReroute] = useState<Reroute | null>(null);
   const [lost, setLost] = useState<{ at: string; reason?: string } | null>(null);
+  // The last job this unit handed over (from the hospital's handover record), shown while the unit is free.
+  const [handedOver, setHandedOver] = useState<{ caseId: string; hospitalId: string; at: string } | null>(null);
   const latest = useRef<{ ambulance: AmbulanceState | null; name: (id: string) => string | undefined }>({ ambulance: null, name: () => undefined });
 
   const onLive = useCallback(
@@ -95,6 +97,7 @@ export default function App() {
       if (e.eventType === 'demo.reset') {
         setReroute(null);
         setLost(null);
+        setHandedOver(null);
         toast.show({ title: 'Demo reset', description: 'All demo state was cleared.', icon: 'refresh', groupKey: 'reset' });
         return;
       }
@@ -120,8 +123,15 @@ export default function App() {
       } else if (e.eventType === 'destination.changed' && p.hospitalId === 'UNASSIGNED') {
         setLost({ at: e.timestamp, reason: humanizeReason(typeof p.reason === 'string' ? p.reason : undefined, name) });
         toast.show({ title: 'Destination withdrawn', description: 'Waiting for another hospital to accept.', tone: 'danger', icon: 'alertTriangle', groupKey: 'route', durationMs: 8000 });
-      } else if (e.eventType === 'ambulance.arrived') {
-        toast.show({ title: `Arrived at ${name(String(p.hospitalId)) ?? p.hospitalId}`, description: 'Hand over to the emergency team.', tone: 'ok', icon: 'pin', groupKey: 'arrived' });
+      } else if (e.eventType === 'ambulance.arrived' && p.basis !== 'HOSPITAL_CONFIRMED') {
+        toast.show({ title: `At ${name(String(p.hospitalId)) ?? p.hospitalId}`, description: 'Waiting for the hospital to record your arrival.', tone: 'ok', icon: 'pin', groupKey: 'arrived' });
+      } else if (e.eventType === 'encounter.arrival.recorded') {
+        toast.show({ title: `${name(String(p.hospitalId)) ?? p.hospitalId} confirmed your arrival`, description: 'Hand the patient over to the emergency team.', tone: 'ok', icon: 'hospital', groupKey: 'arrived' });
+      } else if (e.eventType === 'encounter.handover.recorded') {
+        setReroute(null);
+        setLost(null);
+        setHandedOver({ caseId: String(p.caseId), hospitalId: String(p.hospitalId), at: typeof p.handedOverAt === 'string' ? p.handedOverAt : e.timestamp });
+        toast.show({ title: 'Handover recorded', description: `${String(p.caseId)} is in the care of ${name(String(p.hospitalId)) ?? p.hospitalId}. Your unit is available.`, tone: 'ok', icon: 'checkCircle', groupKey: 'arrived', durationMs: 8000 });
       } else if (e.eventType === 'ambulance.dispatched' && p.assignmentBasis !== 'REPORTED_BY_CREW') {
         // A crew-reported case is confirmed by the intake itself; only dispatch assignments need a toast.
         toast.show({ title: `Dispatched to ${String(p.caseId ?? 'a case')}`, tone: 'ok', icon: 'ambulance', groupKey: 'dispatch' });
@@ -193,7 +203,7 @@ export default function App() {
   };
 
   const destStatus = destination ? acceptanceStatus(statusFor(destination)) : null;
-  const next = nextAction({ ambulance, destinationName: destination?.displayName, lost: !!lost && !destination, arrived, destStatus: destination ? statusFor(destination) : undefined });
+  const next = nextAction({ ambulance, destinationName: destination?.displayName, lost: !!lost && !destination, arrived, confirmed: !!patient?.encounterId, destStatus: destination ? statusFor(destination) : undefined });
 
   // The unit may report a new emergency only while free (mirrors the server's check).
   const free = !!ambulance && ambulance.status !== 'UNAVAILABLE' && (!ambulance.assignedPatient || ambulance.status === 'AVAILABLE');
@@ -561,18 +571,31 @@ export default function App() {
                   pending={pendingCase ? { caseId: pendingCase.caseId, timedOut: pendingCase.timedOut } : null}
                 />
               ) : free ? (
-                <JivaCard>
-                  <EmptyState
-                    icon="ambulance"
-                    title="Available"
-                    description="Dispatch assignments appear here automatically. If your crew is already with a patient, report the emergency yourself."
-                    action={
-                      <JivaButton variant="danger" icon="siren" onClick={() => setIntakeOpen(true)}>
-                        Report an emergency
-                      </JivaButton>
-                    }
-                  />
-                </JivaCard>
+                <>
+                  {handedOver && (
+                    <JivaCard accent="ok" className="animate-enter">
+                      <p className="flex items-center gap-1.5 text-sm font-semibold text-brand-800">
+                        <Icon name="checkCircle" size={16} />
+                        Handover recorded at {formatClock(handedOver.at)}
+                      </p>
+                      <p className="mt-1 text-[13px] text-ink-700">
+                        {handedOver.caseId} is in the care of {name(handedOver.hospitalId) ?? handedOver.hospitalId}. The hospital's record released this unit; the case is no longer shown here.
+                      </p>
+                    </JivaCard>
+                  )}
+                  <JivaCard>
+                    <EmptyState
+                      icon="ambulance"
+                      title="Available"
+                      description="Dispatch assignments appear here automatically. If your crew is already with a patient, report the emergency yourself."
+                      action={
+                        <JivaButton variant="danger" icon="siren" onClick={() => setIntakeOpen(true)}>
+                          Report an emergency
+                        </JivaButton>
+                      }
+                    />
+                  </JivaCard>
+                </>
               ) : (
                 !caseId && (
                   <JivaCard>
@@ -617,9 +640,10 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function nextAction({ ambulance, destinationName, lost, arrived, destStatus }: { ambulance: AmbulanceState | null; destinationName?: string; lost: boolean; arrived: boolean; destStatus?: string }): { title: string; detail?: string; tone: Tone } {
+function nextAction({ ambulance, destinationName, lost, arrived, confirmed, destStatus }: { ambulance: AmbulanceState | null; destinationName?: string; lost: boolean; arrived: boolean; confirmed: boolean; destStatus?: string }): { title: string; detail?: string; tone: Tone } {
   if (!ambulance) return { title: 'Connecting to JIVA…', tone: 'neutral' };
-  if (arrived) return { title: `Hand over at ${destinationName ?? 'the hospital'}`, detail: 'Arrived. The emergency team has your handoff brief.', tone: 'ok' };
+  if (arrived && confirmed) return { title: `Hand over at ${destinationName ?? 'the hospital'}`, detail: 'The hospital recorded your arrival. Your unit is released when the hospital records the handover.', tone: 'ok' };
+  if (arrived) return { title: `At ${destinationName ?? 'the hospital'}`, detail: 'GPS places you at the hospital. Hand over to the emergency team; the hospital records the arrival and the handover.', tone: 'ok' };
   if (!ambulance.assignedPatient) return { title: 'Available', detail: 'Waiting for dispatch.', tone: 'neutral' };
   if (lost) return { title: 'Hold — finding a new destination', detail: 'The previous hospital can no longer take this patient. JIVA is waiting for another hospital to accept.', tone: 'danger' };
   if (!destinationName && ambulance.status === 'ON_SCENE') return { title: 'Stay with the patient', detail: 'You reported this emergency. JIVA is asking hospitals that offer the required care; a destination appears as soon as one accepts.', tone: 'warn' };
