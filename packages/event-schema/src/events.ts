@@ -1,17 +1,40 @@
 import { z } from 'zod';
 import { BaseEventSchema } from './base';
+import { boundedText, CapabilityCodeSchema } from './primitives';
+import {
+  ClinicalDocumentStoredSchema,
+  ClinicalPrescriptionRecordedSchema,
+  ClinicalReportRecordedSchema,
+  ClinicalTelemetryRecordedSchema,
+  EncounterArrivalRecordedSchema,
+  EncounterDoctorAssignedSchema,
+  EncounterHandoverRecordedSchema,
+} from './clinical';
 
 // 1. Patient Events
 export const PatientEmergencyCreatedSchema = BaseEventSchema.extend({
   eventType: z.literal('patient.emergency.created'),
   payload: z.object({
+    /** Legacy one-line description; drives the rule-based assessment. Kept for every existing producer. */
     condition: z.string(),
     location: z.object({
       latitude: z.number(),
       longitude: z.number(),
       address: z.string().optional()
     }),
-    severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'])
+    severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
+    // Structured intake (optional; used by the ambulance intake). Symptoms and the suspected cause are
+    // stored separately and the cause is always unconfirmed — never a diagnosis.
+    reportedSymptoms: z.array(boundedText(80)).min(1).max(20).optional(),
+    suspectedCause: boundedText(160).optional(),
+    /** Care the reporter asked for, added to (never replacing) the rule-based assessment. */
+    requestedCapabilities: z.array(CapabilityCodeSchema).max(12).optional(),
+    notes: boundedText(1000).optional(),
+    intake: z.object({
+      channel: z.enum(['AMBULANCE_CREW', 'DISPATCH', 'PATIENT_APP']),
+      locationMethod: z.enum(['DEVICE_GPS', 'MAP_PIN', 'MANUAL_ENTRY']),
+      locationAccuracyMeters: z.number().finite().nonnegative().max(100_000).optional(),
+    }).strict().optional(),
   })
 });
 
@@ -26,7 +49,12 @@ export const AmbulanceDispatchedSchema = BaseEventSchema.extend({
       longitude: z.number(),
       address: z.string().optional()
     }),
-    estimatedEtaMinutes: z.number()
+    estimatedEtaMinutes: z.number(),
+    /**
+     * DISPATCH (default): sent by dispatch to a scene. REPORTED_BY_CREW: system-generated when the
+     * ambulance crew itself reported the emergency — the crew is already with the patient (ON_SCENE).
+     */
+    assignmentBasis: z.enum(['DISPATCH', 'REPORTED_BY_CREW']).optional(),
   })
 });
 
@@ -50,7 +78,12 @@ export const AmbulanceArrivedSchema = BaseEventSchema.extend({
   payload: z.object({
     ambulanceId: z.string(),
     hospitalId: z.string(),
-    caseId: z.string().optional()
+    caseId: z.string().optional(),
+    /**
+     * GPS_GEOFENCE (default, legacy): the ambulance's GPS came within the arrival radius — a derived
+     * signal. HOSPITAL_CONFIRMED: a hospital user recorded the arrival (see encounter.arrival.recorded).
+     */
+    basis: z.enum(['GPS_GEOFENCE', 'HOSPITAL_CONFIRMED']).optional(),
   })
 });
 
@@ -75,7 +108,12 @@ export const CareRequirementCreatedSchema = BaseEventSchema.extend({
     optionalCapabilities: z.array(z.string()),
     severity: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']),
     createdAt: z.string(),
-    expiresAt: z.string().optional()
+    expiresAt: z.string().optional(),
+    /** Transparency only: which required capabilities came from the rules and which the reporter asked for. */
+    capabilitySources: z.object({
+      ruleDerived: z.array(z.string()),
+      reporterRequested: z.array(z.string()),
+    }).optional(),
   })
 });
 
@@ -358,7 +396,14 @@ export const AnyEventSchema = z.discriminatedUnion('eventType', [
   AiAnomalyExplainedSchema,
   AiSummaryGeneratedSchema,
   FeasibilityTraceRecordedSchema,
-  DemoResetSchema
+  DemoResetSchema,
+  EncounterArrivalRecordedSchema,
+  EncounterHandoverRecordedSchema,
+  EncounterDoctorAssignedSchema,
+  ClinicalPrescriptionRecordedSchema,
+  ClinicalReportRecordedSchema,
+  ClinicalDocumentStoredSchema,
+  ClinicalTelemetryRecordedSchema,
 ]);
 
 export type PatientEmergencyCreated = z.infer<typeof PatientEmergencyCreatedSchema>;
