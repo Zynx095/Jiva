@@ -7,7 +7,7 @@ import { ambulancesStore, patientsStore } from '../stateStore';
 import { recordAndPublish } from '../ingest';
 import { composeCondition, ambulanceCanAttend } from '../intake';
 import { isWithinServiceArea, serviceArea } from '../serviceArea';
-import { audit, conflict, idempotent, replayOr, validationError, withKeyLock } from '../commands/support';
+import { asyncRoute, audit, conflict, idempotent, replayOr, validationError, withKeyLock } from '../commands/support';
 
 type AuthedRequest = Request & { auth?: AuthContext };
 
@@ -34,7 +34,7 @@ function newCaseId(): string {
 export function emergencyRouter(): Router {
   const router = Router();
 
-  router.post('/emergencies', async (req: AuthedRequest, res) => {
+  router.post('/emergencies', asyncRoute(async (req: AuthedRequest, res) => {
     const auth = req.auth!;
     if (auth.role !== 'AMBULANCE' || !auth.ambulanceId) {
       return res.status(403).json({ error: 'forbidden', message: 'Only an ambulance crew reports emergencies here. Dispatch uses POST /api/events.' });
@@ -120,7 +120,7 @@ export function emergencyRouter(): Router {
       idem.remember(202, body);
       return res.status(202).json(body);
     });
-  });
+  }));
 
   return router;
 }

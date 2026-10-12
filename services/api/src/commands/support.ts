@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'crypto';
-import type { Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import type { ZodError } from 'zod';
 import type { AuthContext } from '@jiva/auth';
 import type { AuditRecord } from '@jiva/domain-models';
@@ -13,6 +13,16 @@ import { actorFromAuth, type Decision } from '../clinical/policy';
  */
 
 export const sha256Hex = (data: string | Buffer) => createHash('sha256').update(data).digest('hex');
+
+/**
+ * Express 4 does not pass a rejected async handler to the error middleware: the request would hang and the
+ * rejection would only be logged. Command handlers are wrapped so a failure answers 500 (no details).
+ */
+export function asyncRoute<Req extends Request>(fn: (req: Req, res: Response) => Promise<unknown>) {
+  return (req: Req, res: Response, next: NextFunction): void => {
+    fn(req, res).catch(next);
+  };
+}
 
 /** 400 with field-level issues (messages come from the schema, never echo the submitted values). */
 export function validationError(res: Response, error: ZodError) {

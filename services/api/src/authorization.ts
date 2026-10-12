@@ -92,6 +92,23 @@ function eventCase(event: any): string | undefined {
 /** What a clinician may see of the operational stream for their own assigned patients: clinical context only. */
 const CLINICIAN_CONTEXT_EVENTS = new Set(['patient.emergency.created', 'care.requirement.created', 'ambulance.arrived']);
 
+/**
+ * The copy of an event a principal receives (realtime, ledger and timeline reads), applied after
+ * `canReceiveEvent`. Encounter and clinical events name the staff member who recorded them; that identity
+ * is delivered only to staff of the same hospital (administrators read it in the audit log). Everyone else —
+ * the patient, the crew, network coordination — receives the role only.
+ */
+export function eventForRecipient(auth: AuthContext, event: AnyEvent): AnyEvent {
+  if (!isClinicalDomainEvent(event.eventType)) return event;
+  const p = (event as { payload?: Record<string, unknown> }).payload;
+  const actor = p?.recordedBy as { role?: unknown; hospitalId?: unknown } | undefined;
+  if (!p || !actor) return event;
+  const sameHospitalStaff = (auth.role === 'HOSPITAL' || auth.role === 'CLINICIAN') && !!auth.hospitalId && auth.hospitalId === p.hospitalId;
+  if (sameHospitalStaff) return event;
+  const recordedBy = { role: actor.role, ...(typeof actor.hospitalId === 'string' ? { hospitalId: actor.hospitalId } : {}) };
+  return { ...event, payload: { ...p, recordedBy } } as unknown as AnyEvent;
+}
+
 /** Realtime delivery filter: may this principal receive this event? Also applied to ledger and timeline reads. */
 export function canReceiveEvent(auth: AuthContext, event: AnyEvent): boolean {
   if (event.eventType === 'demo.reset') return true;

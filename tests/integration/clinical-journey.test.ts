@@ -238,6 +238,186 @@ async function referralsAndAcceptance(api: Api) {
   for (const s of [crew, otherCrew, shortCrew]) s.s.close();
 }
 
+// ------------------------------------------------------------------------------------------ phases 5–6
+
+/** A crew reports a case and hospital `hospitalId` accepts it: the crew is routed there. */
+async function routedCase(api: Api, crewPersona: string, crewId: string, hospitalId: string, hospitalPersona: string): Promise<string> {
+  const caseId = (await api.post(crewPersona, '/api/emergencies', intakeBody({ severity: 'CRITICAL', requiredCapabilities: [] }))).json?.caseId as string;
+  await api.waitFor(async () => !!(await referralId(api, caseId, hospitalId)));
+  await api.event(hospitalPersona, answer(caseId, hospitalId, await referralId(api, caseId, hospitalId), 'ACCEPTED'));
+  await api.waitFor(async () => ((await api.get(P.mgmt, '/api/ambulances')).json as any[]).find(a => a.ambulanceId === crewId)?.destinationHospital === hospitalId);
+  return caseId;
+}
+
+const arrive = (api: Api, persona: string, hospitalId: string, caseId: string, o: Record<string, unknown> = {}) =>
+  api.post(persona, `/api/hospitals/${hospitalId}/arrivals`, { clientRequestId: uuid(), caseId, ...o });
+const handover = (api: Api, persona: string, encounterId: string, o: Record<string, unknown> = {}) =>
+  api.post(persona, `/api/encounters/${encounterId}/handover`, { clientRequestId: uuid(), ...o });
+const assignDoctor = (api: Api, persona: string, encounterId: string, practitionerId: string, o: Record<string, unknown> = {}) =>
+  api.post(persona, `/api/encounters/${encounterId}/doctor`, { clientRequestId: uuid(), practitionerId, ...o });
+
+async function arrivalAndHandover(api: Api): Promise<{ caseId: string; encounterId: string; gpsCase: string; gpsEncounter: string }> {
+  console.log('\n[Phase 5] Hospital arrival, handover and encounter creation');
+  await reset(api);
+  const sockets = {
+    patient: await api.socket(P.pat1), crew: await api.socket(P.a2), h1: await api.socket(P.h1), h2: await api.socket(P.h2),
+    mgmt: await api.socket(P.mgmt), doc: await api.socket(P.doc3),
+  };
+  // The demo patient's own case (CASE-BLR-876), reported by AMB-BLR-002 and accepted by Hebbal (001).
+  const caseId = (await api.post(P.a2, '/api/emergencies', intakeBody({ caseRef: 'CASE-BLR-876', severity: 'CRITICAL', requiredCapabilities: [] }))).json?.caseId as string;
+  await api.waitFor(async () => !!(await referralId(api, caseId, 'HOSP-BLR-001')));
+  await api.event(P.h1, answer(caseId, 'HOSP-BLR-001', await referralId(api, caseId, 'HOSP-BLR-001'), 'ACCEPTED'));
+  await api.waitFor(async () => (await api.get(P.a2, '/api/ambulances')).json?.[0]?.destinationHospital === 'HOSP-BLR-001');
+
+  // who may record an arrival
+  const r2 = await arrive(api, P.h2, 'HOSP-BLR-001', caseId);
+  check('another hospital cannot record an arrival here → 403', r2.status === 403 && r2.json?.code === 'OTHER_HOSPITAL', r2.text);
+  for (const [name, persona] of [['clinician', P.doc3], ['ambulance crew', P.a2], ['patient', P.pat1], ['management', P.mgmt], ['admin', P.admin]] as const) {
+    check(`${name} cannot record an arrival → 403`, (await arrive(api, persona, 'HOSP-BLR-001', caseId)).status === 403);
+  }
+  check('unauthenticated → 401', (await arrive(api, undefined as unknown as string, 'HOSP-BLR-001', caseId)).status === 401);
+  const wrongHospital = await arrive(api, P.h4, 'HOSP-BLR-004', caseId);
+  check('a hospital the case is not routed to / accepted by cannot claim it → 404 not_routed_here', wrongHospital.status === 404 && wrongHospital.json?.error === 'not_routed_here', wrongHospital.text);
+  const unknown = await arrive(api, P.h1, 'HOSP-BLR-001', 'CASE-DOES-NOT-EXIST');
+  check('unknown case reference answers the same (no existence oracle)', unknown.status === 404 && unknown.json?.error === 'not_routed_here');
+  check('arrival in the future → 400', (await arrive(api, P.h1, 'HOSP-BLR-001', caseId, { arrivedAt: new Date(Date.now() + 10 * 60_000).toISOString() })).status === 400);
+  check('arrival with a hospitalId in the body → 400 (hospital comes from the path and identity)', (await api.post(P.h1, '/api/hospitals/HOSP-BLR-001/arrivals', { clientRequestId: uuid(), caseId, hospitalId: 'HOSP-BLR-004' })).status === 400);
+
+  // before any arrival record, the case is NOT in hospital care
+  check('before arrival: no encounter exists for the patient', ((await api.get(P.pat1, '/api/encounters')).json as any[]).length === 0);
+
+  const body = { clientRequestId: uuid(), caseId };
+  const rec = await api.post(P.h1, '/api/hospitals/HOSP-BLR-001/arrivals', body);
+  const encounterId: string = rec.json?.encounter?.encounterId;
+  check('the destination hospital records the arrival → 201, encounter ARRIVED', rec.status === 201 && rec.json.encounter.status === 'ARRIVED' && /^ENC-BLR-001-[0-9A-F]{8}$/.test(encounterId), rec.text);
+  check('encounter records actor, referral and ambulance', rec.json?.encounter?.arrival?.recordedBy?.userId === 'demo-hosp-1' && rec.json.encounter.referral?.requestId?.startsWith('AR-') && rec.json.encounter.ambulanceId === 'AMB-BLR-002');
+  check('retry with the same clientRequestId → same result', (await api.post(P.h1, '/api/hospitals/HOSP-BLR-001/arrivals', body)).json?.encounter?.encounterId === encounterId);
+  const dup = await arrive(api, P.h1, 'HOSP-BLR-001', caseId);
+  check('a second arrival for the same case → 409 already_recorded (no duplicate encounter)', dup.status === 409 && dup.json?.error === 'already_recorded' && dup.json.encounterId === encounterId);
+  const pat = (await api.get(P.mgmt, '/api/patients')).json.find((p: any) => p.patientId === caseId);
+  check('case is ARRIVED and linked to the encounter (not yet in care)', pat?.currentStatus === 'ARRIVED' && pat.encounterId === encounterId);
+  const amb = (await api.get(P.mgmt, '/api/ambulances')).json.find((a: any) => a.ambulanceId === 'AMB-BLR-002');
+  check('the crew\'s unit is ARRIVED (authoritative arrival)', amb?.status === 'ARRIVED');
+  const hist = (await api.get(P.mgmt, '/api/events/history?limit=500')).json as any[];
+  check('ambulance.arrived carries basis HOSPITAL_CONFIRMED', hist.some(e => e.eventType === 'ambulance.arrived' && e.payload.caseId === caseId && e.payload.basis === 'HOSPITAL_CONFIRMED'));
+  check('the case\'s other referrals were withdrawn (CASE_CLOSED)', hist.filter(e => e.eventType === 'hospital.acceptance.cancelled' && e.payload.caseId === caseId).every(e => e.payload.reason === 'CASE_CLOSED') && hist.some(e => e.eventType === 'hospital.acceptance.cancelled' && e.payload.caseId === caseId));
+
+  // views
+  const pv = (await api.get(P.pat1, '/api/encounters')).json as any[];
+  check('patient sees their encounter (patient view: no staff user ids)', pv.length === 1 && pv[0].status === 'ARRIVED' && !('arrival' in pv[0]) && !JSON.stringify(pv[0]).includes('demo-hosp-1'));
+  check('another patient sees nothing', ((await api.get(P.pat2, '/api/encounters')).json as any[]).length === 0);
+  check('the crew sees a summary of its case encounter', (await api.get(P.a2, `/api/encounters/${encounterId}`)).json?.status === 'ARRIVED');
+  check('management sees a summary (no doctor, no actors)', !('arrival' in ((await api.get(P.mgmt, `/api/encounters/${encounterId}`)).json ?? {})));
+  check('another hospital cannot read it → 404', (await api.get(P.h2, `/api/encounters/${encounterId}`)).status === 404);
+  check('an unassigned clinician at the same hospital cannot read it → 404', (await api.get(P.doc3, `/api/encounters/${encounterId}`)).status === 404);
+
+  // handover
+  check('another hospital cannot record the handover → 404', (await handover(api, P.h2, encounterId)).status === 404);
+  check('the crew cannot record its own handover → 403', (await handover(api, P.a2, encounterId)).status === 403);
+  check('the patient cannot record the handover → 403', (await handover(api, P.pat1, encounterId)).status === 403);
+  check('an unassigned clinician cannot record it → 404', (await handover(api, P.doc3, encounterId)).status === 404);
+  check('handover before the arrival time → 400', (await handover(api, P.h1, encounterId, { handedOverAt: new Date(Date.parse(rec.json.encounter.arrival.arrivedAt) - 60_000).toISOString() })).status === 400);
+  const ho = await handover(api, P.h1, encounterId);
+  check('the hospital records the handover → 200, encounter IN_CARE', ho.status === 200 && ho.json?.encounter?.status === 'IN_CARE' && ho.json.encounter.handover.recordedBy.userId === 'demo-hosp-1', ho.text);
+  check('a second handover → 409 already_handed_over', (await handover(api, P.h1, encounterId)).json?.error === 'already_handed_over');
+  check('case is HANDED_OVER (authoritative in-hospital care)', (await api.get(P.mgmt, '/api/patients')).json.find((p: any) => p.patientId === caseId)?.currentStatus === 'HANDED_OVER');
+  const released = (await api.get(P.mgmt, '/api/ambulances')).json.find((a: any) => a.ambulanceId === 'AMB-BLR-002');
+  check('the crew is released for the next job (AVAILABLE, no case)', released?.status === 'AVAILABLE' && !released.assignedPatient && !released.destinationHospital);
+  check('…and can report a new emergency', (await api.post(P.a2, '/api/emergencies', intakeBody())).status === 202);
+  check('the hospital still sees its patient after the crew left', ((await api.get(P.h1, '/api/patients')).json as any[]).some(p => p.patientId === caseId));
+
+  await new Promise(r => setTimeout(r, 300));
+  const got = (s: { events: any[] }, type: string) => s.events.some(e => e.eventType === type && e.payload.encounterId === encounterId);
+  check('realtime: patient, crew, hospital and management receive arrival and handover', ['patient', 'crew', 'h1', 'mgmt'].every(k => got(sockets[k as keyof typeof sockets], 'encounter.arrival.recorded') && got(sockets[k as keyof typeof sockets], 'encounter.handover.recorded')));
+  check('realtime: another hospital and an unassigned clinician receive nothing', !got(sockets.h2, 'encounter.arrival.recorded') && !got(sockets.doc, 'encounter.arrival.recorded'));
+  const copy = (s: { events: any[] }) => s.events.find(e => e.eventType === 'encounter.arrival.recorded' && e.payload.encounterId === encounterId);
+  check("the patient's, crew's and management's copies name the role only, never the staff member",
+    ['patient', 'crew', 'mgmt'].every(k => { const c = copy(sockets[k as keyof typeof sockets]); return c?.payload.recordedBy?.role === 'HOSPITAL' && !('userId' in c.payload.recordedBy) && !JSON.stringify(c).includes('demo-hosp-1'); }));
+  check("…the hospital's own staff see who recorded it", copy(sockets.h1)?.payload.recordedBy?.userId === 'demo-hosp-1');
+  const ledgerCopy = ((await api.get(P.mgmt, '/api/events/history?limit=500')).json as any[]).find(e => e.eventType === 'encounter.handover.recorded' && e.payload.encounterId === encounterId);
+  check('…and so does the ledger read for management', !!ledgerCopy && !('userId' in ledgerCopy.payload.recordedBy));
+  const forged = envelope('encounter.handover.recorded', { encounterId, caseId, hospitalId: 'HOSP-BLR-001', handedOverAt: new Date().toISOString(), recordedBy: { userId: 'demo-hosp-1', role: 'HOSPITAL', hospitalId: 'HOSP-BLR-001' } }, { type: 'hospital', id: 'HOSP-BLR-001' });
+  check('encounter events cannot be submitted directly, even by the hospital → 403 (commands only)', (await api.event(P.h1, forged)).status === 403);
+
+  // a GPS geofence alone never creates an encounter
+  const gpsCase = await routedCase(api, P.a1, 'AMB-BLR-001', 'HOSP-BLR-004', P.h4);
+  const h4 = ((await api.get(P.mgmt, '/api/hospitals')).json as any[]).find(h => h.hospitalId === 'HOSP-BLR-004');
+  const gps = await api.event(P.a1, envelope('ambulance.location.updated', { ambulanceId: 'AMB-BLR-001', coordinates: { latitude: h4.location.latitude, longitude: h4.location.longitude }, speedKmh: 5 }, { type: 'ambulance', id: 'AMB-BLR-001' }));
+  check('crew GPS at the destination accepted → 202', gps.status === 202, gps.text);
+  const gpsArrived = await api.waitFor(async () => (await api.get(P.mgmt, '/api/ambulances')).json.find((a: any) => a.ambulanceId === 'AMB-BLR-001')?.status === 'ARRIVED');
+  check('GPS geofence marks the unit ARRIVED (derived signal)…', gpsArrived);
+  check('…but creates no encounter and no in-hospital care', ((await api.get(P.mgmt, `/api/encounters?caseId=${gpsCase}`)).json as any[]).length === 0 && (await api.get(P.mgmt, '/api/patients')).json.find((p: any) => p.patientId === gpsCase)?.currentStatus === 'ARRIVED');
+  const gpsRec = await arrive(api, P.h4, 'HOSP-BLR-004', gpsCase);
+  check('hospital confirmation creates the encounter, keeping the GPS time as evidence', gpsRec.status === 201 && !!gpsRec.json.encounter.arrival.gpsArrivalAt, gpsRec.text);
+
+  // diversion: the receiving hospital's record wins over the routed destination
+  const divCase = (await api.post(P.a3, '/api/emergencies', intakeBody({ severity: 'CRITICAL', requiredCapabilities: [] }))).json?.caseId as string;
+  await api.waitFor(async () => !!(await referralId(api, divCase, 'HOSP-BLR-001')) && !!(await referralId(api, divCase, 'HOSP-BLR-004')));
+  await api.event(P.h1, answer(divCase, 'HOSP-BLR-001', await referralId(api, divCase, 'HOSP-BLR-001'), 'ACCEPTED'));
+  await api.waitFor(async () => ((await api.get(P.mgmt, '/api/ambulances')).json as any[]).find(a => a.ambulanceId === 'AMB-BLR-003')?.destinationHospital === 'HOSP-BLR-001');
+  await api.event(P.h4, answer(divCase, 'HOSP-BLR-004', await referralId(api, divCase, 'HOSP-BLR-004'), 'ACCEPTED'));
+  const div = await arrive(api, P.h4, 'HOSP-BLR-004', divCase);
+  check('diversion: a hospital that accepted the case records its arrival although the crew was routed elsewhere → 201', div.status === 201, div.text);
+  const a3 = ((await api.get(P.mgmt, '/api/ambulances')).json as any[]).find(a => a.ambulanceId === 'AMB-BLR-003');
+  check('…the crew is ARRIVED at the receiving hospital (no route kept to the routed one)', a3?.status === 'ARRIVED' && a3.destinationHospital === 'HOSP-BLR-004' && !a3.activeRoute, JSON.stringify({ status: a3?.status, dest: a3?.destinationHospital }));
+  const divHist = (await api.get(P.mgmt, '/api/events/history?limit=1000')).json as any[];
+  check('…ambulance.arrived names the receiving hospital; the referral to the routed hospital is withdrawn',
+    divHist.some(e => e.eventType === 'ambulance.arrived' && e.payload.caseId === divCase && e.payload.hospitalId === 'HOSP-BLR-004' && e.payload.basis === 'HOSPITAL_CONFIRMED') &&
+    divHist.some(e => e.eventType === 'hospital.acceptance.cancelled' && e.payload.caseId === divCase && e.payload.hospitalId === 'HOSP-BLR-001' && e.payload.reason === 'CASE_CLOSED'));
+  check('…and the case points to the receiving hospital', (await api.get(P.mgmt, '/api/patients')).json.find((p: any) => p.patientId === divCase)?.assignedHospital === 'HOSP-BLR-004');
+  check('the bypassed hospital can no longer record an arrival for the case → 404 not_routed_here', (await arrive(api, P.h1, 'HOSP-BLR-001', divCase)).json?.error === 'not_routed_here');
+  for (const s of Object.values(sockets)) s.s.close();
+  return { caseId, encounterId, gpsCase, gpsEncounter: gpsRec.json?.encounter?.encounterId };
+}
+
+async function doctorAssignment(api: Api, ctx: { caseId: string; encounterId: string; gpsEncounter: string }) {
+  console.log('\n[Phase 6] Doctor assignment');
+  const { encounterId } = ctx;
+  const roster = await api.get(P.h1, '/api/hospitals/HOSP-BLR-001/clinicians');
+  check('hospital reads its roster: synthetic demo clinicians, labelled', roster.status === 200 && roster.json.length === 2 && roster.json.every((p: any) => p.dataStatus === 'SYNTHETIC_DEMO' && p.hospitalId === 'HOSP-BLR-001'));
+  check('a clinician of the hospital can read the roster', (await api.get(P.doc3, '/api/hospitals/HOSP-BLR-001/clinicians')).status === 200);
+  for (const [name, persona] of [['another hospital', P.h2], ['management', P.mgmt], ['patient', P.pat1], ['crew', P.a1]] as const) {
+    check(`${name} cannot read the roster → 403`, (await api.get(persona, '/api/hospitals/HOSP-BLR-001/clinicians')).status === 403);
+  }
+
+  check('no doctor before handover → 409 not_handed_over', (await assignDoctor(api, P.h4, ctx.gpsEncounter, 'PRAC-BLR-004-01')).json?.error === 'not_handed_over');
+  const foreign = await assignDoctor(api, P.h1, encounterId, 'PRAC-BLR-004-01');
+  check('a doctor of another hospital cannot be assigned → 422', foreign.status === 422 && foreign.json?.error === 'practitioner_not_eligible', foreign.text);
+  check('another hospital cannot assign on this encounter → 404', (await assignDoctor(api, P.h2, encounterId, 'PRAC-BLR-001-01')).status === 404);
+  check('a clinician cannot assign doctors → 404 (unassigned) ', (await assignDoctor(api, P.doc3, encounterId, 'PRAC-BLR-001-01')).status === 404);
+  check('management cannot assign doctors → 403', (await assignDoctor(api, P.mgmt, encounterId, 'PRAC-BLR-001-01')).status === 403);
+  check('first assignment cannot claim a reassignment reason → 400', (await assignDoctor(api, P.h1, encounterId, 'PRAC-BLR-001-01', { reason: 'SHIFT_HANDOVER' })).status === 400);
+
+  const docSock = await api.socket(P.doc3);
+  const mgmtSock = await api.socket(P.mgmt);
+  const a1 = await assignDoctor(api, P.h1, encounterId, 'PRAC-BLR-001-01');
+  check('the hospital assigns its doctor → 200 with who/when/why', a1.status === 200 && a1.json.encounter.assignedDoctor.practitionerId === 'PRAC-BLR-001-01' && a1.json.encounter.assignedDoctor.reason === 'INITIAL_ASSIGNMENT' && a1.json.encounter.assignedDoctor.assignedBy.userId === 'demo-hosp-1', a1.text);
+  check('same doctor again → 409 already_assigned', (await assignDoctor(api, P.h1, encounterId, 'PRAC-BLR-001-01')).json?.error === 'already_assigned');
+  check('the assigned doctor now sees the encounter', (await api.get(P.doc3, `/api/encounters/${encounterId}`)).json?.assignedDoctor?.practitionerId === 'PRAC-BLR-001-01');
+  const pv = (await api.get(P.pat1, `/api/encounters/${encounterId}`)).json;
+  check('the patient sees their doctor (name and specialty, no staff ids)', pv?.assignedDoctor?.displayName === 'Dr. Ravi Kumar' && !('assignedBy' in pv.assignedDoctor));
+  check('management summary does not include the doctor', !('assignedDoctor' in ((await api.get(P.mgmt, `/api/encounters/${encounterId}`)).json ?? {})));
+  await new Promise(r => setTimeout(r, 300));
+  check('realtime: the doctor is notified; management is not', docSock.events.some(e => e.eventType === 'encounter.doctor.assigned' && e.payload.encounterId === encounterId) && !mgmtSock.events.some(e => e.eventType === 'encounter.doctor.assigned'));
+
+  const a2 = await assignDoctor(api, P.h1, encounterId, 'PRAC-BLR-001-02', { reason: 'SHIFT_HANDOVER' });
+  check('reassignment keeps the history and closes the previous assignment', a2.status === 200 && a2.json.encounter.assignmentHistory.length === 2 && !!a2.json.encounter.assignmentHistory[0].endedAt && a2.json.encounter.assignedDoctor.reason === 'SHIFT_HANDOVER');
+  check('the previous doctor loses access', (await api.get(P.doc3, `/api/encounters/${encounterId}`)).status === 404);
+  await new Promise(r => setTimeout(r, 300));
+  check('…and is told (realtime, previous practitioner)', docSock.events.some(e => e.eventType === 'encounter.doctor.assigned' && e.payload.previousPractitionerId === 'PRAC-BLR-001-01'));
+  const workload = (await api.get(P.h1, '/api/hospitals/HOSP-BLR-001/clinicians')).json as any[];
+  check('roster shows current workload', workload.find(p => p.practitionerId === 'PRAC-BLR-001-02')?.activeEncounters === 1 && workload.find(p => p.practitionerId === 'PRAC-BLR-001-01')?.activeEncounters === 0);
+
+  // inactive clinician (Indiranagar roster) on the GPS case once handed over
+  await handover(api, P.h4, ctx.gpsEncounter);
+  check('an inactive clinician cannot be assigned → 422', (await assignDoctor(api, P.h4, ctx.gpsEncounter, 'PRAC-BLR-004-03')).status === 422);
+  check('an active Indiranagar clinician can', (await assignDoctor(api, P.h4, ctx.gpsEncounter, 'PRAC-BLR-004-01')).status === 200);
+  docSock.s.close();
+  mgmtSock.s.close();
+  // hand the case back to the original doctor (demo-doc-3) for the clinical phases
+  check('reassign back to demo-doc-3 for the clinical record phases', (await assignDoctor(api, P.h1, encounterId, 'PRAC-BLR-001-01', { reason: 'REASSIGNMENT' })).status === 200);
+}
+
 // ------------------------------------------------------------------------------------------
 
 async function main() {
@@ -247,6 +427,8 @@ async function main() {
     await emergencyIntake(api);
     await facilityDirectory(api);
     await referralsAndAcceptance(api);
+    const journey = await arrivalAndHandover(api);
+    await doctorAssignment(api, journey);
     check('API process still healthy at the end', (await api.get(undefined, '/api/health')).status === 200);
     check('no handler crashes logged', !/Handler for .* failed|Uncaught exception|Unhandled rejection/.test(api.log()), api.log().match(/.*(failed|Uncaught|Unhandled).*/g)?.slice(0, 3).join('\n'));
   } finally {

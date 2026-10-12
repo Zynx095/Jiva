@@ -564,39 +564,73 @@ eventBus.on('ambulance.location.updated', async (event: AmbulanceLocationUpdated
   const dest = updated.destinationHospital ? hospitalsStore.get(updated.destinationHospital) : undefined;
   if (dest?.location && updated.status !== 'ARRIVED' &&
       distanceMeters(updated.currentLocation!, dest.location) <= ARRIVAL_RADIUS_METERS) {
-    ambulancesStore.set(ambulanceId, { ...updated, status: 'ARRIVED' });
-    const patient = patientsStore.get(updated.assignedPatient || '');
-    if (patient) patientsStore.set(patient.patientId, { ...patient, currentStatus: 'ARRIVED', lastUpdated: event.timestamp });
+    await markAmbulanceArrived(ambulanceId, dest.hospitalId, event.timestamp, 'GPS_GEOFENCE');
+  }
+});
+
+/** Statuses a patient case passes through before reaching a hospital (arrival never moves a case back). */
+export const PRE_ARRIVAL: ReadonlySet<string> = new Set(['EMERGENCY_REPORTED', 'ASSESSED', 'IN_TRANSIT']);
+
+/**
+ * Arrival effects of an ambulance, shared by the GPS geofence (a derived signal) and a hospital-confirmed
+ * arrival (authoritative, see clinical/encounters.ts): the unit is ARRIVED and no longer routed, the case
+ * is ARRIVED (never moved back from a later status), `ambulance.arrived` records the basis, and the case's
+ * open referrals are withdrawn (CASE_CLOSED).
+ *
+ * Runs under the ambulance's routing lock, so it cannot interleave with a destination commit, and
+ * re-validates there: a geofence hit only counts while the unit is still heading to that hospital; a
+ * hospital confirmation counts while the unit still carries that case — and wins over the routed
+ * destination (diversion) or an earlier geofence hit at another hospital. Returns whether it applied.
+ */
+export async function markAmbulanceArrived(
+  ambulanceId: string, hospitalId: string, at: string, basis: 'GPS_GEOFENCE' | 'HOSPITAL_CONFIRMED', expectedCaseId?: string,
+): Promise<boolean> {
+  let applied = false;
+  await withAmbulanceLock(ambulanceId, async () => {
+    const amb = ambulancesStore.get(ambulanceId);
+    if (!amb) return;
+    if (basis === 'GPS_GEOFENCE' && (amb.status === 'ARRIVED' || amb.destinationHospital !== hospitalId)) return;
+    if (basis === 'HOSPITAL_CONFIRMED' && (!expectedCaseId || amb.assignedPatient !== expectedCaseId ||
+        (amb.status === 'ARRIVED' && amb.destinationHospital === hospitalId))) return;
+    applied = true;
+    const diverted = amb.destinationHospital !== hospitalId;
+    ambulancesStore.set(ambulanceId, { ...amb, status: 'ARRIVED', ...(diverted ? { destinationHospital: hospitalId, activeRoute: undefined } : {}) });
+    const caseId = amb.assignedPatient;
+    const patient = patientsStore.get(caseId || '');
+    if (patient && PRE_ARRIVAL.has(patient.currentStatus)) patientsStore.set(patient.patientId, { ...patient, currentStatus: 'ARRIVED', lastUpdated: at });
     await publish({
       eventType: 'ambulance.arrived',
-      source: { type: 'system', id: 'telemetry-engine' },
-      patientId: updated.assignedPatient,
-      payload: { ambulanceId, hospitalId: dest.hospitalId, caseId: updated.assignedPatient },
+      source: { type: 'system', id: basis === 'GPS_GEOFENCE' ? 'telemetry-engine' : 'encounter-engine' },
+      patientId: caseId,
+      payload: { ambulanceId, hospitalId, caseId, basis },
     });
 
     // Close case acceptance holds when patient arrives at destination:
-    if (updated.assignedPatient) {
-      const caseId = updated.assignedPatient;
-      for (const [, r] of Array.from(engine.requests.entries())) {
-        if (r.caseId === caseId) {
-          await publish({
-            eventType: 'hospital.acceptance.cancelled',
-            source: { type: 'system', id: 'acceptance-protocol' },
-            patientId: caseId,
-            causationId: r.requestId,
-            payload: {
-              requestId: r.requestId,
-              caseId,
-              hospitalId: r.hospitalId,
-              cancelledAt: event.timestamp,
-              reason: 'CASE_CLOSED',
-            },
-          });
-        }
-      }
+    if (caseId) await closeCaseReferrals(caseId, at);
+  });
+  return applied;
+}
+
+/** Withdraw every open referral of a case (the patient has reached a hospital). */
+export async function closeCaseReferrals(caseId: string, at: string): Promise<void> {
+  for (const [, r] of Array.from(engine.requests.entries())) {
+    if (r.caseId === caseId) {
+      await publish({
+        eventType: 'hospital.acceptance.cancelled',
+        source: { type: 'system', id: 'acceptance-protocol' },
+        patientId: caseId,
+        causationId: r.requestId,
+        payload: {
+          requestId: r.requestId,
+          caseId,
+          hospitalId: r.hospitalId,
+          cancelledAt: at,
+          reason: 'CASE_CLOSED',
+        },
+      });
     }
   }
-});
+}
 
 // ---------------------------------------------------------------- expiration
 
@@ -628,8 +662,11 @@ export function checkAcceptanceExpiry(now = Date.now()): void {
 
   for (const hospitalId of hospitalsStore.keys()) {
     for (const caseId of acceptanceLedger.casesFor(hospitalId)) {
-      const r = acceptanceLedger.view(caseId, hospitalId, now).response;
+      const view = acceptanceLedger.view(caseId, hospitalId, now);
+      const r = view.response;
       if (!r || (r.status !== 'ACCEPTED' && r.status !== 'LIMITED') || ms(r.validUntil) > now) continue;
+      // A withdrawn referral (e.g. CASE_CLOSED on arrival) no longer has a standing answer: its lapse is not news.
+      if (view.requestState === 'REQUEST_CANCELLED') continue;
       const key = `${caseId}|${hospitalId}|${r.responseId}`;
       if (engine.expiryNotified.has(key)) continue;
       engine.expiryNotified.add(key);

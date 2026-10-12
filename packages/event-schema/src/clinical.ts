@@ -32,6 +32,13 @@ export const CLINICAL_RECORD_EVENT_TYPES = [
 
 const timestamp = z.string().datetime();
 
+/**
+ * Provenance of the recorded fact, derived by the API from the authenticated principal (never from a
+ * client): a demo persona produces SYNTHETIC_DEMO; real hospital staff produce HOSPITAL_CONFIRMED; an
+ * authorised device or feed produces AUTHORIZED_FEED.
+ */
+export const RecordProvenanceSchema = z.enum(['SYNTHETIC_DEMO', 'HOSPITAL_CONFIRMED', 'AUTHORIZED_FEED', 'UNVERIFIED']);
+
 /** A hospital user confirmed the patient is physically at the hospital. Creates the encounter. */
 export const EncounterArrivalRecordedSchema = BaseEventSchema.extend({
   eventType: z.literal('encounter.arrival.recorded'),
@@ -44,6 +51,7 @@ export const EncounterArrivalRecordedSchema = BaseEventSchema.extend({
     referralRequestId: RecordIdSchema.optional(),
     arrivedAt: timestamp,
     recordedBy: ActorSchema,
+    dataStatus: RecordProvenanceSchema.optional(),
     /** Recorded by hospital personnel. A GPS geofence alone never produces this event. */
     basis: z.literal('HOSPITAL_CONFIRMED'),
   }).strict(),
@@ -59,6 +67,7 @@ export const EncounterHandoverRecordedSchema = BaseEventSchema.extend({
     ambulanceId: RecordIdSchema.optional(),
     handedOverAt: timestamp,
     recordedBy: ActorSchema,
+    dataStatus: RecordProvenanceSchema.optional(),
   }).strict(),
 });
 
@@ -73,6 +82,7 @@ export const EncounterDoctorAssignedSchema = BaseEventSchema.extend({
     reason: DoctorAssignmentReasonSchema,
     assignedAt: timestamp,
     recordedBy: ActorSchema,
+    dataStatus: RecordProvenanceSchema.optional(),
   }).strict(),
 });
 
@@ -82,6 +92,7 @@ const recordRef = {
   hospitalId: RecordIdSchema,
   recordedAt: timestamp,
   recordedBy: ActorSchema,
+  dataStatus: RecordProvenanceSchema.optional(),
 };
 
 export const ClinicalPrescriptionRecordedSchema = BaseEventSchema.extend({

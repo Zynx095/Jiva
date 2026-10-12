@@ -5,6 +5,9 @@ import { checkReferralAnswer } from './acceptanceCorrelation';
 import { emergencyRouter } from './routes/emergencies';
 import { directoryRouter } from './routes/directory';
 import { referralRouter } from './routes/referrals';
+import { encounterRouter } from './routes/encounters';
+import { initializeEncounterEngine, resetEncounterEngine } from './clinical/encounters';
+import { loadRoster } from './clinical/roster';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -24,7 +27,7 @@ import { authenticateRequest } from './authVerification';
 import { LocalSocketIoAdapter } from '@jiva/realtime';
 import { AnyEvent, AnyEventSchema } from '@jiva/event-schema';
 import {
-  authorizeEventSubmission, canReadCase, canReceiveEvent,
+  authorizeEventSubmission, canReadCase, canReceiveEvent, eventForRecipient,
   filterAmbulances, filterPatients, sanitizeHospitals,
 } from './authorization';
 import { clinicalStore } from './clinical';
@@ -55,6 +58,8 @@ const realtimeAdapter = new LocalSocketIoAdapter(io);
 
 initializeStateEngines();
 initializeIntelligenceEngine();
+initializeEncounterEngine();
+clinicalStore.setRoster(loadRoster());
 
 // Every event on the bus (external and system-generated) goes into the audit ledger.
 eventBus.on('*', (event: AnyEvent) => {
@@ -156,7 +161,7 @@ app.get('/api/events/history', requireRole('MANAGEMENT', 'ADMIN'), async (req: A
   const raw = parseInt(String(req.query.limit ?? '100'), 10);
   const limit = Number.isFinite(raw) ? Math.min(Math.max(raw, 1), 1000) : 100;
   // Same delivery rules as realtime: clinical-record events are never listed for management/admin.
-  res.json((await stateStore.listRecentEvents(limit)).filter(e => canReceiveEvent(req.auth!, e)));
+  res.json((await stateStore.listRecentEvents(limit)).filter(e => canReceiveEvent(req.auth!, e)).map(e => eventForRecipient(req.auth!, e)));
 });
 
 // Care Feasibility Engine (SHADOW MODE): read-only traces and legacy/engine disagreements.
@@ -190,7 +195,7 @@ app.get('/api/cases/:id/timeline', async (req: AuthenticatedRequest, res) => {
   const auth = req.auth!;
   if (!canReadCase(auth, String(req.params.id))) return res.status(403).json({ error: 'forbidden' });
   const events = await stateStore.queryEventsByCase(String(req.params.id));
-  res.json(events.filter(e => canReceiveEvent(auth, e)));
+  res.json(events.filter(e => canReceiveEvent(auth, e)).map(e => eventForRecipient(auth, e)));
 });
 
 // ------------------------------------------------------------------ writes
@@ -243,11 +248,15 @@ app.use('/api', emergencyRouter());
 app.use('/api', directoryRouter());
 // Case referral overview (listed vs assessed vs answered vs reported capacity).
 app.use('/api', referralRouter());
+// Hospital arrival, handover, doctor assignment and encounter reads (Journey B).
+app.use('/api', encounterRouter());
 
 app.post('/api/demo/reset', requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
   resetEngines();
   resetIntelligence();
   clinicalStore.reset();
+  clinicalStore.setRoster(loadRoster());
+  resetEncounterEngine();
   await localStoreInstance.reset();
   await eventBus.publish({
     eventId: uuidv4(),
@@ -288,7 +297,7 @@ io.on('connection', (socket) => {
   const auth: AuthContext = socket.data.auth;
   console.log(`[Socket] ${auth.role} ${auth.userId} connected (${socket.id})`);
   const onEvent = (event: AnyEvent) => {
-    if (canReceiveEvent(auth, event)) socket.emit('event', event);
+    if (canReceiveEvent(auth, event)) socket.emit('event', eventForRecipient(auth, event));
   };
   eventBus.on('*', onEvent);
   socket.on('disconnect', () => eventBus.off('*', onEvent));
