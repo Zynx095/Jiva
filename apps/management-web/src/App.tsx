@@ -16,7 +16,10 @@ import {
   hospitalShortName,
   useNow,
   useToast,
+  useDirectory,
   type ActionResult,
+  type DirectoryFacility,
+  type DirectoryResponse,
   type JivaEvent,
   type MapFit,
   type MapFocus,
@@ -38,14 +41,19 @@ import {
 } from './derive';
 import type { PanelTab, Selection, SelectionKind } from './types';
 import { Kpis } from './components/Kpis';
-import { NetworkMap, type MapFilters } from './components/NetworkMap';
+import { DEFAULT_MAP_FILTERS, NetworkMap, type MapFilters } from './components/NetworkMap';
+import { DirectoryList } from './components/Directory';
+import { apiGet } from './api';
 import { DemoControls } from './components/DemoControls';
 import { ActivityFeed, AmbulancesList, HospitalsList, IncidentsList } from './components/Lists';
 import { AmbulanceDetail, CaseDetail, HospitalDetail } from './components/Details';
 import { SystemStatus } from './components/SystemStatus';
 
 const TAB_FOR: Record<SelectionKind, PanelTab> = { case: 'incidents', hospital: 'hospitals', ambulance: 'ambulances' };
-const TAB_LABEL: Record<PanelTab, string> = { incidents: 'Incidents', hospitals: 'Hospitals', ambulances: 'Ambulances', activity: 'Activity' };
+const TAB_LABEL: Record<PanelTab, string> = { incidents: 'Incidents', hospitals: 'Hospitals', ambulances: 'Ambulances', directory: 'Directory', activity: 'Activity' };
+
+/** Public facility directory (listings, not connected). Defined at module level so the fetcher is stable. */
+const fetchDirectory = () => apiGet<DirectoryResponse>('/api/directory/facilities');
 
 /** Selection lives in the URL hash so the browser Back button walks back through drill-downs. */
 function readHash(): Selection | null {
@@ -53,7 +61,7 @@ function readHash(): Selection | null {
   return m ? { kind: m[1] as SelectionKind, id: decodeURIComponent(m[2]) } : null;
 }
 
-const DEFAULT_FILTERS: MapFilters = { hospitals: true, ambulances: true, emergencies: true, routes: true, staleOnly: false, statuses: [] };
+const DEFAULT_FILTERS: MapFilters = DEFAULT_MAP_FILTERS;
 
 export default function App() {
   const toast = useToast();
@@ -64,6 +72,8 @@ export default function App() {
   const [fit, setFit] = useState<MapFit | null>(null);
   const [popupOpen, setPopupOpen] = useState(false);
   const detailRef = useRef<HTMLDivElement | null>(null);
+  const directory = useDirectory(fetchDirectory);
+  const [dirSelected, setDirSelected] = useState<DirectoryFacility | null>(null);
 
   // Latest data for callbacks created once (live-event handler, selection focus).
   const latest = useRef<{ model: NetworkModel | null }>({ model: null });
@@ -340,6 +350,12 @@ export default function App() {
                 popupOpen={popupOpen && !!selection}
                 onClosePopup={() => setPopupOpen(false)}
                 onShowDetails={showDetails}
+                directory={directory.data?.facilities ?? []}
+                directorySelected={dirSelected}
+                onDirectorySelect={(f) => {
+                  setDirSelected(f);
+                  if (f) setPopupOpen(false);
+                }}
               />
             </section>
             <DemoControls advanceAmbulance={advanceAmbulance} />
@@ -380,6 +396,7 @@ export default function App() {
                     { id: 'incidents', label: 'Incidents', count: kpis.open + kpis.arrived, attention: kpis.open > 0 },
                     { id: 'hospitals', label: 'Hospitals', count: net.hospitals.length, attention: kpis.awaiting > 0 },
                     { id: 'ambulances', label: 'Ambulances', count: net.ambulances.length },
+                    { id: 'directory', label: 'Directory', count: directory.data?.counts.total },
                     { id: 'activity', label: 'Activity' },
                   ]}
                 />
@@ -389,6 +406,22 @@ export default function App() {
                     <HospitalsList statuses={filters.statuses} onStatuses={(statuses) => setFilters((f) => ({ ...f, statuses }))} staleOnly={filters.staleOnly} loaded={net.loaded} />
                   )}
                   {tab === 'ambulances' && <AmbulancesList loaded={net.loaded} />}
+                  {tab === 'directory' && (
+                    <DirectoryList
+                      data={directory.data}
+                      state={directory.state}
+                      onRetry={() => void directory.reload()}
+                      selectedId={dirSelected?.facilityId}
+                      onSelect={(f) => {
+                        setDirSelected(f);
+                        setPopupOpen(false);
+                        if (f.location) {
+                          setFilters((x) => (x.directory ? x : { ...x, directory: true }));
+                          setFocus({ lat: f.location.latitude, lng: f.location.longitude, zoom: 13.5, key: `dir:${f.facilityId}:${Date.now()}`, offset: [0, 150] });
+                        }
+                      }}
+                    />
+                  )}
                   {tab === 'activity' && <ActivityFeed loaded={net.loaded} />}
                 </TabPanel>
               </div>

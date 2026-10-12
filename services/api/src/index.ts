@@ -2,6 +2,7 @@ import { hashPolicy } from '@jiva/feasibility';
 import { evidenceEnvironment } from './evidenceTrust';
 import { recordAndPublish } from './ingest';
 import { emergencyRouter } from './routes/emergencies';
+import { directoryRouter } from './routes/directory';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -234,6 +235,8 @@ app.post('/api/events', async (req: AuthenticatedRequest, res) => {
 
 // Command endpoints (validated, authorized, state-checked; they emit canonical events).
 app.use('/api', emergencyRouter());
+// Public facility directory (read-only, listing data only; never part of routing).
+app.use('/api', directoryRouter());
 
 app.post('/api/demo/reset', requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
   resetEngines();

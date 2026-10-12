@@ -371,7 +371,7 @@ export const JivaMap: React.FC<JivaMapProps> = ({
 };
 
 /** Collapsible key to the marker language (shape + colour + label, never colour alone). */
-export function MapLegend({ showEmergency = true, showAmbulance = true }: { showEmergency?: boolean; showAmbulance?: boolean }) {
+export function MapLegend({ showEmergency = true, showAmbulance = true, showDirectory = false }: { showEmergency?: boolean; showAmbulance?: boolean; showDirectory?: boolean }) {
   const row = 'flex items-center gap-2 text-xs text-ink-700';
   const sq = (bg: string, border = 'border-white') => <span className={cx('h-3.5 w-3.5 rounded-[4px] border-2', bg, border)} aria-hidden="true" />;
   return (
@@ -402,6 +402,12 @@ export function MapLegend({ showEmergency = true, showAmbulance = true }: { show
           <span className="h-1 w-5 rounded-full bg-[#0a5535]" aria-hidden="true" />
           Active route
         </div>
+        {showDirectory && (
+          <div className={row}>
+            <span className="h-2.5 w-2.5 rounded-full border border-white bg-ink-600" aria-hidden="true" />
+            Listed facility · not connected
+          </div>
+        )}
       </div>
     </details>
   );

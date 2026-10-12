@@ -5,6 +5,7 @@ export * from './Map/AmbulanceMarker';
 export * from './Map/EmergencyMarker';
 export * from './Map/MapPopup';
 export * from './Map/MapContext';
+export * from './Map/DirectoryLayer';
 
 // Components
 export * from './components/Icon';
@@ -33,3 +34,4 @@ export * from './lib/labels';
 export * from './lib/time';
 export * from './lib/events';
 export * from './lib/acceptance';
+export * from './lib/directory';

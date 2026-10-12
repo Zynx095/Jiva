@@ -1,6 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import {
   AmbulanceMarker,
+  DirectoryFacilityDetails,
+  DirectoryLayer,
   Icon,
   EmergencyMarker,
   HospitalMarker,
@@ -19,6 +21,7 @@ import {
   minutesFromSeconds,
   severityStatus,
   timeAgo,
+  type DirectoryFacility,
   type MapFit,
   type MapFocus,
 } from '@jiva/ui/src';
@@ -31,9 +34,13 @@ export interface MapFilters {
   ambulances: boolean;
   emergencies: boolean;
   routes: boolean;
+  /** Public directory facilities (listed, not connected). */
+  directory: boolean;
   staleOnly: boolean;
   statuses: string[];
 }
+
+export const DEFAULT_MAP_FILTERS: MapFilters = { hospitals: true, ambulances: true, emergencies: true, routes: true, directory: true, staleOnly: false, statuses: [] };
 
 export const STATUS_FILTERS = ['ACCEPTED', 'PENDING', 'LIMITED', 'UNAVAILABLE', 'UNKNOWN'] as const;
 
@@ -50,6 +57,9 @@ export function NetworkMap({
   popupOpen,
   onClosePopup,
   onShowDetails,
+  directory,
+  directorySelected,
+  onDirectorySelect,
 }: {
   filters: MapFilters;
   onFilters: (f: MapFilters) => void;
@@ -58,6 +68,9 @@ export function NetworkMap({
   popupOpen: boolean;
   onClosePopup: () => void;
   onShowDetails: () => void;
+  directory: DirectoryFacility[];
+  directorySelected: DirectoryFacility | null;
+  onDirectorySelect: (f: DirectoryFacility | null) => void;
 }) {
   const m = useModel();
   const sel = m.selection;
@@ -99,7 +112,7 @@ export function NetworkMap({
   const emergencies = filters.emergencies && !filters.staleOnly ? m.patients.filter((p) => p.currentLocation && p.currentStatus !== 'DISCHARGED') : [];
 
   const set = (patch: Partial<MapFilters>) => onFilters({ ...filters, ...patch });
-  const activeFilterCount = filters.statuses.length + (filters.staleOnly ? 1 : 0) + [filters.hospitals, filters.ambulances, filters.emergencies, filters.routes].filter((x) => !x).length;
+  const activeFilterCount = filters.statuses.length + (filters.staleOnly ? 1 : 0) + [filters.hospitals, filters.ambulances, filters.emergencies, filters.routes, filters.directory].filter((x) => !x).length;
 
   return (
     <JivaMap
@@ -108,7 +121,11 @@ export function NetworkMap({
       routeMetadata={route}
       focus={focus}
       fit={fit}
-      onBackgroundClick={onClosePopup}
+      onBackgroundClick={() => {
+        // Fires before a directory point's own click handler, so a point click still selects it.
+        onClosePopup();
+        onDirectorySelect(null);
+      }}
       topLeft={
         <div className="max-w-full rounded-xl bg-white/95 p-1.5 shadow-sm ring-1 ring-ink-200">
           <div className="jiva-scroll flex items-center gap-1.5 overflow-x-auto" role="group" aria-label="Map layers and filters">
@@ -116,6 +133,16 @@ export function NetworkMap({
             <ToggleChip icon="ambulance" pressed={filters.ambulances} onChange={(v) => set({ ambulances: v })}>Ambulances</ToggleChip>
             <ToggleChip icon="siren" pressed={filters.emergencies} onChange={(v) => set({ emergencies: v })}>Emergencies</ToggleChip>
             <ToggleChip icon="route" pressed={filters.routes} onChange={(v) => set({ routes: v })}>Routes</ToggleChip>
+            <ToggleChip
+              icon="building"
+              pressed={filters.directory}
+              onChange={(v) => {
+                set({ directory: v });
+                if (!v) onDirectorySelect(null);
+              }}
+            >
+              Directory
+            </ToggleChip>
             <span className="mx-0.5 h-5 w-px shrink-0 bg-ink-200" aria-hidden="true" />
             <ToggleChip icon="filter" pressed={statusOpen || filters.statuses.length > 0} onChange={(v) => setStatusOpen(v)}>
               Status{filters.statuses.length ? ` · ${filters.statuses.length}` : ''}
@@ -125,7 +152,7 @@ export function NetworkMap({
               <button
                 type="button"
                 onClick={() => {
-                  onFilters({ hospitals: true, ambulances: true, emergencies: true, routes: true, staleOnly: false, statuses: [] });
+                  onFilters(DEFAULT_MAP_FILTERS);
                   setStatusOpen(false);
                 }}
                 className="shrink-0 px-1.5 text-xs font-semibold text-brand-700 hover:underline"
@@ -146,8 +173,21 @@ export function NetworkMap({
           )}
         </div>
       }
-      bottomLeft={<MapLegend />}
+      bottomLeft={<MapLegend showDirectory={filters.directory} />}
     >
+      <DirectoryLayer facilities={directory} visible={filters.directory && !filters.staleOnly} selectedId={directorySelected?.facilityId} onSelect={(f) => onDirectorySelect(f)} />
+      {directorySelected?.location && (
+        <MapPopup lat={directorySelected.location.latitude} lng={directorySelected.location.longitude} offset={12} onClose={() => onDirectorySelect(null)}>
+          <div className="w-72 p-3">
+            <DirectoryFacilityDetails facility={directorySelected} />
+            <div className="mt-2 flex justify-end">
+              <button type="button" onClick={() => onDirectorySelect(null)} aria-label="Close facility card" className="rounded-md p-1.5 text-ink-500 hover:bg-ink-100 hover:text-ink-800">
+                <Icon name="x" size={15} />
+              </button>
+            </div>
+          </div>
+        </MapPopup>
+      )}
       {visibleHospitals.map((h) => {
         const status = m.hospitalStatus(h);
         const dimmed = !!sel && sel.kind !== 'hospital' && routeAmbulance?.destinationHospital !== h.hospitalId;

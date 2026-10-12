@@ -34,7 +34,7 @@ export interface Selection {
   id: string;
 }
 
-export type PanelTab = 'incidents' | 'hospitals' | 'ambulances' | 'activity';
+export type PanelTab = 'incidents' | 'hospitals' | 'ambulances' | 'directory' | 'activity';
 
 export type { CaseResponse, CaseResponseStatus } from '@jiva/ui/src';
 

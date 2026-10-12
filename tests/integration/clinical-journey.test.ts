@@ -117,6 +117,35 @@ async function emergencyIntake(api: Api) {
   otherPatient.s.close();
 }
 
+// ------------------------------------------------------------------------------------------ phase 3
+
+async function facilityDirectory(api: Api) {
+  console.log('\n[Phase 3] Public facility directory');
+  await reset(api);
+  check('directory requires authentication → 401', (await api.get(undefined, '/api/directory/facilities')).status === 401);
+  const all = await api.get(P.pat1, '/api/directory/facilities');
+  check('directory readable by any authenticated role (public listing data)', all.status === 200 && all.json?.facilities?.length > 400, `${all.status}`);
+  check('every listing is marked not connected, capacity unknown', all.json.facilities.every((f: any) => f.operational?.connectedToJiva === false && f.operational?.capacity === 'UNKNOWN'));
+  check('response carries the not-connected note, sources and OSM attribution', /Not connected/.test(all.json.note) && all.json.sources.length >= 5 && /OpenStreetMap/.test(all.json.osmSnapshot?.attribution ?? ''));
+  const located = await api.get(P.a1, '/api/directory/facilities?located=true&category=HOSPITAL');
+  check('filters: located hospitals only', located.status === 200 && located.json.facilities.length > 0 && located.json.facilities.every((f: any) => f.location && f.category === 'HOSPITAL'));
+  check('invalid category → 400', (await api.get(P.a1, '/api/directory/facilities?category=CASINO')).status === 400);
+
+  const near = await api.get(P.a1, `/api/directory/facilities/near?lat=${SCENE.latitude}&lng=${SCENE.longitude}&limit=3&category=HOSPITAL`);
+  const d = near.json?.results?.map((r: any) => r.straightLineKm) ?? [];
+  check('nearby: straight-line distances, sorted, bounded, labelled as such', near.status === 200 && near.json.basis === 'STRAIGHT_LINE_DISTANCE' && d.length === 3 && d.every((x: number, i: number) => x <= 15 && (i === 0 || d[i - 1] <= x)), near.text.slice(0, 200));
+  check('nearby: invalid coordinates → 400', (await api.get(P.a1, '/api/directory/facilities/near?lat=abc&lng=77.5')).status === 400);
+
+  const network = (await api.get(P.mgmt, '/api/hospitals')).json as any[];
+  check('directory facilities never enter the operational network (hospital store unchanged)', network.length === 4 && !network.some(h => /^FAC-/.test(h.hospitalId)));
+  await api.post(P.a1, '/api/emergencies', intakeBody({ reportedSymptoms: ['Chest pain'], suspectedCause: undefined, requiredCapabilities: [] }));
+  await api.waitFor(async () => ((await api.get(P.mgmt, '/api/events/history?limit=200')).json as any[]).some(e => e.eventType === 'hospital.acceptance.requested'), 5000);
+  const hist = (await api.get(P.mgmt, '/api/events/history?limit=300')).json as any[];
+  const asked = hist.filter(e => e.eventType === 'hospital.acceptance.requested').map(e => e.payload.hospitalId);
+  const evaluated = hist.filter(e => e.eventType === 'hospital.candidate.generated').flatMap(e => e.payload.candidates.map((c: any) => c.hospitalId));
+  check('referrals and candidate evaluation consider network hospitals only', asked.length > 0 && [...asked, ...evaluated].every(id => /^HOSP-BLR-00\d$/.test(id)), JSON.stringify([...new Set([...asked, ...evaluated])]));
+}
+
 // ------------------------------------------------------------------------------------------
 
 async function main() {
@@ -124,6 +153,7 @@ async function main() {
   const api = await startApi(4101);
   try {
     await emergencyIntake(api);
+    await facilityDirectory(api);
     check('API process still healthy at the end', (await api.get(undefined, '/api/health')).status === 200);
     check('no handler crashes logged', !/Handler for .* failed|Uncaught exception|Unhandled rejection/.test(api.log()), api.log().match(/.*(failed|Uncaught|Unhandled).*/g)?.slice(0, 3).join('\n'));
   } finally {

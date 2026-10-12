@@ -6,6 +6,8 @@ import {
   CardHeader,
   ConnectionPill,
   DemoBadge,
+  DirectoryFacilityDetails,
+  DirectoryLayer,
   EmergencyMarker,
   EmptyState,
   Flash,
@@ -17,9 +19,11 @@ import {
   JivaStatus,
   JivaTimeline,
   MapLegend,
+  MapPopup,
   PersonaSelect,
   SkeletonRows,
   TechnicalDetails,
+  ToggleChip,
   acceptanceStatus,
   ambulanceStatus,
   capabilityLabel,
@@ -35,15 +39,18 @@ import {
   severityStatus,
   timeAgo,
   timeUntil,
+  useDirectory,
   useNow,
   useToast,
   type CaseResponse,
+  type DirectoryFacility,
+  type DirectoryResponse,
   type JivaEvent,
   type MapFocus,
   type Tone,
   type TimelineItem,
 } from '@jiva/ui/src';
-import { PERSONA } from './api';
+import { PERSONA, apiGet } from './api';
 import { useCrew } from './useCrew';
 import { EmergencyIntake, type DraftLocation } from './EmergencyIntake';
 
@@ -62,6 +69,11 @@ interface Reroute {
   durationSeconds?: number;
   oldCoords?: [number, number][];
 }
+
+/** Public facility directory: listed, not connected. Module-level so the fetcher is stable. */
+const fetchDirectory = () => apiGet<DirectoryResponse>('/api/directory/facilities?located=true');
+
+interface NearbyFacility { facility: DirectoryFacility; straightLineKm: number }
 
 const routeOf = (a?: AmbulanceState | null) => (a?.activeRoute && a.activeRoute.hospitalId === a.destinationHospital ? a.activeRoute : undefined);
 
@@ -122,6 +134,10 @@ export default function App() {
   const [intakeOpen, setIntakeOpen] = useState(false);
   const [draftLocation, setDraftLocation] = useState<DraftLocation | null>(null);
   const [pendingCase, setPendingCase] = useState<{ caseId: string; at: number; assignedHere: boolean; timedOut: boolean } | null>(null);
+  // Facility directory layer (off by default to keep the crew map clean).
+  const [showDirectory, setShowDirectory] = useState(false);
+  const [dirSelected, setDirSelected] = useState<DirectoryFacility | null>(null);
+  const directory = useDirectory(fetchDirectory, showDirectory);
   useEffect(() => {
     if (!pendingCase) return;
     // Success is read back from authoritative state: the case is now this ambulance's job.
@@ -186,9 +202,21 @@ export default function App() {
     if (!ev || cands.length === 0) return null;
     const askable = cands.filter((c) => (c.missingCapabilities ?? []).length === 0 && c.operationalEligibility !== 'INELIGIBLE');
     if (askable.length > 0) return null;
-    const missing = [...new Set(cands.flatMap((c) => c.missingCapabilities ?? []))];
-    return { missing };
+    // Care that NO connected hospital lists (a gap in one hospital alone is not a network gap).
+    const missing = [...new Set(cands.flatMap((c) => c.missingCapabilities ?? []))].filter((cap) => cands.every((c) => (c.missingCapabilities ?? []).includes(cap)));
+    const partial = cands.some((c) => (c.missingCapabilities ?? []).length > 0);
+    return { missing, partial };
   }, [crew.events, caseId]);
+
+  // When nobody connected can be asked, show the nearest LISTED facilities (straight line, not connected).
+  const [nearby, setNearby] = useState<{ caseId: string; list: NearbyFacility[] } | null>(null);
+  const scene = patient?.currentLocation;
+  useEffect(() => {
+    if (!referralGap || !scene || !caseId || nearby?.caseId === caseId) return;
+    apiGet<{ results: NearbyFacility[] }>(`/api/directory/facilities/near?lat=${scene.latitude}&lng=${scene.longitude}&limit=3&category=HOSPITAL,SPECIALTY_HOSPITAL,MATERNITY_HOME`)
+      .then((r) => setNearby({ caseId, list: r.results }))
+      .catch(() => setNearby({ caseId, list: [] }));
+  }, [referralGap, scene, caseId, nearby?.caseId]);
 
   const timeline = useMemo<TimelineItem[]>(
     () =>
@@ -289,17 +317,40 @@ export default function App() {
             alternativeRouteCoordinates={reroute?.oldCoords ? [reroute.oldCoords] : undefined}
             fitBoundsOnUpdate
             focus={focus}
-            bottomLeft={<MapLegend showEmergency />}
+            bottomLeft={<MapLegend showEmergency showDirectory={showDirectory} />}
+            onBackgroundClick={() => setDirSelected(null)}
             onPick={showIntake && !pendingCase ? (p) => setDraftLocation({ latitude: p.lat, longitude: p.lng, method: 'MAP_PIN', source: 'Map pin' }) : undefined}
             topLeft={
-              showIntake && !pendingCase ? (
-                <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/95 px-2.5 py-1.5 text-xs font-semibold text-ink-800 shadow-sm ring-1 ring-ink-200">
-                  <Icon name="crosshair" size={13} />
-                  Tap the map where the patient is
+              <>
+                {showIntake && !pendingCase && (
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/95 px-2.5 py-1.5 text-xs font-semibold text-ink-800 shadow-sm ring-1 ring-ink-200">
+                    <Icon name="crosshair" size={13} />
+                    Tap the map where the patient is
+                  </span>
+                )}
+                <span className="rounded-lg bg-white/95 p-1 shadow-sm ring-1 ring-ink-200">
+                  <ToggleChip
+                    icon="building"
+                    pressed={showDirectory}
+                    onChange={(v) => {
+                      setShowDirectory(v);
+                      if (!v) setDirSelected(null);
+                    }}
+                  >
+                    {showDirectory && directory.state === 'loading' ? 'Loading facilities…' : showDirectory && directory.state === 'error' ? 'Facilities unavailable' : 'Listed facilities'}
+                  </ToggleChip>
                 </span>
-              ) : undefined
+              </>
             }
           >
+            <DirectoryLayer facilities={directory.data?.facilities ?? []} visible={showDirectory} selectedId={dirSelected?.facilityId} onSelect={setDirSelected} />
+            {dirSelected?.location && (
+              <MapPopup lat={dirSelected.location.latitude} lng={dirSelected.location.longitude} offset={12} onClose={() => setDirSelected(null)}>
+                <div className="w-72 p-3">
+                  <DirectoryFacilityDetails facility={dirSelected} />
+                </div>
+              </MapPopup>
+            )}
             {showIntake && draftLocation && (
               <EmergencyMarker patientId="New report" lat={draftLocation.latitude} lng={draftLocation.longitude} condition={draftLocation.source} selected />
             )}
@@ -386,9 +437,23 @@ export default function App() {
                   <p className="mt-1 text-[13px] text-ink-700">
                     {referralGap.missing.length
                       ? <>No connected hospital lists {referralGap.missing.map((c) => capabilityLabel(c)).join(', ')}, so JIVA could not send a referral.</>
-                      : 'Every connected hospital is currently unable to take this case.'}
+                      : referralGap.partial
+                        ? 'No single connected hospital lists all the care this patient needs, so JIVA could not send a referral.'
+                        : 'Every connected hospital is currently unable to take this case.'}
                   </p>
                   <p className="mt-1 text-xs text-ink-500">Contact dispatch or call the nearest suitable hospital directly. JIVA never sends a patient to a hospital that has not accepted.</p>
+                  {nearby && nearby.caseId === caseId && nearby.list.length > 0 && (
+                    <div className="mt-3 border-t border-ink-100 pt-3">
+                      <p className="text-xs font-semibold text-ink-700">Nearest listed facilities (straight line · not connected to JIVA)</p>
+                      <ul className="mt-2 space-y-2.5">
+                        {nearby.list.map((n) => (
+                          <li key={n.facility.facilityId} className="rounded-lg bg-ink-25 p-2.5 ring-1 ring-inset ring-ink-200">
+                            <DirectoryFacilityDetails facility={n.facility} distanceKm={n.straightLineKm} />
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </JivaCard>
               )}
 

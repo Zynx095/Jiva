@@ -21,7 +21,7 @@ phase's acceptance criteria were met **and** verified; frontend-only progress is
 | 0 | Baseline, repository safety, tracking | ✅ Done | (this file) |
 | 1 | Domain models, event contracts, authorization | ✅ Done | see Phase 1 section |
 | 2 | Ambulance emergency intake | ✅ Done | see Phase 2 section |
-| 3 | Real hospital directory and map coverage | ⏳ | |
+| 3 | Real hospital directory and map coverage | ✅ Done | see Phase 3 section |
 | 4 | Hospital referrals and explicit acceptance | ⏳ | |
 | 5 | Arrival, handover, encounter creation | ⏳ | |
 | 6 | Doctor assignment | ⏳ | |
@@ -182,3 +182,32 @@ Phase 2 — ambulance emergency intake (command endpoint, engine handling of str
 - Ambulance-originated creation is a product requirement (Journey A step 1); the minimum change is that the crew may report as itself. The crew's assignment is derived by the engine, not a new crew permission.
 - Patient identity is linked only through a case reference the patient shares (demo personas are bound to `CASE-BLR-876/877`). A verified production patient-link flow does not exist — documented limitation.
 - The synthetic network lists only emergency/trauma/ICU/ventilator; asking for other care leaves nobody to refer to, which the UI states plainly instead of inventing capability.
+
+---
+
+## Phase 3 — Real hospital directory and map coverage (✅ 2026-10-12)
+
+### What changed
+
+| Area | Files | Summary |
+|---|---|---|
+| Pre-existing data honesty fix | `scripts/data-normalize.ts`, `data/canonical/hospitals.json` | The normalizer hard-coded capabilities (`emergency/trauma/icu/…: true`) that the raw extracts never state, and labelled typed-in coordinates as `geocoder-nominatim`. Capabilities are now empty ("not listed in source"), coordinates are `MANUAL_UNVERIFIED` / `UNVERIFIED` evidence. `npm run data:validate` still passes for all 7 records. This dataset is only used with `USE_CANONICAL`. |
+| Directory model | `packages/domain-models/src/directory.ts` | `FacilityDirectoryEntry` (category + reviewable `categoryBasis`, name-only `specialtyHint`, ownership, address/pincode, listed phone, ROHINI id, `coordinateStatus` = `OSM_FACILITY_MATCH` / `MANUAL_UNVERIFIED` / `UNRESOLVED`, source references down to file + row, `operational: { connectedToJiva: false, acceptanceChannel: NONE, capacity: UNKNOWN }`). No capability or capacity fields exist. |
+| Build | `scripts/directory-build.ts`, `scripts/lib/{directory,tabular}.ts`, `data/directory/*` | Dependency-free XLSX/CSV readers; 481 listings from 6 sources → **466 facilities** (15 evidence-based merges; chains keep their branches). Coordinates only from a name-matched OpenStreetMap health facility under strict, documented rules (specialty-class agreement, two-way identity containment, corroboration by postcode/locality for partial or thin names, ambiguity and postcode-conflict rejection, service-area check): **148 placed from OSM, 4 manual-unverified, 314 unresolved**. One Overpass query (snapshot committed with query, timestamp, attribution and ODbL licence); rebuilds are offline and byte-identical (verified). `build-report.json` explains every unplaced facility and every merge. Matches were reviewed by hand; the first rule set produced false positives (e.g. "Cloudnine Jayanagar" → "Jayanagar General Hospital"), the rules were tightened until they were rejected. |
+| API | `services/api/src/directory.ts`, `routes/directory.ts` | `GET /api/directory/facilities` (filters `category`, `located`; any authenticated role; 503 if not built) and `GET /api/directory/facilities/near` (straight-line distance, labelled, ≤ 15 km). Directory facilities never enter `hospitalsStore`, so referrals, candidates, routing and the feasibility shadow are untouched. |
+| UI | `packages/ui/src/Map/DirectoryLayer.tsx`, `lib/directory.ts`, `JivaMap` legend; `apps/management-web` (`components/Directory.tsx`, `NetworkMap.tsx`, `App.tsx`); `apps/ambulance-web/src/App.tsx` | One GeoJSON circle layer for hundreds of points (neutral gray — listed, not connected; amber ring = unverified location), click → card with category, address, listed phone, how the location was obtained, sources, and "Not connected to JIVA … call ahead". Command Center: map layer toggle + **Directory** tab (coverage summary, search, type filters with counts, on-map filter, inline details for unplaced facilities, loading / not-built / error states). Crew app: "Listed facilities" layer toggle, and when no connected hospital can be asked, the three nearest listed facilities by straight line with the not-connected warning. The gap message now names only care that NO connected hospital lists. |
+
+### Tests
+
+| Command | Result |
+|---|---|
+| `tsx tests/unit/facility-directory.test.ts` (new) | ✅ 12 checks: names, pincodes, classification, merges, every match rule (incl. rejected false-positive patterns), placement, determinism, readers, and invariants of the committed directory (nothing operational claimed, unique ids, attribution) |
+| `tsx tests/integration/clinical-journey.test.ts` (+Phase 3 section) | ✅ 50 passed: auth required; readable by every role; not-connected markers; filters; `near` sorting/bounds/validation; directory never enters the network; referrals and candidates involve network hospitals only |
+| `npm run typecheck` / `test:unit` (29 suites) / `test:integration` / `data:validate` | ✅ all exit 0 (runtime 124/0, journey 50/0) |
+| Browser (headless Edge, `npm run dev`) | ✅ 11/11: Directory tab summary + not-connected note, search, map card with provenance, inline details for unplaced facility, crew layer loads, crew report needing cardiology → "No connected hospital could be asked" + nearest listed facilities; no console errors |
+
+### Decisions and limitations
+
+- Network hospitals (synthetic, demo) and directory facilities (real, public) are deliberately separate: no directory facility has an acceptance channel, so none can become a destination.
+- About two thirds of listings have no verified location; they are listed but not drawn. Name variants across sources are not always merged.
+- `Bengaluru.xlsx` and `HospitalsInIndia.csv` have no documented publisher or licence in the repository — recorded in `data/directory/README.md`; verify before redistribution. OSM-derived coordinates are ODbL.
