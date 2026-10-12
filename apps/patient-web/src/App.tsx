@@ -26,6 +26,7 @@ import {
   type TimelineItem,
 } from '@jiva/ui/src';
 import { PERSONA } from './api';
+import { CareTeamCard, DocumentsCard, MedicationsCard, RecordsNotYet, ReportsCard } from './InHospital';
 import { usePatient } from './usePatient';
 
 const PERSONAS = [
@@ -68,6 +69,11 @@ export default function App() {
         toast.show({ title: 'The hospital recorded your arrival', description: 'The ambulance crew is handing you over to the emergency team.', tone: 'ok', icon: 'hospital', groupKey: 'arrived' });
       } else if (e.eventType === 'encounter.handover.recorded') {
         toast.show({ title: 'You are in hospital care', description: 'The ambulance crew handed you over to the hospital team.', tone: 'ok', icon: 'stethoscope', groupKey: 'arrived' });
+      } else if (e.eventType === 'encounter.doctor.assigned') {
+        toast.show({ title: p.previousPractitionerId ? 'Your doctor changed' : 'A doctor was assigned to you', description: 'See "Your care team".', tone: 'ok', icon: 'user', groupKey: 'doctor' });
+      } else if (e.eventType.startsWith('clinical.')) {
+        // Content-free notification; the details are read from your records.
+        toast.show({ title: 'New in your health records', description: 'Your care team shared an update with you.', tone: 'ok', icon: 'file', groupKey: 'records' });
       }
     },
     [toast],
@@ -75,7 +81,7 @@ export default function App() {
 
   const pt = usePatient(onLive);
   const now = useNow(5000);
-  const { patient, ambulance, hospital, encounter } = pt;
+  const { patient, ambulance, hospital, encounter, records } = pt;
 
   const names = useMemo(() => new Map(pt.hospitals.map((h) => [h.hospitalId, h.displayName])), [pt.hospitals]);
   const name = useCallback((id: string) => names.get(id), [names]);
@@ -216,7 +222,7 @@ export default function App() {
             </div>
 
             {patient && (
-              <ol className="grid grid-cols-5 gap-1 px-4 py-4" aria-label="Your journey">
+              <ol className="grid grid-cols-3 gap-x-1 gap-y-3 px-4 py-4 sm:grid-cols-6" aria-label="Your journey">
                 {journey.map((s, i) => {
                   const current = i === currentStep;
                   return (
@@ -248,7 +254,9 @@ export default function App() {
             </div>
           )}
 
-          {patient && (
+          {patient && inCare && encounter && <CareTeamCard encounter={encounter} hospitalName={hospital?.displayName ?? encounter.hospitalName ?? 'Your hospital'} now={now} />}
+
+          {patient && !inCare && (
             <JivaCard as="section" aria-labelledby="dest-title">
               <p id="dest-title" className="text-[13px] font-semibold text-ink-500">
                 Your hospital
@@ -272,7 +280,7 @@ export default function App() {
             </JivaCard>
           )}
 
-          {patient && <WhatNext patientCare={patient.careRequirements} hospitalName={hospital?.displayName} confirmed={confirmed} arrived={arrived} hasAmbulance={!!ambulance} eta={eta} />}
+          {patient && <WhatNext patientCare={patient.careRequirements} hospitalName={hospital?.displayName} confirmed={confirmed} arrived={arrived} inCare={inCare} hasAmbulance={!!ambulance} eta={eta} />}
 
           {summary && (
             <JivaCard as="section" aria-labelledby="summary-title">
@@ -284,7 +292,7 @@ export default function App() {
             </JivaCard>
           )}
 
-          <SosCard />
+          <SosCard inHospital={arrivalConfirmed} />
         </div>
 
         <div className="min-w-0 space-y-5">
@@ -309,7 +317,15 @@ export default function App() {
             </div>
           </JivaCard>
 
-          <HealthRecords />
+          {inCare && encounter ? (
+            <>
+              <MedicationsCard list={records?.encounterId === encounter.encounterId ? records.prescriptions : undefined} />
+              <ReportsCard encounterId={encounter.encounterId} list={records?.encounterId === encounter.encounterId ? records.reports : undefined} documents={records?.encounterId === encounter.encounterId ? records.documents : undefined} />
+              <DocumentsCard encounterId={encounter.encounterId} list={records?.encounterId === encounter.encounterId ? records.documents : undefined} />
+            </>
+          ) : (
+            patient && <RecordsNotYet />
+          )}
 
           <p className="px-1 text-center text-xs text-ink-500">
             {pt.syncedAt ? `Updated ${timeAgo(pt.syncedAt, now)}` : ''} · signed in as demo persona {PERSONA}
@@ -321,10 +337,16 @@ export default function App() {
 }
 
 /** Upcoming: what will happen next, in plain words. Never a clinical judgement. */
-function WhatNext({ patientCare, hospitalName, confirmed, arrived, hasAmbulance, eta }: { patientCare: string[]; hospitalName?: string; confirmed: boolean; arrived: boolean; hasAmbulance: boolean; eta?: number }) {
-  const steps: Array<{ icon: IconName; text: ReactNode }> = arrived
+function WhatNext({ patientCare, hospitalName, confirmed, arrived, inCare, hasAmbulance, eta }: { patientCare: string[]; hospitalName?: string; confirmed: boolean; arrived: boolean; inCare: boolean; hasAmbulance: boolean; eta?: number }) {
+  const steps: Array<{ icon: IconName; text: ReactNode }> = inCare
     ? [
-        { icon: 'stethoscope', text: <>The emergency team at <strong className="font-semibold">{hospitalName ?? 'the hospital'}</strong> takes over your care.</> },
+        { icon: 'stethoscope', text: <>Your care team at <strong className="font-semibold">{hospitalName ?? 'the hospital'}</strong> is looking after you.</> },
+        { icon: 'file', text: 'Medications, results and scans your care team shares with you appear on this page.' },
+        { icon: 'user', text: 'Questions about your treatment are best answered by your doctor or nurse.' },
+      ]
+    : arrived
+    ? [
+        { icon: 'stethoscope', text: <>The team at <strong className="font-semibold">{hospitalName ?? 'the hospital'}</strong> records your arrival and takes over your care from the ambulance crew.</> },
         { icon: 'brief', text: 'A short summary of your journey appears on this page when it is ready.' },
       ]
     : confirmed && hospitalName
@@ -358,7 +380,22 @@ function WhatNext({ patientCare, hospitalName, confirmed, arrived, hasAmbulance,
   );
 }
 
-function SosCard() {
+function SosCard({ inHospital }: { inHospital: boolean }) {
+  if (inHospital) {
+    return (
+      <section aria-labelledby="sos-title" className="flex flex-wrap items-center gap-3 rounded-2xl bg-white p-4 ring-1 ring-danger-200">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-danger-50 text-danger-700">
+          <Icon name="alertCircle" size={20} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 id="sos-title" className="text-[15px] font-semibold text-ink-900">
+            Feeling worse?
+          </h2>
+          <p className="text-[13px] text-ink-600">Tell the nurse or doctor near you straight away, or use the call button by your bed. Do not wait for this page.</p>
+        </div>
+      </section>
+    );
+  }
   return (
     <section aria-labelledby="sos-title" className="flex flex-wrap items-center gap-3 rounded-2xl bg-white p-4 ring-1 ring-danger-200">
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-danger-50 text-danger-700">
@@ -375,41 +412,5 @@ function SosCard() {
         Call 108
       </a>
     </section>
-  );
-}
-
-/** Clinical records are Phase 7 — shown as not connected rather than faked. */
-function HealthRecords() {
-  const rows: Array<{ icon: IconName; title: string; body: string }> = [
-    { icon: 'pill', title: 'Medications', body: 'Prescriptions from your care team will appear here.' },
-    { icon: 'file', title: 'Reports', body: 'Test results and reports will appear here once shared with you.' },
-    { icon: 'users', title: 'Care team', body: 'The doctors and nurses looking after you will be listed here.' },
-    { icon: 'calendar', title: 'Upcoming', body: 'Follow-up appointments will appear here.' },
-  ];
-  return (
-    <JivaCard as="section" aria-labelledby="records-title">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <h2 id="records-title" className="text-[15px] font-semibold text-ink-900">
-            Your health records
-          </h2>
-          <p className="text-[13px] text-ink-500">Not connected yet. JIVA does not hold clinical records in this version.</p>
-        </div>
-        <span className="rounded-md bg-ink-100 px-1.5 py-0.5 text-xs font-semibold text-ink-600">Coming later</span>
-      </div>
-      <ul className="mt-3 divide-y divide-ink-100">
-        {rows.map((r) => (
-          <li key={r.title} className="flex items-start gap-3 py-2.5" aria-disabled="true">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ink-50 text-ink-500 ring-1 ring-inset ring-ink-200">
-              <Icon name={r.icon} size={16} />
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-ink-700">{r.title}</p>
-              <p className="text-[13px] text-ink-500">{r.body}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </JivaCard>
   );
 }

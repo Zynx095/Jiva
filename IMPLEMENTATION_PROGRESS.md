@@ -27,7 +27,7 @@ phase's acceptance criteria were met **and** verified; frontend-only progress is
 | 6 | Doctor assignment | ✅ Done | see Phases 5–6 section |
 | 7 | Clinical records and prescriptions | ✅ Done | see Phase 7 section |
 | 8 | Diagnostic documents and secure file storage | ✅ Done | see Phase 8 section |
-| 9 | Patient dashboard and in-hospital experience | ⏳ | |
+| 9 | Patient dashboard and in-hospital experience | ✅ Done | see Phase 9 section |
 | 10 | Medical telemetry foundation | ⏳ | |
 | 11 | Operational mode, demo mode, provenance | ⏳ | |
 | 12 | Security, privacy and audit hardening | ⏳ | |
@@ -392,3 +392,34 @@ A production provider would implement the same interface on a private object sto
 - A document's visibility to the patient is decided at upload, or by sharing a report it is attached to. There is no separate "share this file" command and no deletion endpoint (medical records are retained; local files are ephemeral by design of local mode).
 - Local files are not encrypted at rest (development only); production requires an encrypted object store as above.
 - DICOM files are stored and downloadable but not rendered in the browser (no DICOM viewer).
+
+---
+
+## Phase 9 — Patient dashboard and in-hospital experience (✅ 2026-10-13)
+
+### Existing patient app (inspected)
+
+`apps/patient-web/src/App.tsx` had the pre-arrival experience (current care headline, ETA labelled as an estimate, journey steps, "Your hospital", `WhatNext`, AI summary, SOS card, activity timeline) and a `HealthRecords` placeholder ("Not connected yet … Coming later"). Phase 5 had already moved arrival and care onto the encounter. All existing screens were kept.
+
+### What changed
+
+| Area | Files | Summary |
+|---|---|---|
+| State A → B | `apps/patient-web/src/App.tsx` | **State A** (no encounter, or arrival recorded but not handed over): unchanged coordination screens; the records area says plainly that records become available once the hospital takes over care. **State B** starts only when the patient's own encounter is `IN_CARE` (the hospital's handover record): headline "In the care of …", "Your care team" instead of the acceptance card, in-hospital "What happens next", and a bedside "Feeling worse?" card instead of "Call 108". Journey steps (6) fit small screens. |
+| In-hospital sections | `apps/patient-web/src/InHospital.tsx` | **Your care team**: assigned doctor (name, specialty, since when) or "not assigned yet"; arrival and handover times; hospital reference. **Your medications**: current prescriptions with status (stopped ones struck through), instructions, prescriber and dates — no change reasons. **Your reports and results**: shared reports only, with category, date, preliminary warning, findings, conclusion, author, corrections, attached images/documents. **Your scans and documents**: shared X-rays, ECGs and lab documents with view (images) and download through the API. Every section has loading, unavailable ("could not be loaded right now") and empty states; nothing is invented. |
+| Data and privacy | `apps/patient-web/src/{usePatient,api}.ts`, `services/api/src/index.ts` | The hook loads the patient's own records for the current encounter only; they are dropped when the encounter changes or on demo reset, so one encounter's records never show under another. Records live in memory only (no browser storage); downloads use the patient's credentials and short-lived object URLs. Realtime events trigger a refresh; a reconnect refetches everything. All `/api` responses now carry `Cache-Control: no-store`, so a browser shared by several personas never serves one person's data from cache to another. |
+| Notifications | `apps/patient-web/src/App.tsx` | Doctor assigned/changed; "New in your health records" for content-free clinical events. |
+
+### Tests
+
+| Command | Result |
+|---|---|
+| `tsx tests/integration/clinical-journey.test.ts` (+Phase 9: 10) | ✅ 256 passed: the patient's encounter is `IN_CARE` with the doctor (state B source); case status agrees; `Cache-Control: no-store`; the patient's realtime connection drops, the doctor prescribes, after reconnecting a refresh shows it and the case history contains the missed content-free event (role-only author); the history never lists unshared reports/documents; another patient gets 403/404; the new connection carries only this case |
+| `tsc` (patient app, tests, API) | ✅ |
+| Browser | ⚠️ Not run in this phase (dev stack stopped by the environment for low memory); see Phase 14 for the end-of-roadmap browser pass. |
+
+### Decisions and limitations
+
+- The patient sees what the hospital released: own prescriptions (current version), shared reports and documents, the doctor's name. Internal notes, change reasons, earlier versions and unshared results stay with the care team.
+- No discharge state yet: state B lasts while the encounter is `IN_CARE`.
+- `WhatNext` stays non-clinical (who is caring for you, where updates appear); JIVA does not interpret results.

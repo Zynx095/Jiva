@@ -1,9 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AmbulanceState, HospitalState, PatientState } from '@jiva/domain-models';
-import type { ConnectionState, EncounterRecord, JivaEvent } from '@jiva/ui/src';
+import type { ConnectionState, DocumentRecord, EncounterRecord, JivaEvent, PatientPrescription, PatientReport } from '@jiva/ui/src';
 import { apiGet, socket } from './api';
 
 type LoadState = 'loading' | 'ready' | 'error';
+
+/**
+ * The patient's own records for one encounter, as the API releases them. `null` = could not be loaded
+ * (shown as "unavailable", never as "none"). Held in memory only and keyed by the encounter: they are
+ * dropped as soon as the encounter changes or disappears, so nothing outlives the session or its case.
+ */
+export interface PatientRecords {
+  encounterId: string;
+  prescriptions: PatientPrescription[] | null;
+  reports: PatientReport[] | null;
+  documents: DocumentRecord[] | null;
+}
+
+const enc = encodeURIComponent;
 
 const mergeNewest = (a: JivaEvent[], b: JivaEvent[]) => {
   const seen = new Set<string>();
@@ -20,6 +34,8 @@ export function usePatient(onLiveEvent?: (e: JivaEvent) => void) {
   const [hospital, setHospital] = useState<HospitalState | null>(null);
   // The hospital's own record of this patient's stay (arrival, handover, doctor). Only the hospital creates it.
   const [encounter, setEncounter] = useState<EncounterRecord | null>(null);
+  const [records, setRecords] = useState<PatientRecords | null>(null);
+  const encounterRef = useRef<string | undefined>(undefined);
   const [hospitals, setHospitals] = useState<HospitalState[]>([]);
   const [events, setEvents] = useState<JivaEvent[]>([]);
   const [load, setLoad] = useState<LoadState>('loading');
@@ -33,6 +49,17 @@ export function usePatient(onLiveEvent?: (e: JivaEvent) => void) {
     liveRef.current = onLiveEvent;
   }, [onLiveEvent]);
 
+  /** What the hospital has released to the patient: prescriptions, shared reports, shared documents. */
+  const loadRecords = useCallback(async (encounterId: string) => {
+    const [prescriptions, reports, documents] = await Promise.all([
+      apiGet<PatientPrescription[]>(`/api/encounters/${enc(encounterId)}/prescriptions`).catch(() => null),
+      apiGet<PatientReport[]>(`/api/encounters/${enc(encounterId)}/reports`).catch(() => null),
+      apiGet<DocumentRecord[]>(`/api/encounters/${enc(encounterId)}/documents`).catch(() => null),
+    ]);
+    if (encounterRef.current !== encounterId) return;
+    setRecords({ encounterId, prescriptions, reports, documents });
+  }, []);
+
   const fetchState = useCallback(async () => {
     try {
       const [pats, ambs, hosps, encs] = await Promise.all([
@@ -43,16 +70,21 @@ export function usePatient(onLiveEvent?: (e: JivaEvent) => void) {
       ]);
       const me = pats[0] || null;
       const myAmb = ambs[0] || null;
-      const enc = encs[0] || null;
+      const stay = encs[0] || null;
       setPatient(me);
       setAmbulance(myAmb);
-      setEncounter(enc);
+      setEncounter(stay);
       setHospitals(hosps);
       // The hospital that recorded the arrival, else the ambulance's destination.
-      const hospitalId = enc?.hospitalId ?? myAmb?.destinationHospital;
+      const hospitalId = stay?.hospitalId ?? myAmb?.destinationHospital;
       setHospital(hospitalId ? hosps.find((h) => h.hospitalId === hospitalId) || null : null);
       setLoad('ready');
       setSyncedAt(Date.now());
+      if (stay?.encounterId !== encounterRef.current) {
+        encounterRef.current = stay?.encounterId;
+        setRecords(null); // never show one encounter's records under another
+      }
+      if (stay) void loadRecords(stay.encounterId);
       if (me && me.patientId !== caseRef.current) {
         caseRef.current = me.patientId;
         apiGet<JivaEvent[]>(`/api/cases/${encodeURIComponent(me.patientId)}/timeline`)
@@ -62,7 +94,7 @@ export function usePatient(onLiveEvent?: (e: JivaEvent) => void) {
     } catch {
       setLoad('error');
     }
-  }, []);
+  }, [loadRecords]);
 
   useEffect(() => {
     void fetchState();
@@ -78,7 +110,10 @@ export function usePatient(onLiveEvent?: (e: JivaEvent) => void) {
     const onEvent = (event: JivaEvent) => {
       if (event.eventType === 'demo.reset') {
         caseRef.current = undefined;
+        encounterRef.current = undefined;
         setEvents([]);
+        setEncounter(null);
+        setRecords(null);
       } else {
         setEvents((prev) => mergeNewest([event], prev));
       }
@@ -104,5 +139,5 @@ export function usePatient(onLiveEvent?: (e: JivaEvent) => void) {
     };
   }, [fetchState]);
 
-  return { patient, ambulance, hospital, encounter, hospitals, events, load, connection, syncedAt, refresh: fetchState };
+  return { patient, ambulance, hospital, encounter, records, hospitals, events, load, connection, syncedAt, refresh: fetchState };
 }

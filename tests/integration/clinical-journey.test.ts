@@ -626,6 +626,37 @@ async function diagnosticDocuments(api: Api, ctx: { caseId: string; encounterId:
   for (const s of Object.values(sock)) s.s.close();
 }
 
+// ------------------------------------------------------------------------------------------ phase 9
+
+async function patientDashboard(api: Api, ctx: { caseId: string; encounterId: string }) {
+  console.log('\n[Phase 9] Patient dashboard: authoritative state B, refresh and reconnection');
+  const { caseId, encounterId } = ctx;
+  const mine = ((await api.get(P.pat1, '/api/encounters')).json as any[])[0];
+  check('state B is driven by the encounter: IN_CARE with the assigned doctor, for the patient', mine?.status === 'IN_CARE' && mine.assignedDoctor?.displayName === 'Dr. Ravi Kumar' && !!mine.handedOverAt);
+  const pat = ((await api.get(P.pat1, '/api/patients')).json as any[])[0];
+  check('the case status agrees (HANDED_OVER) and links the encounter', pat?.currentStatus === 'HANDED_OVER' && pat.encounterId === encounterId);
+  const rxRes = await api.get(P.pat1, `/api/encounters/${encounterId}/prescriptions`);
+  check('personal data is never cached by browsers (Cache-Control: no-store)', rxRes.headers.get('cache-control') === 'no-store' && (await api.get(P.pat1, '/api/encounters')).headers.get('cache-control') === 'no-store');
+
+  // a dropped realtime connection: state is recovered from the API, nothing depends on missed events
+  const first = await api.socket(P.pat1);
+  first.s.close();
+  const missed = await prescribe(api, P.doc3, encounterId, { medication: 'Paracetamol', strength: '500 mg', dose: '1 tablet', frequency: 'Every 6 hours as needed', duration: undefined });
+  check('while the patient was offline, the doctor prescribed', missed.status === 201, missed.text);
+  const again = await api.socket(P.pat1);
+  const after = (await api.get(P.pat1, `/api/encounters/${encounterId}/prescriptions`)).json as any[];
+  check('after reconnecting, a refresh shows the new prescription', after.some(r => r.medication === 'Paracetamol' && r.status === 'ACTIVE'));
+  const timeline = (await api.get(P.pat1, `/api/cases/${caseId}/timeline`)).json as any[];
+  const rxEvent = timeline.find(e => e.eventType === 'clinical.prescription.recorded' && e.payload.prescriptionId === missed.json?.prescription?.prescriptionId);
+  check('…and the case history includes the missed (content-free) event, author by role only', !!rxEvent && !('userId' in rxEvent.payload.recordedBy) && !JSON.stringify(rxEvent).includes('Paracetamol'));
+  check('the history never lists unshared reports or documents', !timeline.some(e => (e.eventType === 'clinical.report.recorded' || e.eventType === 'clinical.document.stored') && e.payload.patientVisible === false));
+  check("another patient cannot read this patient's history → 403", (await api.get(P.pat2, `/api/cases/${caseId}/timeline`)).status === 403);
+  check("…or this patient's encounter → 404", (await api.get(P.pat2, `/api/encounters/${encounterId}`)).status === 404);
+  await new Promise(r => setTimeout(r, 200));
+  check('realtime resumes on the new connection (no stale room: only this case)', again.events.every(e => !e.payload?.caseId || e.payload.caseId === caseId));
+  again.s.close();
+}
+
 // ------------------------------------------------------------------------------------------
 
 async function main() {
@@ -640,6 +671,7 @@ async function main() {
     await doctorAssignment(api, journey);
     await clinicalRecords(api, journey);
     await diagnosticDocuments(api, journey);
+    await patientDashboard(api, journey);
     check('API process still healthy at the end', (await api.get(undefined, '/api/health')).status === 200);
     check('no handler crashes logged', !/Handler for .* failed|Uncaught exception|Unhandled rejection/.test(api.log()), api.log().match(/.*(failed|Uncaught|Unhandled).*/g)?.slice(0, 3).join('\n'));
   } finally {

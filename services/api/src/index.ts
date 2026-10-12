@@ -137,6 +137,12 @@ app.get('/api/health', async (_req, res) => {
   });
 });
 
+// Personal and clinical data must not be kept by browsers or shared caches (one browser may serve several
+// demo personas; a cached response must never be shown to the next one).
+app.use('/api', (_req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
 app.use('/api', requireAuth);
 
 app.get('/api/whoami', (req: AuthenticatedRequest, res) => res.json(req.auth));
