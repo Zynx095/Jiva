@@ -108,7 +108,8 @@ export function VitalsPanel({ encounterId, vitals, onChanged, now }: { encounter
                     <JivaStatus meta={measurementFreshness(m.freshness)} />
                   </div>
                   <p className="mt-1 text-xs text-ink-500">
-                    {formatDateTime(m.observedAt)} ({timeAgo(m.observedAt, now)}){m.recordedByName ? ` · ${m.recordedByName}` : ''}
+                    {formatDateTime(m.observedAt)} ({timeAgo(m.observedAt, now)})
+                    {m.recordedByName ? (m.source === 'DEVICE_SIMULATED' ? ` · simulator started by ${m.recordedByName}` : ` · ${m.recordedByName}`) : ''}
                   </p>
                 </li>
               );
