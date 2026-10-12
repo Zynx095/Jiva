@@ -81,6 +81,10 @@ npm run simulate:full:blr  # flagship scenario: request → accept → reroute �
 
 `npm run start:prod` serves the production builds.
 
+Personas are chosen with `?as=` (e.g. `http://localhost:5175/?as=demo-doc-3` opens the hospital app as a clinician):
+crews `demo-amb-1…3`, hospital coordinators `demo-hosp-1…4`, clinicians `demo-doc-1…5`, patients
+`demo-patient-1/2` (cases `CASE-BLR-876/877`), `demo-mgmt-1`, `demo-admin`.
+
 ### Common commands
 
 | Command | Purpose |
@@ -139,6 +143,17 @@ jiva/
 | RBAC and realtime filtering | ✅ | Per-role event filtering, verified reconnect resync |
 | Demo reset | ✅ | Admin-only, with an epoch guard for in-flight work |
 | Four role apps | ✅ | Verified in browser, dev and prod |
+| Crew emergency intake | ✅ | `POST /api/emergencies`; symptoms and suspected cause kept apart; idempotent |
+| Public facility directory | ✅ | 466 Bengaluru facilities, OSM-verified locations where possible; never a destination |
+| Referral-bound answers | ✅ | An answer must name its referral; case-scoped expiry; referral evidence per hospital |
+| Arrival, handover, encounters | ✅ | Recorded by the hospital; GPS never establishes care; the crew is released at handover |
+| Doctor assignment | ✅ | Active clinician of the same hospital, with history; **demo roster only** (no staff directory integration) |
+| Prescriptions and diagnostic reports | ✅ | Versioned; written by the assigned clinician; the patient sees what is released |
+| Diagnostic documents | ✅ | Ticket-bound streamed upload, sha256 and file-signature checks, authorized download; **local storage only** |
+| Vital signs | ✅ | Clinician-entered; simulator demo-only and labelled; **no medical device integration** |
+| Patient in-hospital dashboard | ✅ | Switches on the hospital's handover record, never on GPS or timers |
+| Operational vs demo mode | ✅ | One switch (`JIVA_ENVIRONMENT`); nothing synthetic in operational mode; provenance in `/api/health` |
+| Audit trail | ✅ | Content-free, administrators only; in memory locally |
 
 ### Intelligence and data
 
@@ -184,7 +199,8 @@ timeline
          : Phase 3 · Live command center
          : Mapping, AI sidecar, hardening
          : Phase 6 · Decision authority (frozen)
-    Next : Phase 7 · Patient and clinical data
+         : Emergency-to-care journey (local)
+    Next : Production identity and storage
     Later : Phase 8 · Real-world integration
           : Phase 9 · Cloud deployment
           : Phase 10 · Clinical validation
@@ -200,14 +216,22 @@ timeline
 | **4–5** | Intelligence and hardening | Mapping providers, AI sidecar, RBAC, canonical data pipeline, AWS CDK, 103-check runtime suite |
 | **6.1–6.7** | Decision authority | Feasibility engine (shadow), authority gate, canary soak, failure recovery, JWT verification, **foundation freeze** |
 
-### 🔜 Next: Phase 7 — Patient & Clinical Data Foundation
+### ✅ Emergency-to-care journey (branch `feat/emergency-to-care-journey`)
 
-Not started. It waits on explicit go-ahead.
+Crew intake → referrals with explicit, case-bound answers → hospital-recorded arrival and handover →
+doctor assignment → versioned prescriptions and reports → verified diagnostic documents → vital signs with
+provenance → the patient's in-hospital view, with an operational/demo switch, an audit trail and a security
+review. Implemented and tested in the **local API**; see [`docs/emergency-to-care.md`](docs/emergency-to-care.md)
+and [`IMPLEMENTATION_PROGRESS.md`](IMPLEMENTATION_PROGRESS.md).
 
-- Patient registration and identity
-- FHIR-aligned clinical data models
-- EHR integration boundaries that keep hospital databases private
-- Consent and privacy controls for clinical data
+### 🔜 Next: production prerequisites
+
+Not started; each needs an explicit go-ahead.
+
+- Production identity (Cognito provisioning incl. clinicians, MFA, a verified patient-linking flow)
+- Durable, encrypted storage for clinical records, documents (S3 + KMS) and the audit trail
+- The clinical domain on AWS (routes, functions, tables) and a Cognito-token WebSocket authorizer
+- FHIR/EHR boundaries, staff-directory and device integrations, consent and data-subject workflows
 
 ### 🧭 Proposed later phases
 
@@ -222,6 +246,9 @@ These are directional, not committed.
 ### Known limitations
 
 - No clinical validation or physician sign-off yet.
+- Clinical records, documents, vital signs and the audit trail live in memory (local API) and are lost on restart.
+- The clinical workflows exist only in the local API; the AWS stack has none of them.
+- No hospital, staff-directory, EHR or medical-device integration exists; demo data is synthetic and labelled.
 - All operational data in the demo is synthetic; public data is facility master data only.
 - AWS is synthesized but not deployed; DynamoDB behavior is unverified.
 - Care-window transit constraint `HC-TMP-01` is deferred.
@@ -238,7 +265,10 @@ These are directional, not committed.
 
 | Read | For |
 |---|---|
-| [`docs/opus-final-system-status.md`](docs/opus-final-system-status.md) | Component-by-component status |
+| [`docs/emergency-to-care.md`](docs/emergency-to-care.md) | The emergency-to-care journey: contracts, APIs, authorization, provenance, limits |
+| [`IMPLEMENTATION_PROGRESS.md`](IMPLEMENTATION_PROGRESS.md) | Phase-by-phase record with audits, decisions, tests and commits |
+| [`docs/security-review.md`](docs/security-review.md) | Enforced protections, audit trail and remaining gaps |
+| [`docs/opus-final-system-status.md`](docs/opus-final-system-status.md) | Component-by-component status (before the emergency-to-care work) |
 | [`docs/architecture-diagram.md`](docs/architecture-diagram.md) | Full diagrams |
 | [`docs/security.md`](docs/security.md) | Security model |
 | [`docs/aws-architecture.md`](docs/aws-architecture.md) | AWS design |

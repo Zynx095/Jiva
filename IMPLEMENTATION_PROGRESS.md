@@ -11,6 +11,7 @@ phase's acceptance criteria were met **and** verified; frontend-only progress is
 | Not committed (not ours) | `start-jiva.bat` (Windows launcher created 2026-10-12, unrelated to this roadmap) — left untracked |
 | Decision authority | `DECISION_AUTHORITY_MODE` unset → `SHADOW`; legacy rule engines decide all routing; no change planned |
 | Cloud | Nothing deployed; no AWS command that provisions or deploys anything is run |
+| Status (2026-10-13) | **All phases 0–14 done.** Final gate: typecheck, 36 unit suites, 6 integration suites (124 / 302 / 14 / 39 checks), lambdas, data validation, CDK synth (no deploy), lint, demo check, flagship scenario and a 27-check browser pass — all passing. Remaining limitations: Phase 14 section. |
 
 ---
 
@@ -32,7 +33,7 @@ phase's acceptance criteria were met **and** verified; frontend-only progress is
 | 11 | Operational mode, demo mode, provenance | ✅ Done | see Phase 11 section |
 | 12 | Security, privacy and audit hardening | ✅ Done | see Phase 12 section |
 | 13 | End-to-end integration and regression testing | ✅ Done | see Phase 13 section |
-| 14 | Final quality gate and documentation | ⏳ | |
+| 14 | Final quality gate and documentation | ✅ Done | see Phase 14 section |
 
 ---
 
@@ -449,7 +450,7 @@ Only ambulance GPS (`ambulance.location.updated`) existed. No medical measuremen
 |---|---|
 | `tsx tests/unit/medical-telemetry.test.ts` (new) | ✅ 6 checks: ranges, units, BP order, unknown types, client-claimed source refused (measurement and top level); observation-time bounds; freshness; server-decided source and latest-per-type (no invented types); simulator gate, determinism and 200 seeds × 5 values within the validated ranges; device contract strictness and every refusal code |
 | `tsx tests/integration/clinical-journey.test.ts` (+Phase 10: 23) | ✅ 279 passed: empty state shows nothing invented; `medicalDeviceIntegrated: false`; simulator offered to the assigned doctor only; coordinator, patient, other hospital's clinician and another patient refused; implausible value / wrong unit / BP order / future time / claimed device source → 400; manual entry `MANUAL_CLINICIAN`; patient sees value, unit, source, recorder name, freshness, no staff id, no untaken types; simulator labels every value, refused to the patient and coordinator; patient sees simulated values marked as simulated; realtime events carry types and times, never values; no telemetry in the management ledger |
-| `npm run typecheck` / `test:unit` (35 suites) / `test:integration` | ✅ all exit 0 (runtime 124/0, journey 279/0) |
+| `npm run typecheck` / `test:unit` (34 suites) / `test:integration` | ✅ all exit 0 (runtime 124/0, journey 279/0) |
 
 ### Decisions and limitations
 
@@ -494,7 +495,7 @@ Only ambulance GPS (`ambulance.location.updated`) existed. No medical measuremen
 | `tsx tests/unit/emergency-intake.test.ts` (updated) | ✅ the legacy-shape check now runs in both modes: operational = exactly the legacy keys (unchanged assertion); demo = the legacy keys plus the demo label, still no intake fields |
 | `tsx tests/integration/operational-mode.test.ts` (new, real API on :4102, `JIVA_ENVIRONMENT=production`) | ✅ 13 passed: mode OPERATIONAL, no demo auth; 0 hospitals/ambulances; no clinicians, no simulator; no live integration claimed; demo personas refused on reads, intake, demo reset and encounters (401); `no-store`; demo realtime handshake refused |
 | `tsx tests/integration/clinical-journey.test.ts` (+Phase 11: 8) | ✅ 287 passed: demo mode reported with its synthetic counts, synthetic roster, demo-only simulator, mock routing/AI flagged, no live integration; demo cases, units and hospitals labelled |
-| `npm run typecheck` / `test:unit` (36 suites) / `test:integration` / `build:lambdas` / app `lint` (oxlint) | ✅ all exit 0 (runtime 124/0, journey 287/0, operational 13/0) |
+| `npm run typecheck` / `test:unit` (35 suites) / `test:integration` / `build:lambdas` / app `lint` (oxlint) | ✅ all exit 0 (runtime 124/0, journey 287/0, operational 13/0) |
 
 ### Decisions and limitations
 
@@ -530,7 +531,7 @@ Authentication on every `/api` route; the event-submission allowlist (system and
 | `tsx tests/unit/realtime-isolation.test.ts` (new) | ✅ 5 checks: a case event reaches only that patient and coordination (never another patient or an anonymous connection); referrals only to the hospital asked; encounter events with role-only copies for the patient and full copies for same-hospital staff; clinical record events never to coordination or another hospital; `$connect` principal: none without credentials, unsigned claims refused, verified token accepted, forged token refused, demo persona refused in production and accepted in demo, nothing token-like stored |
 | `tsx tests/integration/clinical-journey.test.ts` (+Phase 12: 15) | ✅ 302 passed: all 17 new endpoints → 401 unauthenticated; `nosniff` + `no-store`; malformed JSON → `{"error":"malformed_json"}`; management, coordinator, doctor, patient and crew cannot read the audit log; invalid filter 400; the administrator's encounter trail contains every expected write, read, download and denial; every entry has actor/action/entity/outcome/time; a denial carries its reason; no clinical content in the trail; audit reads are audited |
 | `tsx tests/integration/operational-mode.test.ts` (+1) | ✅ 14 passed: `ENVIRONMENT=production` without `JIVA_ENVIRONMENT=production` → the API refuses to start |
-| `npm run typecheck` / `test:unit` (37 suites) / `test:integration` / `build:lambdas` / `cdk synth --quiet` (no deploy) | ✅ all exit 0; cdk warnings are pre-existing (Lambda runtime `nodejs20.x` deprecated; `pointInTimeRecovery` deprecated) |
+| `npm run typecheck` / `test:unit` (36 suites) / `test:integration` / `build:lambdas` / `cdk synth --quiet` (no deploy) | ✅ all exit 0; cdk warnings are pre-existing (Lambda runtime `nodejs20.x` deprecated; `pointInTimeRecovery` deprecated) |
 
 ### Not claimed
 
@@ -591,6 +592,69 @@ One deterministic narrative after a demo reset, with a fixed scene, the demo pat
 | `tsx tests/integration/e2e-journey.test.ts` (new) | ✅ 39 passed (run twice: stable) |
 | Flagship scenario `scripts/simulate-full.ts` against a short-lived API (scratch runner; the dev stack stays stopped) | ✅ `SCENARIO COMPLETE` — reset → accept → reroute → GPS arrival → AI sidecar events; shadow: 4 traces, 0 disagreements, 0 failures; no API handler crashes |
 | `npm run test:integration` (parity, mapping parity, runtime 124, journey 302, operational mode 14, e2e 39) | ✅ exit 0 |
-| `npm run test:unit` (37 suites) / `npm run typecheck` | ✅ exit 0 |
+| `npm run test:unit` (36 suites) / `npm run typecheck` | ✅ exit 0 |
 
 Existing suites were not weakened: the only pre-existing assertion that changed (Phase 11, intake legacy shape) now asserts both modes explicitly.
+
+---
+
+## Phase 14 — Final quality gate and documentation (✅ 2026-10-13)
+
+### Quality gate (actual commands, run on the final code)
+
+| Command | Result |
+|---|---|
+| `npm run typecheck` (all workspaces incl. the four Vite production builds + tests) | ✅ exit 0 |
+| `npm run test:unit` (36 suites: 25 pre-existing + 11 new) | ✅ exit 0 |
+| `npm run test:integration` (6 suites) | ✅ exit 0 — parity ✅, mapping parity ✅, runtime **124/0**, journey **302/0**, operational mode **14/0**, end-to-end **39/0** |
+| `npm run build:lambdas` | ✅ exit 0 — 7 self-contained bundles |
+| `npm run data:validate` | ✅ exit 0 — 7 canonical facilities |
+| `npx cdk synth --quiet` (synthesis only; nothing deployed) | ✅ exit 0 — pre-existing warnings only (`nodejs20.x` deprecated; `pointInTimeRecovery` deprecated) |
+| `npm run lint` in each app (oxlint) | ✅ exit 0 in all four (warnings only; no errors) |
+| `npm run demo:check` (against a short-lived API on :4105) | ✅ `STATUS: READY` (INFO: mock routing, demo auth, AWS not deployed) |
+| Flagship scenario `scripts/simulate-full.ts` (Phase 13, short-lived API) | ✅ `SCENARIO COMPLETE`; shadow 0 disagreements |
+| Browser pass on the production builds (`vite preview` ×4 + short-lived API + headless Edge; scratch harness) | ✅ **27/27**: coordinator records arrival → handover → assigns a doctor in the UI and sees no clinical content; clinician workspace lists both assigned patients, shows records, verified scan, vital signs with source labels, and prescribes through the form; patient state B on desktop and at 390 px (doctor, medications, reports, scans, vital signs labelled, no staff ids, no horizontal overflow); command center "Mode and data"; released crew available; **no runtime errors on any page** |
+
+The long-running dev stack (`npm run dev`) was stopped by the environment for low memory during the session and was **not** restarted; every runtime check above used short-lived processes that were stopped afterwards.
+
+### Diff review (`main..HEAD`) — findings and fixes
+
+| Check | Result |
+|---|---|
+| Routing architecture | No change to `routingEngine.ts`, `eligibilityEngine.ts`, `mapping.ts`, `stateTransitions.ts`, `services/api/src/feasibility/**`, `packages/feasibility/**`, `packages/mapping/**`, `authVerification.ts`, `evidenceTrust.ts`. `stateEngines.ts` changes are the documented ones (Phase 2 intake handling, Phase 4 case-scoped expiry, Phase 5 shared arrival effects under the routing lock). `DECISION_AUTHORITY_MODE` stays `SHADOW`. |
+| Dead code | `hasOutstandingRequest` became unused when Phase 4 replaced its only caller → **removed**. Exported inferred types in `@jiva/event-schema` stay (package API). |
+| Duplication | The policy's clinical event-type sets now derive from the event contracts (one source of truth); the duplicated 60-second clock-skew constants in the command routes are one `CLOCK_SKEW_MS`. |
+| Unhandled backend failures | The referral overview route (Phase 4) was the last async route outside `asyncRoute` → **wrapped** (a failure answers 500 instead of hanging). |
+| Labels | Clinician view no longer shows the clinician as the recorder of simulated readings ("simulator started by …"). |
+| Hard-coded operational data / fake capacity | None added. The only seed data is the labelled synthetic network and roster (demo mode only). |
+| Unlabelled synthetic information | None found; remaining demo wording is conditional on mode or provenance (Phase 11). |
+| Unprotected clinical APIs / missing authorization | None: every new endpoint is covered by 401/403/404 tests (journey Phase 12, e2e). |
+| UI/UX work | The preserved UI commit (`6dbeb8a`) was extended, not removed: the only deleted UI code is the patient "records coming later" placeholder and GPS-based "you have arrived / care takes over" copy, both replaced by authoritative behaviour. |
+| Secrets / sensitive files | None committed; local document storage, `.env` and test temp dirs are git-ignored or outside the repo. |
+| Documentation accuracy | Unit-suite counts corrected in this tracker (phases 10–13 overstated them by one). |
+
+### Documentation
+
+| File | Content |
+|---|---|
+| `docs/emergency-to-care.md` (new) | Architecture changes, event contracts, API table, authorization rules, hospital-data provenance, operational vs demo behaviour, clinical record / document / telemetry storage and sources, tests, integrations not implemented, production prerequisites |
+| `docs/security-review.md` (Phase 12) | Enforced protections with tests, audit trail, remaining gaps; no compliance claim |
+| `README.md` | Implementation table extended (each new capability with its limits), personas, roadmap (journey done in the local API; production prerequisites next), known limitations, documentation index |
+| `CLAUDE.md` | Current status, personas incl. clinicians, operational switch, new test suites, roadmap pointer |
+
+### Remaining limitations (explicit)
+
+1. **Local API only**: encounters, clinical records, documents and vital signs have no AWS routes, functions or tables; nothing is deployed.
+2. **In-memory clinical storage**: records, documents' metadata, measurements and the audit trail are lost on restart; local document files are not encrypted.
+3. **No real integrations**: hospital capacity/acceptance feeds, staff directory (demo roster only), EHR/FHIR, medical devices, production object storage (S3 provider designed, not built), e-prescribing, live-traffic routing (mock fallback, labelled), Bedrock (failure path only).
+4. **Identity**: demo personas locally; Cognito modelled but not provisioned; no verified patient-linking flow; the AWS WebSocket `$connect` stays IAM-authorized (filtering is in place, a Cognito-token authorizer is the remaining step).
+5. **Clinical workflow gaps**: no discharge, no correction workflow for arrival/handover records, no free-text clinical notes type, no shift/availability model, no break-glass access, no DICOM viewer, no drug-interaction or allergy checks.
+6. **Protocol constants**: the 15-minute referral deadline is a frozen constant (tested with a simulated clock, not at runtime); `UNAVAILABLE` keeps its hospital-wide meaning; the AWS stack has no expiry engine.
+7. **Operations**: no rate limiting/WAF, no tamper-evident audit, no consent or data-subject workflows; Lambda runtime `nodejs20.x` is deprecated (pre-existing).
+8. **Not a medical device**; no clinical validation or regulatory compliance is claimed.
+
+### Handoff
+
+- All phases 0–14 are complete on `feat/emergency-to-care-journey`; `main` is untouched; `start-jiva.bat` remains untracked (not ours).
+- Re-verify: `npm run typecheck && npm run test:unit && npm run test:integration && npm run build:lambdas`, then `npx cdk synth --quiet` in `infrastructure/aws` (never deploy without authorization).
+- Next concrete task (needs an explicit go-ahead): production identity and durable encrypted storage for the clinical domain, then the AWS clinical routes (see `docs/emergency-to-care.md` §9).

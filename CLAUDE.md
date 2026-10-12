@@ -44,6 +44,7 @@ jiva/
 - `management-web` React dashboard created to visualize state and event stream.
 - Event simulator `npm run simulate:emergency` implemented.
 - AWS CDK skeleton written.
+- Emergency-to-care journey (branch `feat/emergency-to-care-journey`, local API): crew intake, public facility directory, referral-bound hospital answers, hospital-recorded arrival/handover and encounters, doctor assignment, versioned prescriptions and reports, verified diagnostic documents, vital signs with provenance, the patient's in-hospital view, an operational/demo switch and an admin audit trail. Record: `IMPLEMENTATION_PROGRESS.md`; reference: `docs/emergency-to-care.md`; security: `docs/security-review.md`.
 
 ## 6. How to Run Locally
 From the project root:
@@ -52,9 +53,10 @@ From the project root:
 3. `npm run simulate:full:blr` — deterministic, self-verifying flagship scenario (reset → accept → reroute → arrival).
 4. `npm run demo:reset` — reset demo state.
 
-Auth is DEMO-only: clients send `x-jiva-demo-user: <persona>` (see `packages/auth/src/demoAuth.ts`); the server enforces role scope. Status: `docs/opus-final-system-status.md`.
+Auth is DEMO-only: clients send `x-jiva-demo-user: <persona>` (see `packages/auth/src/demoAuth.ts`); the server enforces role scope. Personas via `?as=`: crews `demo-amb-1…3`, coordinators `demo-hosp-1…4`, clinicians `demo-doc-1…5` (the hospital app becomes the clinician workspace), patients `demo-patient-1/2`, `demo-mgmt-1`, `demo-admin`. `JIVA_ENVIRONMENT=production` switches the API to operational mode (no demo personas, no synthetic data). Tests: `npm run test:unit`, `npm run test:integration` (incl. `clinical-journey`, `operational-mode`, `e2e-journey`). Status: `docs/opus-final-system-status.md` (before the emergency-to-care work) and `IMPLEMENTATION_PROGRESS.md`.
 
 ## 7. Roadmap for Claude
+The emergency-to-care roadmap (phases 0–14) is complete in the local API; production prerequisites that remain are listed in `docs/emergency-to-care.md` §9. Older roadmap items:
 1. Replace mock data with more exhaustive realistic (synthetic) datasets.
 2. Enhance `services/routing-engine` to use real geolocation calculations and proper matching rules.
 3. Build out the Patient, Ambulance, and Hospital specific web dashboards in `apps/`.
