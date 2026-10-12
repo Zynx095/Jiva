@@ -209,6 +209,8 @@ function ReportItem({ report, encounterId, documents, onChanged }: { report: Rep
 function ReportForm({ encounterId, base, documents, onSaved, onRefresh, onCancel }: { encounterId: string; base?: ReportRecord; documents: DocumentRecord[]; onSaved: () => void; onRefresh: () => void; onCancel: () => void }) {
   const [d, setD] = useState<ReportDraft>(() => draftOf(base));
   const [attached, setAttached] = useState<string[]>(() => base?.current.documentIds ?? []);
+  // Upper bound for the picker, fixed when the form opens (the server re-checks the time anyway).
+  const [latest] = useState(() => toDateTimeLocal(Date.now() + 60_000));
   const attachable = documents.filter((x) => x.status === 'AVAILABLE');
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -242,7 +244,7 @@ function ReportForm({ encounterId, base, documents, onSaved, onRefresh, onCancel
           </select>
         </Field>
         <Field label="Performed at" htmlFor={id('at')} required>
-          <input id={id('at')} type="datetime-local" className={cx(inputClass, 'h-9')} value={d.effectiveAt} max={toDateTimeLocal(Date.now() + 60_000)} onChange={set('effectiveAt')} />
+          <input id={id('at')} type="datetime-local" className={cx(inputClass, 'h-9')} value={d.effectiveAt} max={latest} onChange={set('effectiveAt')} />
         </Field>
         <Field label="Title" htmlFor={id('title')} required className="sm:col-span-2">
           <input id={id('title')} className={cx(inputClass, 'h-9')} value={d.title} onChange={set('title')} maxLength={120} placeholder="e.g. Chest X-ray, PA view" />

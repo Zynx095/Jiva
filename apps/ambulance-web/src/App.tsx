@@ -5,7 +5,7 @@ import {
   AppHeader,
   CardHeader,
   ConnectionPill,
-  DemoBadge,
+  ModeBadge,
   DirectoryFacilityDetails,
   DirectoryLayer,
   EmergencyMarker,
@@ -54,7 +54,7 @@ import {
   type Tone,
   type TimelineItem,
 } from '@jiva/ui/src';
-import { PERSONA, apiGet } from './api';
+import { API_URL, PERSONA, apiGet } from './api';
 import { useCrew } from './useCrew';
 import { EmergencyIntake, type DraftLocation } from './EmergencyIntake';
 
@@ -268,12 +268,12 @@ export default function App() {
     <div className="flex min-h-dvh flex-col lg:h-dvh">
       <AppHeader
         app={`Ambulance ${ambulance?.ambulanceId ?? ''}`.trim()}
-        context={ambulance ? `${ambulanceStatus(ambulance.status).label} · synthetic demo telemetry` : 'Loading…'}
+        context={ambulance ? `${ambulanceStatus(ambulance.status).label}${ambulance.dataStatus === 'SYNTHETIC_DEMO' ? ' · synthetic demo telemetry' : ''}` : 'Loading…'}
         actions={
           <>
             <PersonaSelect value={PERSONA} options={PERSONAS} />
             <ConnectionPill state={crew.connection} lastSync={crew.lastSync} />
-            <DemoBadge detail="Synthetic GPS, simulated hospital responses and mock routes. Not real capacity." />
+            <ModeBadge apiUrl={API_URL} detail="Synthetic GPS, simulated hospital responses and mock routes. Not real capacity." />
           </>
         }
       />

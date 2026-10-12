@@ -133,6 +133,8 @@ export function VitalsPanel({ encounterId, vitals, onChanged, now }: { encounter
 function VitalsForm({ encounterId, onSaved, onCancel }: { encounterId: string; onSaved: () => void; onCancel: () => void }) {
   const [d, setD] = useState<Draft>(() => ({ hr: '', spo2: '', sys: '', dia: '', temp: '', rr: '', at: toDateTimeLocal(Date.now()) }));
   const [error, setError] = useState<string | null>(null);
+  // Upper bound for the picker, fixed when the form opens (the server re-checks the time anyway).
+  const [latest] = useState(() => toDateTimeLocal(Date.now() + 60_000));
   const keyFor = useIdempotencyKey();
   const id = (k: string) => `vit-${encounterId}-${k}`;
   const set = (k: keyof Draft) => (e: { target: { value: string } }) => setD((prev) => ({ ...prev, [k]: e.target.value }));
@@ -176,7 +178,7 @@ function VitalsForm({ encounterId, onSaved, onCancel }: { encounterId: string; o
           <input id={id('temp')} inputMode="decimal" className={cx(inputClass, 'h-9')} value={d.temp} onChange={set('temp')} />
         </Field>
         <Field label="Measured at" htmlFor={id('at')} required>
-          <input id={id('at')} type="datetime-local" className={cx(inputClass, 'h-9')} value={d.at} max={toDateTimeLocal(Date.now() + 60_000)} onChange={set('at')} />
+          <input id={id('at')} type="datetime-local" className={cx(inputClass, 'h-9')} value={d.at} max={latest} onChange={set('at')} />
         </Field>
       </div>
       <p className="text-xs text-ink-500">Fill in what you measured; empty fields are not recorded. Implausible values are refused by the server.</p>

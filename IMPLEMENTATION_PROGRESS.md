@@ -29,7 +29,7 @@ phase's acceptance criteria were met **and** verified; frontend-only progress is
 | 8 | Diagnostic documents and secure file storage | ✅ Done | see Phase 8 section |
 | 9 | Patient dashboard and in-hospital experience | ✅ Done | see Phase 9 section |
 | 10 | Medical telemetry foundation | ✅ Done | see Phase 10 section |
-| 11 | Operational mode, demo mode, provenance | ⏳ | |
+| 11 | Operational mode, demo mode, provenance | ✅ Done | see Phase 11 section |
 | 12 | Security, privacy and audit hardening | ⏳ | |
 | 13 | End-to-end integration and regression testing | ⏳ | |
 | 14 | Final quality gate and documentation | ⏳ | |
@@ -457,3 +457,47 @@ Only ambulance GPS (`ambulance.location.updated`) existed. No medical measuremen
 - Operational mode cannot produce a measurement: the simulator route does not exist outside DEMO.
 - The plausibility ranges are input checks, not clinical thresholds; JIVA raises no clinical alarms.
 - Telemetry is stored in memory (capped at 5,000 measurements per encounter) like the other local clinical records.
+
+---
+
+## Phase 11 — Operational mode, demo mode and data provenance (✅ 2026-10-13)
+
+### Inventory (what is demo or synthetic, as found)
+
+| Element | Where | Labelled before this phase? |
+|---|---|---|
+| Synthetic network: 4 hospitals, 3 ambulances | `data/synthetic/bengaluru/*.json`, preloaded by `LocalStateStore` **in every mode** | Hospitals `SYNTHETIC_DEMO`; ambulances unlabelled |
+| Demo personas (auth) | `packages/auth/src/demoAuth.ts` | Refused in production (Policy 2) |
+| Demo cases (`CASE-BLR-876/877` personas, crew reports) | intake | Not distinguishable |
+| Simulated hospital answers, demo controls, simulators | `apps/management-web/src/lib/simulator.ts`, `scripts/simulate-*.ts` | Trusted provenance stamps `SYNTHETIC_DEMO` (Phase 6/4) |
+| Mock routing and fallback | `packages/mapping` (`MAPPING_PROVIDER`, fallback chain ending in mock) | Routes carry `synthetic` / `provider` |
+| Mock AI | `USE_BEDROCK` (default mock) | Health shows the provider |
+| Synthetic clinician roster, simulated vital signs | Phases 6 and 10 | Labelled, demo-only |
+| `/api/health` | `demoAuth: true` hard-coded | — |
+| Hard-coded "demo" wording in screens | crew header, hospital ETA, patient timeline/ETA, document preview | Unconditional |
+
+### What changed
+
+| Area | Files | Summary |
+|---|---|---|
+| One mode switch | `services/api/src/mode.ts` | `runtimeMode()` = `OPERATIONAL` for `JIVA_ENVIRONMENT=production|prod` or on AWS Lambda, else `DEMO` — the same switch as the evidence-trust layer, so provenance stamps and data loading cannot disagree. Fixed at start-up; local state is in memory, so modes never mix in one process. |
+| Operational mode loads nothing synthetic | `services/api/src/infrastructure/stateStore/LocalStateStore.ts`, `clinical/roster.ts` (Phase 6), `clinical/telemetry.ts` (Phase 10), `index.ts` | No synthetic hospitals or ambulances (an empty network is shown as empty), no clinician roster, no simulator, **no demo reset** (404 — it would wipe state). `USE_CANONICAL` (public-listed records, capabilities unknown) still works in both modes. |
+| Labels | `packages/domain-models/src/{patient,ambulance}.ts`, `services/api/src/intake.ts` | Optional `dataStatus` on cases and ambulances: every case created in demo mode and every demo unit is `SYNTHETIC_DEMO` (shared with the AWS emergency lambda; on Lambda the mode is operational, so no label). |
+| Health / provenance report | `services/api/src/index.ts`, `mode.ts` | `/api/health` adds `mode`, an accurate `demoAuth`, and `provenance`: a plain statement, network counts (total vs synthetic), directory (public, not connected), clinicians (synthetic / none), providers (auth, mapping and AI with a synthetic flag, telemetry simulator), and `liveIntegrations` — hospital capacity feeds, staff directory, medical devices, production document storage: **all false**. |
+| Screens | `packages/ui/src/{lib/mode.ts,components/Header.tsx}`, all four apps, clinician workspace | `ModeBadge` replaces the always-on demo chip: shown in DEMO mode and while the mode is unknown (a screen never claims operational data before the server confirms it), hidden in OPERATIONAL. Command Center → System status → "Mode and data" (the provenance report, integrations listed as not integrated) and an accurate sign-in row; "Demo case" on case details; "Demo unit · synthetic GPS telemetry" only for demo units. Unconditional demo wording made conditional (crew header, patient timeline source, ETA wording by route provenance, document preview caption, hospital ETA label). |
+
+### Tests
+
+| Command | Result |
+|---|---|
+| `tsx tests/unit/runtime-mode.test.ts` (new) | ✅ 5 checks: the switch (production/prod/Lambda/explicit demo/local default); operational preload is empty (no hospitals, ambulances, roster, simulator); demo preload labels every hospital, ambulance and clinician; demo-case label in demo mode only; provenance report in both modes, no live integration claimed |
+| `tsx tests/unit/emergency-intake.test.ts` (updated) | ✅ the legacy-shape check now runs in both modes: operational = exactly the legacy keys (unchanged assertion); demo = the legacy keys plus the demo label, still no intake fields |
+| `tsx tests/integration/operational-mode.test.ts` (new, real API on :4102, `JIVA_ENVIRONMENT=production`) | ✅ 13 passed: mode OPERATIONAL, no demo auth; 0 hospitals/ambulances; no clinicians, no simulator; no live integration claimed; demo personas refused on reads, intake, demo reset and encounters (401); `no-store`; demo realtime handshake refused |
+| `tsx tests/integration/clinical-journey.test.ts` (+Phase 11: 8) | ✅ 287 passed: demo mode reported with its synthetic counts, synthetic roster, demo-only simulator, mock routing/AI flagged, no live integration; demo cases, units and hospitals labelled |
+| `npm run typecheck` / `test:unit` (36 suites) / `test:integration` / `build:lambdas` / app `lint` (oxlint) | ✅ all exit 0 (runtime 124/0, journey 287/0, operational 13/0) |
+
+### Decisions and limitations
+
+- The routing providers were not changed (directive): in either mode, the mapping fallback chain can still end in the mock provider; such routes stay labelled `synthetic` and the health report flags it. Disabling the mock fallback in operational deployments is a configuration decision for the routing owners (`MAPPING_PROVIDER=valhalla|osrm`).
+- The operational path of this repository is the AWS stack (API Gateway + Cognito + Lambda); the local Express API in operational mode accepts only verified JWTs, so it is mostly useful to prove that nothing synthetic is loaded.
+- Demo tooling (simulators, demo controls, AWS demo scripts) is unchanged and remains demo-only by authorization (management/admin personas exist only in demo auth).

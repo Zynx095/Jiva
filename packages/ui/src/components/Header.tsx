@@ -1,4 +1,5 @@
 import React from 'react';
+import { useRuntimeMode } from '../lib/mode';
 import { cx } from '../lib/cx';
 import { timeAgo, useNow } from '../lib/time';
 import { Spinner } from './Button';
@@ -91,6 +92,16 @@ export function DemoBadge({ detail = 'Synthetic hospitals, simulated responses a
       <span className="sr-only">: {detail}</span>
     </span>
   );
+}
+
+/**
+ * The demo label, driven by the server's mode: shown in DEMO mode and while the mode is not yet known
+ * (a screen never claims operational data before the server confirms it); hidden in OPERATIONAL mode.
+ */
+export function ModeBadge({ apiUrl, detail, className }: { apiUrl: string; detail?: string; className?: string }) {
+  const mode = useRuntimeMode(apiUrl);
+  if (mode === 'OPERATIONAL') return null;
+  return <DemoBadge detail={detail} className={className} />;
 }
 
 export interface PersonaOption {

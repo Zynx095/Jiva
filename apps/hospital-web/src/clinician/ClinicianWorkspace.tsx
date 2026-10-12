@@ -4,7 +4,7 @@ import {
   AppHeader,
   CardHeader,
   ConnectionPill,
-  DemoBadge,
+  ModeBadge,
   EmptyState,
   Icon,
   JivaButton,
@@ -26,7 +26,7 @@ import {
   type EncounterRecord,
   type JivaEvent,
 } from '@jiva/ui/src';
-import { PERSONA } from '../api';
+import { API_URL, PERSONA } from '../api';
 import { PERSONAS } from '../personas';
 import { DocumentsPanel } from './DocumentsPanel';
 import { PrescriptionsPanel } from './PrescriptionsPanel';
@@ -75,7 +75,7 @@ export function ClinicianWorkspace() {
           <>
             <PersonaSelect value={PERSONA} options={PERSONAS} />
             <ConnectionPill state={c.connection} lastSync={c.lastSync} />
-            <DemoBadge detail="Synthetic patients, clinicians and records for the demo — not real medical data." />
+            <ModeBadge apiUrl={API_URL} detail="Synthetic patients, clinicians and records for the demo — not real medical data." />
           </>
         }
       />

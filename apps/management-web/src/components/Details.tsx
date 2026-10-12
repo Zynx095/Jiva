@@ -80,6 +80,7 @@ export function CaseDetail({ id }: { id: string }) {
           <h2 className="text-lg font-semibold tracking-[-0.01em] text-ink-900">{p.patientId}</h2>
           <JivaStatus meta={severityStatus(facts?.severity)} />
           <JivaStatus meta={patientStatus(p.currentStatus)} />
+          {p.dataStatus === 'SYNTHETIC_DEMO' && <JivaStatus meta={{ label: 'Demo case', tone: 'warn', icon: 'info', hint: 'Created in demo mode with synthetic data.' }} />}
         </div>
         <p className="mt-1 text-sm text-ink-800">{p.activeConditions.join(', ') || 'Condition not reported'}</p>
         <p className="mt-0.5 text-xs text-ink-500">{facts?.reportedAt ? `Reported ${formatClock(facts.reportedAt)} · ${timeAgo(facts.reportedAt, m.now)}` : `Updated ${timeAgo(p.lastUpdated, m.now)}`}</p>
@@ -334,7 +335,7 @@ export function AmbulanceDetail({ id }: { id: string }) {
           <h2 className="text-lg font-semibold tracking-[-0.01em] text-ink-900">Ambulance {a.ambulanceId}</h2>
           <JivaStatus meta={ambulanceStatus(a.status)} size="md" />
         </div>
-        <p className="mt-0.5 text-xs text-ink-500">Synthetic demo telemetry</p>
+        <p className="mt-0.5 text-xs text-ink-500">{a.dataStatus === 'SYNTHETIC_DEMO' ? 'Demo unit · synthetic GPS telemetry' : 'Position as reported by the unit'}</p>
       </header>
 
       <JivaCard>

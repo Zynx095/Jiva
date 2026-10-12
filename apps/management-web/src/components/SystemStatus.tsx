@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DataRow, Icon, JivaDrawer, JivaStatus, SectionLabel, StatusDot, TechnicalDetails, cx, timeAgo, type StatusMeta } from '@jiva/ui/src';
 import { apiGet } from '../api';
-import type { Health } from '../types';
+import type { Health, ProvenanceReport } from '../types';
 
 interface ShadowSummary {
   mode: string;
@@ -74,7 +74,9 @@ export function SystemStatus({ health }: { health: Health | null }) {
           value: health.environment === 'aws-demo' ? 'AWS mesh' : 'Local demo (not deployed)',
           meta: health.environment === 'aws-demo' ? ok('AWS') : warn('Local'),
         },
-        { label: 'Sign-in', value: 'Demo personas — not production authentication', meta: warn('Demo auth') },
+        health.demoAuth === false
+          ? { label: 'Sign-in', value: 'Cognito (JWT)', meta: ok('Production auth') }
+          : { label: 'Sign-in', value: 'Demo personas — not production authentication', meta: warn('Demo auth') },
       ]
     : [];
 
@@ -119,6 +121,8 @@ export function SystemStatus({ health }: { health: Health | null }) {
             )}
           </section>
 
+          {health?.provenance && <DataProvenance p={health.provenance} />}
+
           <section className="space-y-2">
             <SectionLabel>Decision authority</SectionLabel>
             {shadowError ? (
@@ -156,5 +160,44 @@ export function SystemStatus({ health }: { health: Health | null }) {
         </div>
       </JivaDrawer>
     </>
+  );
+}
+
+const INTEGRATION_TEXT: Record<string, string> = {
+  hospitalCapacityFeeds: 'Hospital capacity feeds',
+  hospitalStaffDirectory: 'Hospital staff directory',
+  medicalDevices: 'Medical devices',
+  documentObjectStorage: 'Production document storage',
+};
+
+/** Mode and provenance: what is synthetic, what is public, and which live integrations exist (none). */
+function DataProvenance({ p }: { p: ProvenanceReport }) {
+  const n = p.datasets.network;
+  return (
+    <section className="space-y-2">
+      <SectionLabel>Mode and data</SectionLabel>
+      <div className="space-y-2 rounded-xl px-3.5 py-3 ring-1 ring-ink-200">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[13px] font-semibold text-ink-900">{p.mode === 'DEMO' ? 'Demo mode' : 'Operational mode'}</p>
+          <JivaStatus meta={p.mode === 'DEMO' ? warn('Synthetic data') : ok('Operational')} />
+        </div>
+        <p className="text-xs text-ink-600">{p.statement}</p>
+        <dl className="divide-y divide-ink-100">
+          <DataRow label="Network">
+            {n.hospitals} hospitals ({n.syntheticHospitals} synthetic) · {n.ambulances} ambulances ({n.syntheticAmbulances} synthetic)
+          </DataRow>
+          <DataRow label="Directory">Public listings · not connected to JIVA</DataRow>
+          <DataRow label="Clinicians">{p.datasets.clinicians.count ? `${p.datasets.clinicians.count} · ${p.datasets.clinicians.dataStatus === 'SYNTHETIC_DEMO' ? 'synthetic roster' : p.datasets.clinicians.dataStatus}` : 'None loaded'}</DataRow>
+          <DataRow label="Vital signs">{p.providers.telemetry.simulator ? 'Clinician entry + labelled simulator' : 'Clinician entry only'} · no medical devices</DataRow>
+        </dl>
+        <ul className="flex flex-wrap gap-1.5 pt-1">
+          {Object.entries(p.liveIntegrations).map(([k, v]) => (
+            <li key={k}>
+              <JivaStatus meta={v ? ok(INTEGRATION_TEXT[k] ?? k) : { label: `${INTEGRATION_TEXT[k] ?? k}: not integrated`, tone: 'neutral', icon: 'minus' }} />
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
   );
 }

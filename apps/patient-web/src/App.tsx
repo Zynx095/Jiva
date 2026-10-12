@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import {
   AppHeader,
   ConnectionPill,
-  DemoBadge,
+  ModeBadge,
   EmptyState,
   Flash,
   Icon,
@@ -20,12 +20,13 @@ import {
   minutesFromSeconds,
   timeAgo,
   useNow,
+  useRuntimeMode,
   useToast,
   type IconName,
   type JivaEvent,
   type TimelineItem,
 } from '@jiva/ui/src';
-import { PERSONA } from './api';
+import { API_URL, PERSONA } from './api';
 import { CareTeamCard, DocumentsCard, MedicationsCard, RecordsNotYet, ReportsCard, VitalsCard } from './InHospital';
 import { usePatient } from './usePatient';
 
@@ -80,6 +81,7 @@ export default function App() {
   );
 
   const pt = usePatient(onLive);
+  const mode = useRuntimeMode(API_URL);
   const now = useNow(5000);
   const { patient, ambulance, hospital, encounter, records } = pt;
 
@@ -147,14 +149,14 @@ export default function App() {
                 <dt className="text-ink-500">Source</dt>
                 <dd className="text-ink-800">{SOURCE_TEXT[e.source.type] ?? e.source.type}</dd>
                 <dt className="text-ink-500">Data</dt>
-                <dd className="text-ink-800">Demo data — simulated for this demonstration</dd>
+                <dd className="text-ink-800">{mode === 'OPERATIONAL' ? 'Recorded by JIVA' : 'Demo data — simulated for this demonstration'}</dd>
                 <dt className="text-ink-500">Reference</dt>
                 <dd className="break-all font-mono text-ink-600">{e.eventId}</dd>
               </dl>
             ),
           };
         }),
-    [pt.events, name],
+    [pt.events, name, mode],
   );
 
   return (
@@ -168,7 +170,7 @@ export default function App() {
               <PersonaSelect value={PERSONA} options={PERSONAS} />
             </span>
             <ConnectionPill state={pt.connection} lastSync={pt.syncedAt} />
-            <DemoBadge detail="This is a demonstration with simulated data. In an emergency, call 108." />
+            <ModeBadge apiUrl={API_URL} detail="This is a demonstration with simulated data. In an emergency, call 108." />
           </>
         }
       />
@@ -211,7 +213,7 @@ export default function App() {
                 <div className="mt-4 flex items-end justify-between gap-3 rounded-xl bg-white/10 px-4 py-3">
                   <div>
                     <p className="text-[13px] font-semibold text-brand-100">Estimated arrival at hospital</p>
-                    <p className="text-xs text-brand-100/90">{route?.synthetic || !route?.trafficAware ? 'Estimate from demo routing, without live traffic' : 'Estimate'}</p>
+                    <p className="text-xs text-brand-100/90">{route?.synthetic ? 'Estimate from synthetic demo routing, without live traffic' : !route?.trafficAware ? 'Estimate, without live traffic' : 'Estimate'}</p>
                   </div>
                   <Flash value={eta}>
                     <span className="text-4xl font-semibold tabular-nums tracking-[-0.02em]">{eta ?? '--'}</span>

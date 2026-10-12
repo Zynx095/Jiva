@@ -8,9 +8,30 @@ export interface ComponentHealth {
   provider?: string;
 }
 
+/** What the running system is made of (GET /api/health → provenance). */
+export interface ProvenanceReport {
+  mode: 'DEMO' | 'OPERATIONAL';
+  statement: string;
+  datasets: {
+    network: { hospitals: number; syntheticHospitals: number; ambulances: number; syntheticAmbulances: number };
+    directory: { dataStatus: string; connectedToJiva: boolean; note: string };
+    clinicians: { count: number; dataStatus: string };
+  };
+  providers: {
+    auth: string;
+    mapping: { active: string; synthetic: boolean };
+    ai: { provider: string; synthetic: boolean };
+    telemetry: { simulator: boolean; medicalDevices: boolean };
+  };
+  liveIntegrations: Record<string, boolean>;
+}
+
 export interface Health {
   status: string;
   environment?: string;
+  mode?: 'DEMO' | 'OPERATIONAL';
+  demoAuth?: boolean;
+  provenance?: ProvenanceReport;
   timestamp?: string;
   components?: {
     eventBus?: ComponentHealth;

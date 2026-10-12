@@ -161,7 +161,10 @@ function DocumentItem({ encounterId, d }: { encounterId: string; d: DocumentReco
       {preview && (
         <figure className="mt-2">
           <img src={preview} alt={d.title} className="max-h-80 rounded-lg ring-1 ring-ink-200" />
-          <figcaption className="mt-1 text-xs text-ink-500">{d.title} — synthetic demo image</figcaption>
+          <figcaption className="mt-1 text-xs text-ink-500">
+            {d.title}
+            {d.dataStatus === 'SYNTHETIC_DEMO' ? ' — synthetic demo file' : ''}
+          </figcaption>
         </figure>
       )}
       {error && <CommandError message={error} />}

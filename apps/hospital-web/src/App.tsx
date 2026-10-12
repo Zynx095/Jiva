@@ -5,7 +5,7 @@ import {
   AsyncButton,
   CardHeader,
   ConnectionPill,
-  DemoBadge,
+  ModeBadge,
   EmptyState,
   Icon,
   JivaBadge,
@@ -39,7 +39,7 @@ import {
   type JivaEvent,
   type TimelineItem,
 } from '@jiva/ui/src';
-import { PERSONA, sendEvent } from './api';
+import { API_URL, PERSONA, sendEvent } from './api';
 import { useHospital, type AcceptanceRequest } from './useHospital';
 import { ArrivalByReference, DepartmentSection, RecordArrivalButton } from './Department';
 import { PERSONAS } from './personas';
@@ -179,7 +179,7 @@ export default function App() {
           <>
             <PersonaSelect value={PERSONA} options={PERSONAS} />
             <ConnectionPill state={hs.connection} lastSync={hs.lastSync} />
-            <DemoBadge detail="Simulated hospital: responses you send here are demo data, not real capacity." />
+            <ModeBadge apiUrl={API_URL} detail="Simulated hospital: responses you send here are demo data, not real capacity." />
           </>
         }
       />
@@ -430,7 +430,7 @@ function RequestCard({ req, patient, now, onRespond }: { req: AcceptanceRequest;
           <div>
             <dt className="text-xs font-semibold text-ink-500">Ambulance ETA</dt>
             <dd className="mt-0.5 text-[15px] font-semibold tabular-nums text-ink-900">{req.ambulanceEtaMinutes !== undefined ? `≈ ${req.ambulanceEtaMinutes} min` : 'Not known yet'}</dd>
-            <dd className="text-xs text-ink-500">estimate, demo routing</dd>
+            <dd className="text-xs text-ink-500">estimate at the time of the request</dd>
           </div>
           <div className="sm:col-span-3">
             <dt className="text-xs font-semibold text-ink-500">Required care</dt>

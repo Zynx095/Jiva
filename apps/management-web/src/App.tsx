@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AppHeader,
   ConnectionPill,
-  DemoBadge,
+  ModeBadge,
   Icon,
   JivaBreadcrumbs,
   JivaButton,
@@ -44,7 +44,7 @@ import type { PanelTab, Selection, SelectionKind } from './types';
 import { Kpis } from './components/Kpis';
 import { DEFAULT_MAP_FILTERS, NetworkMap, type MapFilters } from './components/NetworkMap';
 import { DirectoryList } from './components/Directory';
-import { apiGet } from './api';
+import { API_URL, apiGet } from './api';
 import { DemoControls } from './components/DemoControls';
 import { ActivityFeed, AmbulancesList, HospitalsList, IncidentsList } from './components/Lists';
 import { AmbulanceDetail, CaseDetail, HospitalDetail } from './components/Details';
@@ -316,7 +316,7 @@ export default function App() {
             <>
               <SystemStatus health={net.health} />
               <ConnectionPill state={net.connection} lastSync={net.lastSync} />
-              <DemoBadge />
+              <ModeBadge apiUrl={API_URL} />
             </>
           }
         />

@@ -39,3 +39,4 @@ export * from './lib/referrals';
 export * from './lib/encounters';
 export * from './lib/records';
 export * from './lib/vitals';
+export * from './lib/mode';
