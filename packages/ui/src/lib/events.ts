@@ -245,6 +245,20 @@ export function describeEvent(e: JivaEvent, name: NameResolver, audience: Audien
         ? { ...base, title: `Going to ${H(newId)}`, detail: `This hospital confirmed it can receive you${min !== undefined ? ` · about ${min} min away` : ''}`, tone: 'ok', icon: 'navigation', category: 'routing', notable: true }
         : { ...base, title: `Route to ${H(newId)}`, detail: routeFacts, tone: 'ok', icon: 'route', category: 'routing' };
     }
+    case 'clinical.prescription.recorded': {
+      // Content-free event: the medication itself is read from the records API by those allowed to see it.
+      const action = str(p, 'action');
+      const title = patient
+        ? action === 'DISCONTINUED' ? 'A medication was stopped' : action === 'AMENDED' ? 'A prescription was changed' : 'A new prescription was added'
+        : `Prescription ${action === 'DISCONTINUED' ? 'stopped' : action === 'AMENDED' ? 'changed' : 'written'}${caseId ? ` · ${caseId}` : ''}`;
+      return { ...base, title, detail: patient ? 'See your prescriptions for details.' : `Version ${num(p, 'version') ?? '?'}`, tone: action === 'DISCONTINUED' ? 'neutral' : 'ok', icon: 'pill', category: 'case', notable: true };
+    }
+    case 'clinical.report.recorded': {
+      const first = num(p, 'version') === 1;
+      return patient
+        ? { ...base, title: first ? 'A new report is available' : 'A report was updated', detail: 'See your reports for details.', tone: 'ok', icon: 'file', category: 'case', notable: true }
+        : { ...base, title: `Report ${first ? 'recorded' : 'updated'}${caseId ? ` · ${caseId}` : ''}`, detail: dotJoin([str(p, 'status')?.toLowerCase(), p.patientVisible === true ? 'shared with the patient' : 'not shared']), tone: 'ok', icon: 'file', category: 'case', notable: true };
+    }
     case 'ai.handoff.generated':
       return { ...base, title: `Handoff brief${hospitalId ? ` for ${H(hospitalId)}` : ''}`, detail: str(p, 'summary'), tone: 'neutral', icon: 'brief', category: 'ai' };
     case 'ai.anomaly.explained':

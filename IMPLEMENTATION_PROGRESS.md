@@ -25,7 +25,7 @@ phase's acceptance criteria were met **and** verified; frontend-only progress is
 | 4 | Hospital referrals and explicit acceptance | ✅ Done | see Phase 4 section |
 | 5 | Arrival, handover, encounter creation | ✅ Done | see Phases 5–6 section |
 | 6 | Doctor assignment | ✅ Done | see Phases 5–6 section |
-| 7 | Clinical records and prescriptions | ⏳ | |
+| 7 | Clinical records and prescriptions | ✅ Done | see Phase 7 section |
 | 8 | Diagnostic documents and secure file storage | ⏳ | |
 | 9 | Patient dashboard and in-hospital experience | ⏳ | |
 | 10 | Medical telemetry foundation | ⏳ | |
@@ -315,3 +315,37 @@ Implemented together: the encounter lifecycle and the doctor assignment share on
 - **`doctors.csv` is not imported:** it does not belong to JIVA's hospitals, covers no emergency specialty and carries contact details. A small synthetic roster aligned with the demo personas replaces it in demo mode; production needs a hospital staff-directory integration (not built).
 - No correction workflow for arrival or handover records (an erroneous record needs an administrative amendment flow — not built). No shift or availability model: "active" is the only eligibility signal. No break-glass access.
 - Arrival, handover and assignment exist only in the local API: the AWS stack has no routes, functions or tables for encounters (nothing deployed; revisited in Phases 12 and 14).
+
+---
+
+## Phase 7 — Clinical records and prescriptions (✅ 2026-10-13)
+
+### Starting point
+
+Phase 1 had defined the record models (`Prescription`, `DiagnosticReport` with versions), the strict command bodies, the content-free `clinical.prescription.recorded` / `clinical.report.recorded` events, the policy (`prescription.*` / `report.*` actions) and the store. No workflow, route or screen existed.
+
+### What changed
+
+| Area | Files | Summary |
+|---|---|---|
+| Record rules (pure) | `services/api/src/clinical/records.ts` | Append-only versions. Prescriptions: `CREATED` (ACTIVE) → `AMENDED` → `DISCONTINUED` (final; restart = new prescription). Reports: `PRELIMINARY` → `PRELIMINARY`/`FINAL`; a final report whose clinical content changes becomes `AMENDED` and never returns to preliminary; sharing with or withdrawing from the patient alone keeps the clinical status. Every change names the version it was based on (409 `version_conflict` otherwise), must change something (422 `no_change`) and carries a reason. `contentHash` = sha256 of the canonical content + status of each version. |
+| Commands and reads | `services/api/src/routes/clinicalRecords.ts`, `clinical/views.ts`, `clinical/store.ts`, `commands/support.ts`, `index.ts` | `GET/POST /api/encounters/:id/prescriptions`, `POST …/prescriptions/:rxId/amend`, `POST …/prescriptions/:rxId/discontinue`, `GET/POST /api/encounters/:id/reports`, `GET …/reports/:reportId`, `POST …/reports/:reportId/amend`. Writes: only the clinician assigned to the encounter, only once the patient is in hospital care (409 `not_in_care`); authorization re-checked under the per-case lock (a reassignment between check and write cannot slip through); strict bodies; idempotent `clientRequestId`; report times not in the future; attachments must be verified documents of the same encounter (422 `invalid_document`); record ids are checked against the encounter in the path (no cross-encounter access). A record version is stored and its content-free event recorded together (rolled back if the event cannot be recorded). Reads: the assigned clinician (full records, every version, author names); the patient (own prescriptions; reports only once shared; current version only; prescriber/author by roster name; no staff ids, no change reasons); coordinators, crews, management and admins: 403/404. Writes and denied attempts are audited; reads are access-audited (at most once a minute per reader, record type and encounter). |
+| Event copy | `packages/ui/src/lib/{records,events,time}.ts` | Record types, route and category labels, `medicationLine`, prescription/report status, date helpers; patient and staff wording for the content-free events. |
+| Clinician workspace | `apps/hospital-web/src/{Root.tsx,main.tsx,personas.ts,ui.tsx}`, `src/clinician/*` | The hospital app now serves both roles (role from `/api/whoami`): coordinators keep their console; clinicians (`?as=demo-doc-3` …) get **My patients** (assigned encounters only) with the intake summary (symptoms, suspected cause labelled unconfirmed, assessed care, crew notes) and two panels. **Prescriptions**: prescribe, change (prefilled, based on the version shown, reason required), stop (reason required, final), history. **Diagnostic reports**: record (type, performed at, title, findings, conclusion, preliminary/final, share with patient), edit/correct, mark final, share / stop sharing, history. Every form shows the server's answer; a version conflict keeps the edits and loads the current version; retries reuse the request id. A patient reassigned to another doctor disappears from the list with their records. |
+
+### Tests
+
+| Command | Result |
+|---|---|
+| `tsx tests/unit/clinical-records.test.ts` (new) | ✅ 5 checks: v1 and hashing; amendments (stale, no-change, append-only, input not mutated); discontinuation is final; report status machine incl. release-only changes; patient projections (no user ids, no change reasons, released attachments only) |
+| `tsx tests/integration/clinical-journey.test.ts` (+Phase 7: 48) | ✅ 206 passed: coordinator / patient / other hospital's clinician / management / released crew / anonymous refused (403/404/401); validation (missing field, unknown route, author override, length, control characters); create, idempotent retry, key reuse 422, stored state; patient read without staff ids; another patient 404; coordinator and management cannot read clinical content; stale edit 409 with current version; amend → v2 with history; discontinue → v3; amending a stopped prescription 409; record id under another encounter 404; patient sees "stopped" without the internal reason; unreleased report invisible to the patient (list and by id); future report 400; unknown attachment 422; finalise + share → visible; final → preliminary 409; correction → AMENDED; realtime events carry no medication, reach only the doctor and the patient (role-only author), never management or the coordinator; management ledger read lists no clinical events; reassignment moves read/write access and back |
+| `npm run typecheck` / `test:unit` (32 suites) / `test:integration` | ✅ all exit 0 (runtime 124/0, journey 206/0) |
+| Browser | ⚠️ Not run (dev stack stopped by the environment for low memory, not restarted); covered by typecheck and production builds. |
+
+### Decisions and limitations
+
+- **Free-text clinical notes were not added** as a separate record type: the existing model's diagnostic report (category `PROCEDURE` / `OTHER`, findings, conclusion) records documented observations with the same versioning and release rules. A note type with its own release policy is a follow-up.
+- Patients always see their own prescriptions (current version, status, prescriber); reports only when the clinician shares them. Change reasons and earlier versions stay with the care team.
+- Coordinators (role `HOSPITAL`) never see clinical content — separation of duties from Phase 1.
+- No discharge workflow: records can be written while the encounter is `IN_CARE`; there is no end of encounter yet.
+- No medication terminology (free text, bounded and validated), no drug-interaction or allergy checks, no e-prescription transmission. Records live in the in-memory clinical store (lost on restart / demo reset); a production store must be encrypted and durable (not built).

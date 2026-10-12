@@ -57,7 +57,7 @@ export async function postCommand<T = Record<string, unknown>>(path: string, bod
 }
 
 /** One sentence for a rejected command, or null when it succeeded. */
-export function commandError(r: CommandResponse): string | null {
+export function commandError<T>(r: CommandResponse<T>): string | null {
   if (r.status >= 200 && r.status < 300) return null;
   if (r.status === 400) return r.body.issues?.map((i) => i.message).join('; ') || 'The request was not valid.';
   if (r.status === 403) return `Not allowed: ${r.body.message || 'this persona cannot do this for this hospital'}.`;

@@ -95,3 +95,25 @@ export function formatKm(meters: number | undefined): string {
   if (meters === undefined || !Number.isFinite(meters)) return '—';
   return `${(meters / 1000).toFixed(meters < 10_000 ? 1 : 0)} km`;
 }
+
+/** "12 Oct, 14:32" — for record dates that may be days old. */
+export function formatDateTime(t: TimeInput): string {
+  const ms = toMs(t);
+  if (!Number.isFinite(ms)) return '—';
+  return new Date(ms).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+/** Value for an `<input type="datetime-local">` (local time, minutes precision). */
+export function toDateTimeLocal(t: TimeInput): string {
+  const ms = toMs(t);
+  if (!Number.isFinite(ms)) return '';
+  const d = new Date(ms);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/** ISO timestamp from an `<input type="datetime-local">` value (interpreted in local time). */
+export function fromDateTimeLocal(value: string): string | undefined {
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? new Date(ms).toISOString() : undefined;
+}

@@ -3,7 +3,6 @@ import type { PatientState } from '@jiva/domain-models';
 import {
   ASSIGNMENT_REASON_TEXT,
   AsyncButton,
-  Icon,
   JivaBadge,
   JivaButton,
   JivaCard,
@@ -20,7 +19,7 @@ import {
   type EncounterRecord,
   type RosterEntry,
 } from '@jiva/ui/src';
-import { commandError, postCommand } from './api';
+import { CommandError, sendCommand } from './ui';
 
 /**
  * Journey B at the receiving hospital: record the arrival (creates the encounter), record the handover
@@ -32,13 +31,7 @@ import { commandError, postCommand } from './api';
 const ROLE_TEXT: Record<string, string> = { HOSPITAL: 'Hospital coordinator', CLINICIAN: 'Clinician', AMBULANCE: 'Ambulance crew' };
 
 /** Send a command; the same clientRequestId is reused for retries of the same intent (idempotent). */
-async function send(path: string, body: Record<string, unknown>): Promise<string | null> {
-  try {
-    return commandError(await postCommand(path, body));
-  } catch {
-    return 'Cannot reach JIVA. Nothing was lost — try again; the same request is safe to resend.';
-  }
-}
+const send = async (path: string, body: Record<string, unknown>) => (await sendCommand(path, body)).error;
 
 /* ------------------------------------------------------------------ arrival */
 
@@ -428,15 +421,6 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
     <div className="min-w-0">
       <dt className="text-xs font-semibold text-ink-500">{label}</dt>
       <dd className="truncate text-ink-900">{children}</dd>
-    </div>
-  );
-}
-
-function CommandError({ message }: { message: string }) {
-  return (
-    <div role="alert" className="mt-3 flex items-start gap-2 rounded-lg bg-danger-50 px-3 py-2 text-[13px] text-danger-700 ring-1 ring-inset ring-danger-200">
-      <Icon name="alertCircle" size={15} className="mt-0.5 shrink-0" />
-      <span>{message}</span>
     </div>
   );
 }

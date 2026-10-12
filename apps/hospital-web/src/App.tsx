@@ -42,6 +42,7 @@ import {
 import { PERSONA, sendEvent } from './api';
 import { useHospital, type AcceptanceRequest } from './useHospital';
 import { ArrivalByReference, DepartmentSection, RecordArrivalButton } from './Department';
+import { PERSONAS } from './personas';
 
 type Decision = 'ACCEPTED' | 'LIMITED' | 'REJECTED' | 'UNAVAILABLE';
 
@@ -58,13 +59,6 @@ const LIMIT_REASONS = ['ICU capacity limited', 'Surgical stabilisation only', 'S
 const DECLINE_REASONS = ['Trauma service unavailable', 'No ICU bed', 'Emergency department at capacity'];
 const UNAVAILABLE_REASONS = ['Emergency department full', 'Critical equipment out of service', 'Mass-casualty incident in progress'];
 const VALIDITY_MIN = 30;
-
-const PERSONAS = [
-  { value: 'demo-hosp-1', label: 'Hebbal (demo-hosp-1)' },
-  { value: 'demo-hosp-2', label: 'Whitefield (demo-hosp-2)' },
-  { value: 'demo-hosp-3', label: 'Koramangala (demo-hosp-3)' },
-  { value: 'demo-hosp-4', label: 'Indiranagar (demo-hosp-4)' },
-];
 
 const routeOf = (a?: AmbulanceState) => (a?.activeRoute && a.activeRoute.hospitalId === a.destinationHospital ? a.activeRoute : undefined);
 
