@@ -169,7 +169,14 @@ export const HospitalAcceptanceExpiredSchema = BaseEventSchema.extend({
   eventType: z.literal('hospital.acceptance.expired'),
   payload: z.object({
     requestId: z.string(),
-    hospitalId: z.string()
+    hospitalId: z.string(),
+    /** The case whose referral or acceptance lapsed (absent only on events from before it was added). */
+    caseId: z.string().optional(),
+    /**
+     * RESPONSE_VALIDITY: an ACCEPTED/LIMITED answer for this case passed its validUntil (treated as UNKNOWN).
+     * REQUEST_UNANSWERED: the referral reached its deadline without any answer.
+     */
+    kind: z.enum(['RESPONSE_VALIDITY', 'REQUEST_UNANSWERED']).optional(),
   })
 });
 

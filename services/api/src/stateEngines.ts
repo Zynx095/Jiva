@@ -47,6 +47,8 @@ const engine = {
   answered: new Map<string, string>(),
   lastRequestIdByHospital: new Map<string, string>(),
   ambulanceLocks: new Map<string, Promise<void>>(),
+  /** Case-scoped expiries already announced (`${caseId}|${hospitalId}|${responseId}`), so each is published once. */
+  expiryNotified: new Set<string>(),
 };
 
 const ms = (iso?: string) => (iso ? Date.parse(iso) : NaN);
@@ -62,6 +64,7 @@ export function resetEngines(): void {
   engine.answered.clear();
   engine.lastRequestIdByHospital.clear();
   engine.ambulanceLocks.clear();
+  engine.expiryNotified.clear();
   acceptanceLedger.reset();
   feasibilityShadow.reset();
   decisionAuthority.reset();
@@ -69,6 +72,11 @@ export function resetEngines(): void {
 
 export function hasOutstandingRequest(caseId: string, hospitalId: string): boolean {
   return engine.requests.has(`${caseId}|${hospitalId}`);
+}
+
+/** The open referral (acceptance request) for a case at a hospital, if any. Answered requests stay open for revision. */
+export function outstandingRequest(caseId: string, hospitalId: string): HospitalAcceptanceRequested['payload'] | undefined {
+  return engine.requests.get(`${caseId}|${hospitalId}`);
 }
 
 export function outstandingRequestsForHospital(hospitalId: string) {
@@ -594,26 +602,61 @@ eventBus.on('ambulance.location.updated', async (event: AmbulanceLocationUpdated
 
 let expiryTimer: NodeJS.Timeout | undefined;
 
+/**
+ * Expiry, case by case.
+ *
+ * (1) The hospital's shared acceptance slot (what hospital/management screens show as "current answer")
+ *     becomes UNKNOWN once its answer lapses — never AVAILABLE/UNAVAILABLE; the watermark is kept so an
+ *     older answer cannot resurrect it.
+ * (2) Each case's OWN answer at each hospital (the per-(case, hospital) acceptance ledger that
+ *     evaluateHospitals already uses for eligibility) is checked: when an ACCEPTED/LIMITED answer passes
+ *     its validUntil, a case-scoped `hospital.acceptance.expired` is published once and only the
+ *     ambulance of THAT case is re-evaluated (rerouteAmbulance → the existing selection).
+ *     Previously this ran off the shared slot alone: the lapse of the last-written answer rerouted every
+ *     ambulance heading to the hospital (even with valid answers of their own), and an earlier case's
+ *     lapse rerouted nobody. See IMPLEMENTATION_PROGRESS.md, Phase 4.
+ * (3) A referral that reaches its deadline unanswered is closed and announced once (REQUEST_UNANSWERED).
+ */
 export function checkAcceptanceExpiry(now = Date.now()): void {
   for (const [hospitalId, hospital] of hospitalsStore.entries()) {
     const op = hospital.operationalState;
     if ((op.acceptance === 'ACCEPTED' || op.acceptance === 'LIMITED') && op.expiresAt && ms(op.expiresAt) < now) {
-      console.log(`[Expiration] Hospital ${hospitalId} acceptance expired -> UNKNOWN.`);
-      // Expired evidence becomes UNKNOWN, never AVAILABLE/UNAVAILABLE. Watermark kept so
-      // older responses cannot resurrect the acceptance.
+      console.log(`[Expiration] Hospital ${hospitalId} current answer expired -> UNKNOWN.`);
       hospitalsStore.set(hospitalId, { ...hospital, operationalState: { ...op, acceptance: 'UNKNOWN' } });
+    }
+  }
+
+  for (const hospitalId of hospitalsStore.keys()) {
+    for (const caseId of acceptanceLedger.casesFor(hospitalId)) {
+      const r = acceptanceLedger.view(caseId, hospitalId, now).response;
+      if (!r || (r.status !== 'ACCEPTED' && r.status !== 'LIMITED') || ms(r.validUntil) > now) continue;
+      const key = `${caseId}|${hospitalId}|${r.responseId}`;
+      if (engine.expiryNotified.has(key)) continue;
+      engine.expiryNotified.add(key);
+      console.log(`[Expiration] ${caseId}: answer from ${hospitalId} expired -> UNKNOWN for this case.`);
       void publish({
         eventType: 'hospital.acceptance.expired',
         source: { type: 'system', id: 'expiration-engine' },
-        payload: { requestId: engine.lastRequestIdByHospital.get(hospitalId) || 'unknown', hospitalId },
+        patientId: caseId,
+        payload: { requestId: r.requestId, hospitalId, caseId, kind: 'RESPONSE_VALIDITY' },
       });
-      reroutePredicate(() => true, hospitalId, `Acceptance from ${hospitalId} expired`);
+      reroutePredicate(a => a.assignedPatient === caseId, hospitalId, `Acceptance from ${hospitalId} expired`);
     }
   }
+
   for (const [key, req] of engine.requests) {
     if (ms(req.expiresAt) < now) {
+      const unanswered = !engine.answered.has(key);
       engine.requests.delete(key);
       engine.answered.delete(key);
+      if (unanswered) {
+        void publish({
+          eventType: 'hospital.acceptance.expired',
+          source: { type: 'system', id: 'expiration-engine' },
+          patientId: req.caseId,
+          payload: { requestId: req.requestId, hospitalId: req.hospitalId, caseId: req.caseId, kind: 'REQUEST_UNANSWERED' },
+        });
+      }
     }
   }
 }

@@ -118,7 +118,9 @@ export function canReceiveEvent(auth: AuthContext, event: AnyEvent): boolean {
   }
   if (auth.role === 'AMBULANCE') {
     if (p.ambulanceId && p.ambulanceId === auth.ambulanceId) return true;
-    if (event.eventType === 'hospital.capacity.updated' || event.eventType === 'hospital.acceptance.expired') return true;
+    if (event.eventType === 'hospital.capacity.updated') return true;
+    // Legacy expiry events carried no case; case-scoped ones go only to the crew of that case.
+    if (event.eventType === 'hospital.acceptance.expired' && !p.caseId) return true;
     const own = ambulanceCase(auth.ambulanceId);
     return !!own && caseId === own && !event.eventType.startsWith('ai.summary');
   }
