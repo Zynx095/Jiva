@@ -152,6 +152,9 @@ export function describeEvent(e: JivaEvent, name: NameResolver, audience: Audien
       };
     }
     case 'hospital.acceptance.expired':
+      if (str(p, 'kind') === 'REQUEST_UNANSWERED') {
+        return { ...base, title: audience === 'hospital' ? 'A request closed without your answer' : `${H(hospitalId)} did not answer in time`, detail: 'Treated as unknown for this case', tone: 'neutral', icon: 'hourglass', category: 'hospital', notable: audience !== 'hospital' };
+      }
       return { ...base, title: `${H(hospitalId)}'s acceptance expired`, detail: 'Treated as unknown until the hospital answers again', tone: 'neutral', icon: 'hourglass', category: 'hospital', notable: true };
     case 'hospital.acceptance.cancelled':
       return { ...base, title: `Request to ${H(hospitalId)} withdrawn`, detail: CANCEL_REASON[str(p, 'reason') ?? ''] ?? str(p, 'reason'), tone: 'neutral', icon: 'x', category: 'hospital' };

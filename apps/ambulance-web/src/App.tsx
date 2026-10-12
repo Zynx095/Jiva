@@ -39,10 +39,14 @@ import {
   severityStatus,
   timeAgo,
   timeUntil,
+  capacityLine,
+  referralDetail,
+  referralStatus,
   useDirectory,
   useNow,
   useToast,
   type CaseResponse,
+  type ReferralRow,
   type DirectoryFacility,
   type DirectoryResponse,
   type JivaEvent,
@@ -174,8 +178,15 @@ export default function App() {
     return typeof e?.payload.severity === 'string' ? e.payload.severity : undefined;
   }, [crew.events, caseId]);
 
+  const overview = crew.referrals?.caseId === caseId ? crew.referrals : null;
+  const rowById = useMemo(() => new Map((overview?.rows ?? []).map((r) => [r.hospitalId, r])), [overview]);
   const statusFor = (h: HospitalState): string => {
     if (h.operationalState.emergency === 'UNAVAILABLE') return 'UNAVAILABLE';
+    const row = rowById.get(h.hospitalId);
+    if (row) {
+      const st = referralStatus(row, now);
+      return st === 'NOT_ASKED' || st === 'CANCELLED' || st === 'UNANSWERED' ? 'UNKNOWN' : st;
+    }
     const r = responses?.get(h.hospitalId);
     if (r) return r.status === 'CANCELLED' ? 'UNKNOWN' : r.status;
     return h.operationalState.acceptanceCaseId === caseId ? h.operationalState.acceptance : 'UNKNOWN';
@@ -501,7 +512,11 @@ export default function App() {
               {caseId && (
                 <JivaCard>
                   <CardHeader title="Hospital answers" icon="hospital" subtitle="Only hospitals that confirm can become your destination" />
-                  <HospitalAnswers hospitals={hospitals} responses={responses} destinationId={destination?.hospitalId} statusFor={statusFor} now={now} />
+                  {overview ? (
+                    <ReferralAnswers rows={overview.rows} destinationId={destination?.hospitalId} now={now} />
+                  ) : (
+                    <HospitalAnswers hospitals={hospitals} responses={responses} destinationId={destination?.hospitalId} statusFor={statusFor} now={now} />
+                  )}
                 </JivaCard>
               )}
 
@@ -653,6 +668,57 @@ function Step({ icon, tone, title, subtitle, strike, last }: { icon: 'ban' | 'in
         <p className="text-[13px] text-ink-600">{subtitle}</p>
       </div>
     </li>
+  );
+}
+
+/**
+ * Server-side referral overview: per connected hospital, the explicit answer for THIS case (or why there
+ * is none), what the hospital lists, and its last capacity report with who reported it.
+ */
+function ReferralAnswers({ rows, destinationId, now }: { rows: ReferralRow[]; destinationId?: string; now: number }) {
+  const rank: Record<string, number> = { ACCEPTED: 0, LIMITED: 1, PENDING: 2, EXPIRED: 3, UNANSWERED: 3, CANCELLED: 4, REJECTED: 5, UNAVAILABLE: 5, NOT_ASKED: 6 };
+  const list = [...rows].sort((a, b) => (a.hospitalId === destinationId ? -1 : b.hospitalId === destinationId ? 1 : (rank[referralStatus(a, now)] ?? 9) - (rank[referralStatus(b, now)] ?? 9)));
+  return (
+    <ul className="mt-3 divide-y divide-ink-100">
+      {list.map((r) => {
+        const isDest = r.hospitalId === destinationId;
+        return (
+          <li key={r.hospitalId} className={cx('py-2.5', isDest && 'rounded-lg bg-brand-50/60 px-2 -mx-2')}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-[13px] font-semibold text-ink-900">
+                  {hospitalShortName(r.name)}
+                  {isDest && <span className="ml-1.5 text-xs font-semibold text-brand-700">Your destination</span>}
+                </p>
+                <p className="text-xs text-ink-600">{referralDetail(r, now)}</p>
+              </div>
+              <JivaStatus meta={acceptanceStatus(referralStatus(r, now))} />
+            </div>
+            <details className="mt-1 text-xs text-ink-500">
+              <summary className="cursor-pointer select-none font-semibold text-ink-500 hover:text-ink-700">Evidence</summary>
+              <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5">
+                <dt>Lists</dt>
+                <dd>{r.listed.missingRequired.length ? `not ${r.listed.missingRequired.map((c) => capabilityLabel(c)).join(', ')}` : 'all the care needed'}</dd>
+                {r.assessment && (
+                  <>
+                    <dt>Assessed</dt>
+                    <dd>at referral: {r.assessment.eligibility === 'INELIGIBLE' ? 'not suitable' : r.assessment.eligibility === 'ELIGIBLE' ? 'eligible' : 'capable, answer needed'}{r.assessment.etaMinutes ? ` · ≈ ${r.assessment.etaMinutes} min (estimate)` : ''}</dd>
+                  </>
+                )}
+                {r.answer && (
+                  <>
+                    <dt>Answer</dt>
+                    <dd>{r.answer.provenance === 'SYNTHETIC_DEMO' ? 'demo response' : r.answer.provenance === 'HOSPITAL_CONFIRMED' ? 'confirmed by hospital staff' : r.answer.provenance.toLowerCase()} · ref {r.answer.requestId}</dd>
+                  </>
+                )}
+                <dt>Capacity</dt>
+                <dd>{capacityLine(r, now)}</dd>
+              </dl>
+            </details>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

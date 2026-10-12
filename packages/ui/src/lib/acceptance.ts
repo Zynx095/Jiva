@@ -1,7 +1,7 @@
 import type { JivaEvent } from './events';
 
 /** A hospital's state for one case, replayed from acceptance-protocol events. */
-export type CaseResponseStatus = 'PENDING' | 'ACCEPTED' | 'LIMITED' | 'REJECTED' | 'UNAVAILABLE' | 'EXPIRED' | 'CANCELLED';
+export type CaseResponseStatus = 'PENDING' | 'ACCEPTED' | 'LIMITED' | 'REJECTED' | 'UNAVAILABLE' | 'EXPIRED' | 'UNANSWERED' | 'CANCELLED';
 
 export interface CaseResponse {
   hospitalId: string;
@@ -69,15 +69,24 @@ export function caseResponses(eventsNewestFirst: JivaEvent[]): Map<string, Map<s
           if (prev) m.set(hospitalId, { ...prev, status: prev.status === 'PENDING' ? 'CANCELLED' : prev.status, cancelReason: str(p.reason) });
         }
         break;
-      case 'hospital.acceptance.expired':
-        // The expiry engine expires a hospital's current acceptance (the event carries no case id).
-        if (hospitalId) {
-          for (const m of out.values()) {
-            const prev = m.get(hospitalId);
-            if (prev && (prev.status === 'ACCEPTED' || prev.status === 'LIMITED')) m.set(hospitalId, { ...prev, status: 'EXPIRED' });
-          }
+      case 'hospital.acceptance.expired': {
+        if (!hospitalId) break;
+        const kind = str(p.kind);
+        if (caseId) {
+          // Case-scoped: this case's answer lapsed, or its referral closed without an answer.
+          const m = slot(caseId);
+          const prev = m.get(hospitalId);
+          if (prev && kind === 'REQUEST_UNANSWERED' && prev.status === 'PENDING') m.set(hospitalId, { ...prev, status: 'UNANSWERED' });
+          else if (prev && kind !== 'REQUEST_UNANSWERED' && (prev.status === 'ACCEPTED' || prev.status === 'LIMITED')) m.set(hospitalId, { ...prev, status: 'EXPIRED' });
+          break;
+        }
+        // Older events carry no case id: they expired the hospital's current answer for every case.
+        for (const m of out.values()) {
+          const prev = m.get(hospitalId);
+          if (prev && (prev.status === 'ACCEPTED' || prev.status === 'LIMITED')) m.set(hospitalId, { ...prev, status: 'EXPIRED' });
         }
         break;
+      }
     }
   }
   return out;

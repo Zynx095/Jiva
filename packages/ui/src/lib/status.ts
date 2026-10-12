@@ -69,6 +69,12 @@ export function acceptanceStatus(status?: string): StatusMeta {
       return { label: 'Unavailable', tone: 'danger', icon: 'ban', hint: 'The hospital reported it cannot receive patients right now.' };
     case 'EXPIRED':
       return { label: 'Expired', tone: 'neutral', icon: 'hourglass', hint: 'The last answer is too old to rely on.' };
+    case 'UNANSWERED':
+      return { label: 'No answer in time', tone: 'neutral', icon: 'hourglass', hint: 'The request reached its deadline without an answer. JIVA treats the hospital as unknown for this case.' };
+    case 'NOT_ASKED':
+      return { label: 'Not asked', tone: 'neutral', icon: 'minus', hint: 'JIVA did not send this hospital a request for this case.' };
+    case 'CANCELLED':
+      return { label: 'Withdrawn', tone: 'neutral', icon: 'x', hint: 'JIVA withdrew the request (the case changed or closed).' };
     default:
       return { label: 'No current response', tone: 'neutral', icon: 'help', hint: 'No current answer from this hospital. JIVA never assumes a bed is free.' };
   }

@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   CardHeader,
   DataRow,
@@ -23,8 +23,13 @@ import {
   severityStatus,
   timeAgo,
   timeUntil,
+  capacityLine,
+  referralDetail,
+  referralStatus,
+  type ReferralOverview,
   type TimelineItem,
 } from '@jiva/ui/src';
+import { apiGet } from '../api';
 import { eventsForCase, gpsFreshness, hospitalFreshness } from '../derive';
 import { useModel } from '../model';
 import { CandidateTrace, CapabilityChips, EntityLink, EventDetails, ResponseRow, RouteFacts } from './bits';
@@ -136,6 +141,8 @@ export function CaseDetail({ id }: { id: string }) {
           </p>
         )}
       </Block>
+
+      <ReferralEvidence caseId={id} />
 
       {candidates.length > 0 && (
         <details className="group rounded-xl bg-white ring-1 ring-ink-200">
@@ -378,3 +385,58 @@ function Missing({ what }: { what: string }) {
   return <EmptyState icon="help" title={`This ${what} is no longer listed`} description="It may have been cleared by a demo reset. Go back to the network overview." />;
 }
 
+
+/* ------------------------------------------------------------------ referral evidence */
+
+/**
+ * The four kinds of information JIVA holds per connected hospital for this case, kept apart: what it
+ * lists, what JIVA assessed, what it answered (the only thing that makes it a destination), and its last
+ * capacity report with who reported it. Server read model (GET /api/cases/:id/referrals).
+ */
+function ReferralEvidence({ caseId }: { caseId: string }) {
+  const m = useModel();
+  const [overview, setOverview] = useState<ReferralOverview | null>(null);
+  const [failed, setFailed] = useState(false);
+  const caseEvents = m.events.filter((e) => e.patientId === caseId || e.payload.caseId === caseId).length;
+  useEffect(() => {
+    let live = true;
+    apiGet<ReferralOverview>(`/api/cases/${encodeURIComponent(caseId)}/referrals`)
+      .then((o) => {
+        if (!live) return;
+        setOverview(o);
+        setFailed(false);
+      })
+      .catch(() => live && setFailed(true));
+    return () => {
+      live = false;
+    };
+  }, [caseId, caseEvents]);
+
+  if (failed && !overview) return <p className="text-xs text-ink-500">Referral evidence is unavailable right now.</p>;
+  if (!overview) return null;
+  return (
+    <Block title="Referral evidence" count={overview.rows.length}>
+      <p className="text-xs text-ink-500">Listed care and reported capacity never make a hospital a destination — only its explicit, current answer for this case does.</p>
+      <ul className="divide-y divide-ink-100 rounded-xl bg-white ring-1 ring-ink-200">
+        {overview.rows.map((r) => (
+          <li key={r.hospitalId} className="space-y-1 px-3 py-2.5 text-xs">
+            <div className="flex items-start justify-between gap-2">
+              <EntityLink onClick={() => m.select({ kind: 'hospital', id: r.hospitalId })}>{m.name(r.hospitalId) ?? r.name}</EntityLink>
+              <JivaStatus meta={acceptanceStatus(referralStatus(r, m.now))} />
+            </div>
+            <dl className="grid grid-cols-[5.5rem_1fr] gap-x-2 gap-y-0.5 text-ink-600">
+              <dt className="text-ink-500">Lists</dt>
+              <dd>{r.listed.missingRequired.length ? `not ${r.listed.missingRequired.map((c) => capabilityLabel(c)).join(', ')}` : 'all required care'}</dd>
+              <dt className="text-ink-500">Assessed</dt>
+              <dd>{r.assessment ? `at referral: ${r.assessment.eligibility === 'INELIGIBLE' ? 'not suitable' : r.assessment.eligibility === 'ELIGIBLE' ? 'eligible' : 'capable, answer needed'}${r.assessment.etaMinutes ? ` · ≈ ${r.assessment.etaMinutes} min estimate` : ''}` : 'not evaluated'}</dd>
+              <dt className="text-ink-500">Answer</dt>
+              <dd>{referralDetail(r, m.now)}{r.answer ? ` · ${dataStatus(r.answer.provenance).label.toLowerCase()} · ref ${r.answer.requestId}` : ''}</dd>
+              <dt className="text-ink-500">Capacity</dt>
+              <dd>{capacityLine(r, m.now)}</dd>
+            </dl>
+          </li>
+        ))}
+      </ul>
+    </Block>
+  );
+}

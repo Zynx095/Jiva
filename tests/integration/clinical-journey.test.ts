@@ -146,6 +146,98 @@ async function facilityDirectory(api: Api) {
   check('referrals and candidate evaluation consider network hospitals only', asked.length > 0 && [...asked, ...evaluated].every(id => /^HOSP-BLR-00\d$/.test(id)), JSON.stringify([...new Set([...asked, ...evaluated])]));
 }
 
+// ------------------------------------------------------------------------------------------ phase 4
+
+/** The open referral id for (case, hospital), read from the ledger as management. */
+async function referralId(api: Api, caseId: string, hospitalId: string): Promise<string | undefined> {
+  const hist = (await api.get(P.mgmt, '/api/events/history?limit=1000')).json as any[];
+  return hist.find(e => e.eventType === 'hospital.acceptance.requested' && e.payload.caseId === caseId && e.payload.hospitalId === hospitalId)?.payload.requestId;
+}
+
+const answer = (caseId: string, hospitalId: string, requestId: string | undefined, status: string, o: Record<string, unknown> = {}) =>
+  envelope('hospital.acceptance.received', {
+    responseId: `R-${uuid().slice(0, 8)}`, requestId: requestId ?? 'AR-none', caseId, hospitalId, status,
+    acceptedCapabilities: status === 'REJECTED' || status === 'UNAVAILABLE' ? [] : ['EMERGENCY', 'TRAUMA', 'ICU'], limitations: [],
+    respondedAt: new Date().toISOString(), validUntil: new Date(Date.now() + 30 * 60_000).toISOString(), responderRole: 'CLINICAL_COORDINATOR', source: 'SYNTHETIC_DEMO', ...o,
+  }, { type: 'hospital', id: hospitalId });
+
+async function referralsAndAcceptance(api: Api) {
+  console.log('\n[Phase 4] Hospital referrals and explicit acceptance');
+  await reset(api);
+  const crew = await api.socket(P.a1);
+  const otherCrew = await api.socket(P.a2);
+  const created = await api.post(P.a1, '/api/emergencies', intakeBody({ severity: 'CRITICAL', requiredCapabilities: [] }));
+  const caseId: string = created.json?.caseId;
+  await api.waitFor(async () => !!(await referralId(api, caseId, 'HOSP-BLR-004')));
+
+  // the four kinds of information, kept apart
+  const ov = await api.get(P.a1, `/api/cases/${caseId}/referrals`);
+  const row = (id: string) => ov.json?.rows?.find((r: any) => r.hospitalId === id);
+  check('crew reads the referral overview of its case', ov.status === 200 && ov.json.rows.length === 4, `${ov.status}`);
+  check('listed (directory-level) vs assessed: incapable H3 lists neither trauma nor ICU and was not referred',
+    JSON.stringify(row('HOSP-BLR-003')?.listed.missingRequired) === JSON.stringify(['TRAUMA', 'ICU']) && row('HOSP-BLR-003')?.referral.state === 'NOT_REQUESTED' && row('HOSP-BLR-003')?.assessment?.eligibility === 'INELIGIBLE');
+  check('capable hospitals hold an outstanding, case-specific referral with a 15-minute deadline',
+    ['HOSP-BLR-001', 'HOSP-BLR-002', 'HOSP-BLR-004'].every(h => row(h)?.referral.state === 'OUTSTANDING' && Math.round((Date.parse(row(h).referral.expiresAt) - Date.parse(row(h).referral.requestedAt)) / 60_000) === 15));
+  check('no answer is assumed: no hospital has an answer yet', ov.json.rows.every((r: any) => !r.answer));
+  check('capacity is a report, not a verification (seed / demo data is never "verified")', ov.json.rows.every((r: any) => r.capacity.verified === false && ['SEED', 'SYNTHETIC_DEMO'].includes(r.capacity.provenance)));
+  check('patients do not see hospital answers → 403', (await api.get(P.pat1, `/api/cases/${caseId}/referrals`)).status === 403);
+  check('an unrelated crew → 404', (await api.get(P.a2, `/api/cases/${caseId}/referrals`)).status === 404);
+  check('a never-asked hospital → 404', (await api.get(P.h3, `/api/cases/${caseId}/referrals`)).status === 404);
+  const h1view = await api.get(P.h1, `/api/cases/${caseId}/referrals`);
+  check('a referred hospital sees only its own row', h1view.status === 200 && h1view.json.rows.length === 1 && h1view.json.rows[0].hospitalId === 'HOSP-BLR-001');
+
+  // correlation: the right case, the right referral, possible times
+  const r1 = await referralId(api, caseId, 'HOSP-BLR-001');
+  check('answer naming another referral id → 409 request_mismatch', (await api.event(P.h1, answer(caseId, 'HOSP-BLR-001', 'AR-invented', 'ACCEPTED'))).json?.error === 'request_mismatch');
+  const other = await api.post(P.a2, '/api/emergencies', intakeBody({ severity: 'CRITICAL', requiredCapabilities: [] }));
+  const otherCase: string = other.json?.caseId;
+  await api.waitFor(async () => !!(await referralId(api, otherCase, 'HOSP-BLR-001')));
+  const crossCase = await api.event(P.h1, answer(otherCase, 'HOSP-BLR-001', r1, 'ACCEPTED'));
+  check('an acceptance for one case cannot use another case\'s referral → 409', crossCase.status === 409 && crossCase.json?.error === 'request_mismatch', crossCase.text);
+  check('answer dated in the future → 400', (await api.event(P.h1, answer(caseId, 'HOSP-BLR-001', r1, 'ACCEPTED', { respondedAt: new Date(Date.now() + 10 * 60_000).toISOString() }))).status === 400);
+  check('acceptance valid for 7 hours → 400', (await api.event(P.h1, answer(caseId, 'HOSP-BLR-001', r1, 'ACCEPTED', { validUntil: new Date(Date.now() + 7 * 3600_000).toISOString() }))).status === 400);
+  check('a clinician cannot answer for the hospital → 403', (await api.event(P.doc3, answer(caseId, 'HOSP-BLR-001', r1, 'ACCEPTED'))).status === 403);
+
+  // explicit answers drive the destination
+  check('H2 declines (REJECTED) → 202', (await api.event(P.h2, answer(caseId, 'HOSP-BLR-002', await referralId(api, caseId, 'HOSP-BLR-002'), 'REJECTED', { limitations: ['No ICU bed'] }))).status === 202);
+  const acc = answer(caseId, 'HOSP-BLR-001', r1, 'ACCEPTED');
+  check('H1 accepts its own referral → 202', (await api.event(P.h1, acc)).status === 202);
+  const routed = await api.waitFor(async () => (await api.get(P.a1, '/api/ambulances')).json?.[0]?.destinationHospital === 'HOSP-BLR-001');
+  check('the crew is routed to the hospital that explicitly accepted', routed);
+  const ov2 = await api.get(P.mgmt, `/api/cases/${caseId}/referrals`);
+  const r2 = (id: string) => ov2.json.rows.find((r: any) => r.hospitalId === id);
+  check('overview: H1 answer ACCEPTED, current, provenance from the principal (demo → SYNTHETIC_DEMO)', r2('HOSP-BLR-001')?.answer?.status === 'ACCEPTED' && r2('HOSP-BLR-001').answer.current && r2('HOSP-BLR-001').answer.provenance === 'SYNTHETIC_DEMO' && r2('HOSP-BLR-001').answer.requestId === r1);
+  check('overview: H2 refusal recorded with its limits', r2('HOSP-BLR-002')?.answer?.status === 'REJECTED' && r2('HOSP-BLR-002').answer.limitations[0] === 'No ICU bed');
+  check('the other case is untouched by H1\'s acceptance of this case', !(await api.get(P.mgmt, `/api/cases/${otherCase}/referrals`)).json.rows.some((r: any) => r.answer));
+
+  // duplicates and conflicts
+  check('exact duplicate delivery → duplicate_ignored', (await api.event(P.h1, acc)).json?.status === 'duplicate_ignored');
+  const conflicting = { ...acc, eventId: uuid(), payload: { ...(acc.payload as object), status: 'REJECTED' } };
+  check('conflicting re-use of a responseId is accepted for audit but changes no decision', (await api.event(P.h1, conflicting)).status === 202);
+  await new Promise(r => setTimeout(r, 400));
+  check('…the crew keeps its destination', (await api.get(P.a1, '/api/ambulances')).json?.[0]?.destinationHospital === 'HOSP-BLR-001');
+  check('…and the conflicting envelope is kept in the audit ledger', ((await api.get(P.mgmt, '/api/events/history?limit=1000')).json as any[]).some(e => e.eventId === conflicting.eventId));
+
+  // "busy / unable to accept any patient" is part of the domain: UNAVAILABLE
+  const r4 = await referralId(api, caseId, 'HOSP-BLR-004');
+  check('H4 answers UNAVAILABLE (cannot take any patient now) → 202', (await api.event(P.h4, answer(caseId, 'HOSP-BLR-004', r4, 'UNAVAILABLE', { limitations: ['ED at capacity'] }))).status === 202);
+  await api.waitFor(async () => ((await api.get(P.mgmt, '/api/hospitals')).json as any[]).find(h => h.hospitalId === 'HOSP-BLR-004')?.operationalState.acceptance === 'UNAVAILABLE');
+  check('…recorded hospital-wide (legacy semantics) and visible in the overview', (await api.get(P.mgmt, `/api/cases/${caseId}/referrals`)).json.rows.find((r: any) => r.hospitalId === 'HOSP-BLR-004')?.answer?.status === 'UNAVAILABLE');
+
+  // a short-lived acceptance lapses: case-scoped expiry reaches this crew only
+  const shortCase = (await api.post(P.a3, '/api/emergencies', intakeBody({ severity: 'CRITICAL', requiredCapabilities: [] }))).json?.caseId as string;
+  const shortCrew = await api.socket(P.a3);
+  await api.waitFor(async () => !!(await referralId(api, shortCase, 'HOSP-BLR-001')));
+  check('short acceptance (2 s) → 202', (await api.event(P.h1, answer(shortCase, 'HOSP-BLR-001', await referralId(api, shortCase, 'HOSP-BLR-001'), 'ACCEPTED', { validUntil: new Date(Date.now() + 2000).toISOString() }))).status === 202);
+  const lapsed = await api.waitFor(async () => shortCrew.events.some(e => e.eventType === 'hospital.acceptance.expired' && e.payload.caseId === shortCase && e.payload.kind === 'RESPONSE_VALIDITY'), 8000);
+  check('the lapse is announced to that case\'s crew (case-scoped, RESPONSE_VALIDITY)', lapsed);
+  check('…and not to another case\'s crew', !crew.events.some(e => e.eventType === 'hospital.acceptance.expired' && e.payload.caseId === shortCase) && !otherCrew.events.some(e => e.eventType === 'hospital.acceptance.expired' && e.payload.caseId === shortCase));
+  const ov3 = await api.get(P.mgmt, `/api/cases/${shortCase}/referrals`);
+  check('overview marks the lapsed answer as not current', ov3.json.rows.find((r: any) => r.hospitalId === 'HOSP-BLR-001')?.answer?.current === false);
+  check('the first case keeps its valid destination at the same hospital', (await api.get(P.a1, '/api/ambulances')).json?.[0]?.destinationHospital === 'HOSP-BLR-001');
+  for (const s of [crew, otherCrew, shortCrew]) s.s.close();
+}
+
 // ------------------------------------------------------------------------------------------
 
 async function main() {
@@ -154,6 +246,7 @@ async function main() {
   try {
     await emergencyIntake(api);
     await facilityDirectory(api);
+    await referralsAndAcceptance(api);
     check('API process still healthy at the end', (await api.get(undefined, '/api/health')).status === 200);
     check('no handler crashes logged', !/Handler for .* failed|Uncaught exception|Unhandled rejection/.test(api.log()), api.log().match(/.*(failed|Uncaught|Unhandled).*/g)?.slice(0, 3).join('\n'));
   } finally {

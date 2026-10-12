@@ -42,7 +42,7 @@ import {
 import { PERSONA, sendEvent } from './api';
 import { useHospital, type AcceptanceRequest } from './useHospital';
 
-type Decision = 'ACCEPTED' | 'LIMITED' | 'REJECTED';
+type Decision = 'ACCEPTED' | 'LIMITED' | 'REJECTED' | 'UNAVAILABLE';
 
 interface Confirmation {
   requestId: string;
@@ -55,6 +55,7 @@ interface Confirmation {
 
 const LIMIT_REASONS = ['ICU capacity limited', 'Surgical stabilisation only', 'Specialist on call, arriving later', 'Imaging (CT) unavailable'];
 const DECLINE_REASONS = ['Trauma service unavailable', 'No ICU bed', 'Emergency department at capacity'];
+const UNAVAILABLE_REASONS = ['Emergency department full', 'Critical equipment out of service', 'Mass-casualty incident in progress'];
 const VALIDITY_MIN = 30;
 
 const PERSONAS = [
@@ -134,7 +135,7 @@ export default function App() {
         caseId: req.caseId,
         hospitalId: hs.hospitalId,
         status,
-        acceptedCapabilities: status === 'REJECTED' ? [] : req.requiredCapabilities,
+        acceptedCapabilities: status === 'REJECTED' || status === 'UNAVAILABLE' ? [] : req.requiredCapabilities,
         limitations,
         respondedAt,
         validUntil,
@@ -366,7 +367,7 @@ function StatusStrip({ hospital, now, onUnavailable, onAvailable }: { hospital: 
 /* ------------------------------------------------------------------ request card */
 
 function RequestCard({ req, patient, now, onRespond }: { req: AcceptanceRequest; patient?: PatientState; now: number; onRespond: (r: AcceptanceRequest, s: Decision, l: string[]) => Promise<string | null> }) {
-  const [mode, setMode] = useState<'choose' | 'limited' | 'rejected'>('choose');
+  const [mode, setMode] = useState<'choose' | 'limited' | 'rejected' | 'unavailable'>('choose');
   const [reasons, setReasons] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const left = msUntil(req.expiresAt, now);
@@ -374,9 +375,10 @@ function RequestCard({ req, patient, now, onRespond }: { req: AcceptanceRequest;
   const expired = left <= 0;
   const urgent = left > 0 && left < 2 * 60_000;
 
-  const pick = (m: 'limited' | 'rejected') => {
+  const REASONS = { limited: LIMIT_REASONS, rejected: DECLINE_REASONS, unavailable: UNAVAILABLE_REASONS } as const;
+  const pick = (m: 'limited' | 'rejected' | 'unavailable') => {
     setMode(m);
-    setReasons([m === 'limited' ? LIMIT_REASONS[0] : DECLINE_REASONS[0]]);
+    setReasons([REASONS[m][0]]);
     setError(null);
   };
   const send = (status: Decision, limitations: string[]) => async () => {
@@ -400,6 +402,7 @@ function RequestCard({ req, patient, now, onRespond }: { req: AcceptanceRequest;
             <h3 id={`req-${req.requestId}`} className="mt-0.5 text-xl font-semibold tracking-[-0.01em] text-ink-900">
               {req.caseId}
             </h3>
+            <p className="text-xs text-ink-500">Referral {req.requestId} · your answer is tied to this case only</p>
           </div>
           <div className={cx('rounded-xl px-3 py-2 text-right ring-1 ring-inset', expired ? 'bg-ink-50 ring-ink-200' : urgent ? 'bg-danger-50 ring-danger-200' : 'bg-warn-50 ring-warn-200')} role="timer" aria-live="off">
             <p className={cx('text-xs font-semibold', expired ? 'text-ink-600' : urgent ? 'text-danger-700' : 'text-warn-800')}>{expired ? 'Response window closed' : 'Answer within'}</p>
@@ -448,12 +451,17 @@ function RequestCard({ req, patient, now, onRespond }: { req: AcceptanceRequest;
                   ? 'This request expired without an answer. JIVA treats your hospital as unknown for this case.'
                   : `Accepting lets JIVA route the ambulance to you. Answers are valid for ${VALIDITY_MIN} minutes.`}
               </p>
+              {!expired && (
+                <button type="button" onClick={() => pick('unavailable')} className="mt-1.5 text-xs font-semibold text-danger-700 hover:underline">
+                  Can't take any patient right now?
+                </button>
+              )}
             </>
           ) : (
             <div className="animate-fade space-y-3">
-              <p className="text-sm font-semibold text-ink-900">{mode === 'limited' ? 'Which limits apply?' : 'Why are you declining?'}</p>
+              <p className="text-sm font-semibold text-ink-900">{mode === 'limited' ? 'Which limits apply?' : mode === 'unavailable' ? 'Why can\'t you take any patient?' : 'Why are you declining?'}</p>
               <div className="flex flex-wrap gap-1.5" role="group" aria-label={mode === 'limited' ? 'Limits' : 'Reasons'}>
-                {(mode === 'limited' ? LIMIT_REASONS : DECLINE_REASONS).map((r) => {
+                {REASONS[mode].map((r) => {
                   const on = reasons.includes(r);
                   return (
                     <button
@@ -472,20 +480,22 @@ function RequestCard({ req, patient, now, onRespond }: { req: AcceptanceRequest;
                   );
                 })}
               </div>
-              <p className="text-xs text-ink-500">
+              <p className={cx('text-xs', mode === 'unavailable' ? 'font-semibold text-danger-700' : 'text-ink-500')}>
                 {mode === 'limited'
                   ? 'Hospitals that accept fully are preferred; your limits are shown to the coordinating team.'
-                  : 'JIVA will ask other hospitals. If an ambulance is heading here for this case, it is rerouted.'}
+                  : mode === 'unavailable'
+                    ? `This tells JIVA your hospital cannot take ANY new patient for the next ${VALIDITY_MIN} minutes: every ambulance heading here is rerouted and JIVA stops asking you until then.`
+                    : 'JIVA will ask other hospitals. If an ambulance is heading here for this case, it is rerouted.'}
               </p>
               <div className="flex flex-wrap gap-2">
                 <AsyncButton
                   variant={mode === 'limited' ? 'primary' : 'danger'}
-                  icon={mode === 'limited' ? 'half' : 'xCircle'}
+                  icon={mode === 'limited' ? 'half' : mode === 'unavailable' ? 'ban' : 'xCircle'}
                   disabled={reasons.length === 0 || expired}
                   pendingText="Sending…"
-                  onAction={send(mode === 'limited' ? 'LIMITED' : 'REJECTED', reasons)}
+                  onAction={send(mode === 'limited' ? 'LIMITED' : mode === 'unavailable' ? 'UNAVAILABLE' : 'REJECTED', reasons)}
                 >
-                  {mode === 'limited' ? 'Send limited acceptance' : 'Send decline'}
+                  {mode === 'limited' ? 'Send limited acceptance' : mode === 'unavailable' ? 'Report unable to take patients' : 'Send decline'}
                 </AsyncButton>
                 <JivaButton variant="ghost" onClick={() => setMode('choose')}>
                   Back
@@ -508,14 +518,16 @@ function RequestCard({ req, patient, now, onRespond }: { req: AcceptanceRequest;
 }
 
 /** Cause → effect: what happened after this hospital answered. */
-const VERB: Record<Decision, string> = { ACCEPTED: 'accepted', LIMITED: 'accepted with limits', REJECTED: 'declined' };
+const VERB: Record<Decision, string> = { ACCEPTED: 'accepted', LIMITED: 'accepted with limits', REJECTED: 'declined', UNAVAILABLE: 'reported unable to take patients' };
 
 function ConfirmationCard({ c, hospitalId, hospital, ambulances, now }: { c: Confirmation; hospitalId: string; hospital: HospitalState | null; ambulances: AmbulanceState[]; now: number }) {
   const meta = acceptanceStatus(c.status);
   const routed = ambulances.find((a) => a.assignedPatient === c.caseId && a.destinationHospital === hospitalId);
   const route = routeOf(routed);
   const effect =
-    c.status === 'REJECTED'
+    c.status === 'UNAVAILABLE'
+      ? `JIVA reroutes ambulances heading here and stops asking you for ${VALIDITY_MIN} minutes.`
+      : c.status === 'REJECTED'
       ? 'JIVA is offering this case to other hospitals.'
       : hospital?.operationalState.emergency === 'UNAVAILABLE'
         ? 'Your emergency department is reported unavailable, so JIVA routes this patient elsewhere.'
@@ -534,10 +546,10 @@ function ConfirmationCard({ c, hospitalId, hospital, ambulances, now }: { c: Con
         <span className="ml-auto text-xs text-ink-500">{timeAgo(c.at, now)}</span>
       </div>
       <p className="mt-2 flex items-center gap-1.5 text-sm text-ink-700">
-        <Icon name={routed ? 'ambulance' : c.status === 'REJECTED' ? 'route' : 'info'} size={15} className="shrink-0 text-ink-500" />
+        <Icon name={routed ? 'ambulance' : c.status === 'REJECTED' || c.status === 'UNAVAILABLE' ? 'route' : 'info'} size={15} className="shrink-0 text-ink-500" />
         {effect}
       </p>
-      {c.status !== 'REJECTED' && <p className="mt-1 text-xs text-ink-500">Valid until {formatClock(c.validUntil)}{c.limitations.length ? ` · limits: ${c.limitations.join('; ')}` : ''}</p>}
+      {c.status !== 'REJECTED' && <p className="mt-1 text-xs text-ink-500">Valid until {formatClock(c.validUntil)}{c.limitations.length ? ` · ${c.status === 'UNAVAILABLE' ? 'reason' : 'limits'}: ${c.limitations.join('; ')}` : ''}</p>}
     </JivaCard>
   );
 }

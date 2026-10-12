@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AmbulanceState, HospitalState, PatientState } from '@jiva/domain-models';
-import type { ConnectionState, JivaEvent } from '@jiva/ui/src';
+import type { ConnectionState, JivaEvent, ReferralOverview } from '@jiva/ui/src';
 import { apiGet, socket } from './api';
 
 const MAX_EVENTS = 200;
@@ -19,6 +19,7 @@ export function useCrew(onLiveEvent?: (e: JivaEvent) => void) {
   const [patient, setPatient] = useState<PatientState | null>(null);
   const [hospitals, setHospitals] = useState<HospitalState[]>([]);
   const [events, setEvents] = useState<JivaEvent[]>([]);
+  const [referrals, setReferrals] = useState<ReferralOverview | null>(null);
   const [connection, setConnection] = useState<ConnectionState>(socket.connected ? 'live' : 'connecting');
   const [lastSync, setLastSync] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -47,6 +48,14 @@ export function useCrew(onLiveEvent?: (e: JivaEvent) => void) {
       setLoaded(true);
       setLastSync(Date.now());
       const caseId = me?.assignedPatient;
+      // Hospital answers for this case, from the server (survives reloads; replaces client-side replay).
+      if (caseId) {
+        apiGet<ReferralOverview>(`/api/cases/${encodeURIComponent(caseId)}/referrals`)
+          .then(setReferrals)
+          .catch(() => setReferrals((prev) => (prev?.caseId === caseId ? prev : null)));
+      } else {
+        setReferrals(null);
+      }
       if (caseId && caseId !== caseRef.current) {
         caseRef.current = caseId;
         apiGet<JivaEvent[]>(`/api/cases/${encodeURIComponent(caseId)}/timeline`)
@@ -103,5 +112,5 @@ export function useCrew(onLiveEvent?: (e: JivaEvent) => void) {
     };
   }, [fetchState, scheduleFetch]);
 
-  return { ambulance, patient, hospitals, events, connection, lastSync, loaded, error, refresh: fetchState };
+  return { ambulance, patient, hospitals, events, referrals, connection, lastSync, loaded, error, refresh: fetchState };
 }

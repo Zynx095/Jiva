@@ -22,7 +22,7 @@ phase's acceptance criteria were met **and** verified; frontend-only progress is
 | 1 | Domain models, event contracts, authorization | ✅ Done | see Phase 1 section |
 | 2 | Ambulance emergency intake | ✅ Done | see Phase 2 section |
 | 3 | Real hospital directory and map coverage | ✅ Done | see Phase 3 section |
-| 4 | Hospital referrals and explicit acceptance | ⏳ | |
+| 4 | Hospital referrals and explicit acceptance | ✅ Done | see Phase 4 section |
 | 5 | Arrival, handover, encounter creation | ⏳ | |
 | 6 | Doctor assignment | ⏳ | |
 | 7 | Clinical records and prescriptions | ⏳ | |
@@ -211,3 +211,53 @@ Phase 2 — ambulance emergency intake (command endpoint, engine handling of str
 - Network hospitals (synthetic, demo) and directory facilities (real, public) are deliberately separate: no directory facility has an acceptance channel, so none can become a destination.
 - About two thirds of listings have no verified location; they are listed but not drawn. Name variants across sources are not always merged.
 - `Bengaluru.xlsx` and `HospitalsInIndia.csv` have no documented publisher or licence in the repository — recorded in `data/directory/README.md`; verify before redistribution. OSM-derived coordinates are ODbL.
+
+---
+
+## Phase 4 — Hospital referrals and explicit acceptance (✅ 2026-10-12)
+
+### Audit of the existing implementation (verified in code and at runtime)
+
+| Item | Finding |
+|---|---|
+| Referral creation | ✅ `care.requirement.created` → `evaluateHospitals` → `selectRequestTargets` (capable, not INELIGIBLE) → one `hospital.acceptance.requested` per hospital, `AR-xxxxxxxx`, TTL 15 min. A changed requirement cancels earlier referrals (`REQUIREMENT_CHANGED`). Kept unchanged. |
+| Delivery / hospital visibility | ✅ Socket.IO (hospital receives only its own) and `GET /api/hospitals/:id/requests`. |
+| Accept / limited / decline | ✅ `ACCEPTED`, `LIMITED`, `REJECTED`. `UNAVAILABLE` ("cannot take any patient") exists in the domain (hospital-wide, time-bounded by its validity) but was not offered by the hospital app. |
+| Correlation | ⚠️ An answer was checked only for an open referral for (case, hospital) — **not** for the referral id it claimed to answer; the demo controls sent `AR-demo-control`. Answer times were not checked at the door (the ledger later treated impossible windows as INVALID). |
+| Expiry | ⚠️ Unanswered referrals were dropped silently (no event). Acceptance expiry ran off the hospital's **shared slot**: the lapse of the last-written answer rerouted every ambulance heading to that hospital, even those with valid answers of their own, and the lapse of an earlier case's answer rerouted nobody. (The selection itself was already case-scoped via the acceptance ledger.) |
+| Duplicates / conflicts | ✅ duplicate eventId ignored; redelivered responseId has no side effect; a conflicting re-use of a responseId changes no decision (ledger CONFLICT, legacy first-wins). Kept. |
+| Authorization | ✅ only `HOSPITAL` staff of that hospital (or ADMIN) may answer; clinicians and crews cannot (tested). |
+| Realtime / rerouting | ✅ existing; extended below for case-scoped expiry. |
+
+### Routing-adjacent change (documented before making it)
+
+- **Limitation:** expiry handling used the shared one-slot acceptance (the same bug class the Phase 6 work fixed for selection).
+- **Change:** `checkAcceptanceExpiry` now (1) keeps the slot's "UNKNOWN on lapse" display behaviour, (2) checks each case's own answer in the existing acceptance ledger and, once per lapse, publishes a case-scoped `hospital.acceptance.expired` (`caseId`, `kind: RESPONSE_VALIDITY`) and re-evaluates only that case's ambulance through the existing `rerouteAmbulance` → `selectDestination` path, and (3) announces unanswered referrals once (`kind: REQUEST_UNANSWERED`). Selection, eligibility, the decision authority and the ledger are untouched.
+- **Risks considered:** double reroutes (prevented by the per-ambulance lock + destination check), repeated events (once-per-lapse set, cleared on reset), AWS parity (the AWS stack has no expiry engine at all — pre-existing, documented; parity scenarios unaffected).
+- **Tests:** `tests/unit/referral-lifecycle.test.ts` scenario A **fails on the previous engine** (verified by running it against `HEAD`'s `stateEngines.ts`) and passes now; scenario B covers the over-broad reroute; plus once-only announcements and unanswered closure. The existing expiry runtime test still passes.
+
+### What changed
+
+| Area | Files | Summary |
+|---|---|---|
+| Correlation (shared local/AWS) | `services/api/src/acceptanceCorrelation.ts`, `index.ts`, `lambdas/core/ingestionCore.ts` | An answer must name **the** open referral for that case and hospital (409 `request_mismatch` otherwise — an acceptance can never be attributed to another case), `respondedAt` may not be in the future, and an ACCEPTED/LIMITED answer must be valid after it is given and for at most 6 h (400). |
+| Expiry | `services/api/src/stateEngines.ts`, `packages/event-schema/src/events.ts`, `authorization.ts` | As above. `hospital.acceptance.expired` gains optional `caseId` and `kind`; case-scoped expiries reach only that case's crew. |
+| Referral overview | `services/api/src/referrals.ts`, `routes/referrals.ts` | `GET /api/cases/:id/referrals`: per connected hospital, **listed** care (directory-level), **assessed** suitability at referral time, the case-specific **referral + explicit answer** (times, validity, limits, trusted provenance, referral id) and the last **reported capacity** with who reported it (`verified` only for hospital-confirmed or authorised-feed reports). Crew and management: all rows; a referred hospital: its own row; patients: 403; unrelated: 404. |
+| Clients | `apps/management-web/src/lib/simulator.ts`, `tests/integration/api-runtime.test.ts` | Demo controls and the runtime test answer the real referral id (read from the ledger). |
+| UI | `packages/ui/src/lib/{referrals,acceptance,status,events}.ts`, `apps/ambulance-web/src/{useCrew.ts,App.tsx}`, `apps/hospital-web/src/App.tsx`, `apps/management-web/src/components/Details.tsx` | Crew: "Hospital answers" from the server overview (survives reload), each row with an Evidence disclosure (lists / assessed at referral / answer with provenance and referral ref / capacity report and who made it). Hospital: referral id on each request ("your answer is tied to this case only") and the "Can't take any patient right now?" (`UNAVAILABLE`) answer with its hospital-wide consequence stated first. Command Center case detail: "Referral evidence" block. "No answer in time" status. |
+
+### Tests
+
+| Command | Result |
+|---|---|
+| `tsx tests/unit/referral-lifecycle.test.ts` (new) | ✅ 7 checks (correlation matrix; expiry scenarios A/B — A proven to fail on the previous engine; once-only; unanswered closure) |
+| `tsx tests/integration/clinical-journey.test.ts` (+Phase 4) | ✅ 81 passed: overview layers and access rules; wrong / cross-case referral ids 409; future and 7-hour answers 400; clinician cannot answer; explicit answer routes the crew; duplicates and conflicting duplicates change nothing; `UNAVAILABLE` recorded; a 2-second acceptance lapses → case-scoped event to that crew only, overview marks it not current, the other case keeps its destination |
+| `tsx tests/integration/api-runtime.test.ts` | ✅ 124 passed (answers now name their referral) |
+| `npm run typecheck` / `test:unit` (30 suites) / `test:integration` / `build:lambdas` | ✅ all exit 0 |
+| Browser (headless Edge) | ✅ 10/10: demo control answers accepted with the real referral id; hospital card shows the referral reference and the unable-to-take option with its consequence; accept; crew answers + evidence; Command Center referral evidence; no console errors |
+
+### Remaining limitations
+
+- The AWS stack has no expiry engine (no scheduled lambda), so referral and acceptance expiry exist only locally — pre-existing, now documented.
+- `UNAVAILABLE` keeps its legacy hospital-wide meaning (until the answer's validity ends); there is no per-service "unavailable for this case only" answer.
+- A crew is not re-optimised to a closer hospital that accepts later (destination stability is intentional, unchanged).
