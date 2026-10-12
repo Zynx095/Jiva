@@ -14,6 +14,7 @@ import {
 import { AmbulanceState, CapabilityType, CareRequirement } from '@jiva/domain-models';
 import type { AcceptanceResponsePayload } from './stateTransitions';
 import { evaluateHospitals } from './eligibilityEngine';
+import { ambulanceCanAttend, deriveCareRequirement, patientFromEmergency, reportingAmbulanceOf } from './intake';
 import { mappingProvider } from './mapping';
 import { acceptanceLedger, decisionAuthority, feasibilityMode, feasibilityShadow } from './feasibility';
 import { caseAcceptanceStatus } from './feasibility/acceptanceLedger';
@@ -257,23 +258,27 @@ eventBus.on('patient.emergency.created', async (event: PatientEmergencyCreated) 
     console.warn(`[StateEngine] Emergency for active case ${patientId} ignored (already open).`);
     return;
   }
-  const { condition, severity, location } = event.payload;
-  const required = assessRequiredCapabilities(condition, severity);
-  patientsStore.set(patientId, {
-    patientId,
-    currentStatus: 'ASSESSED',
-    currentLocation: { latitude: location.latitude, longitude: location.longitude },
-    careRequirements: required,
-    activeConditions: [condition],
-    lastUpdated: event.timestamp,
-    provenance: [{
-      sourceType: event.source.type,
-      sourceId: event.source.id,
-      eventId: event.eventId,
-      timestamp: event.timestamp,
-      confidence: event.metadata?.confidence ?? 1.0,
-    }],
-  });
+  const { severity, location } = event.payload;
+  // Frozen rule-based assessment, plus any care the reporter asked for (never fewer than the rules).
+  const requirement = deriveCareRequirement(event.payload);
+  patientsStore.set(patientId, patientFromEmergency(event, patientId, requirement));
+
+  // A crew that reports an emergency is the crew attending it. The assignment is published as a
+  // system event so it is auditable; an out-of-service or busy unit is never reassigned this way.
+  const crew = reportingAmbulanceOf(event);
+  if (crew) {
+    if (ambulanceCanAttend(ambulancesStore.get(crew))) {
+      await publish({
+        eventType: 'ambulance.dispatched',
+        source: { type: 'system', id: 'intake-engine' },
+        patientId,
+        causationId: event.eventId,
+        payload: { ambulanceId: crew, caseId: patientId, destination: { latitude: location.latitude, longitude: location.longitude }, estimatedEtaMinutes: 0, assignmentBasis: 'REPORTED_BY_CREW' },
+      });
+    } else {
+      console.warn(`[StateEngine] ${crew} reported ${patientId} but is not free to attend it; the case awaits dispatch.`);
+    }
+  }
 
   await publish({
     eventType: 'care.requirement.created',
@@ -283,10 +288,11 @@ eventBus.on('patient.emergency.created', async (event: PatientEmergencyCreated) 
     payload: {
       requirementId: `REQ-${uuidv4().substring(0, 8)}`,
       caseId: patientId,
-      requiredCapabilities: required,
+      requiredCapabilities: requirement.required,
       optionalCapabilities: [],
       severity,
       createdAt: new Date().toISOString(),
+      ...(requirement.reporterRequested.length ? { capabilitySources: { ruleDerived: requirement.ruleDerived, reporterRequested: requirement.reporterRequested } } : {}),
     },
   });
 });
@@ -505,7 +511,8 @@ eventBus.on('ambulance.dispatched', async (event: AmbulanceDispatched) => {
   if (!existing) return;
   ambulancesStore.set(ambulanceId, {
     ...existing,
-    status: 'DISPATCHED',
+    // A crew that reported the emergency itself is already with the patient.
+    status: event.payload.assignmentBasis === 'REPORTED_BY_CREW' ? 'ON_SCENE' : 'DISPATCHED',
     assignedPatient: caseId || existing.assignedPatient,
     // A new dispatch starts a new journey: never carry over a previous case's destination.
     destinationHospital: caseId && caseId !== existing.assignedPatient ? undefined : existing.destinationHospital,

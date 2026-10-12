@@ -1,5 +1,7 @@
 import { hashPolicy } from '@jiva/feasibility';
-import { stampTrustedEvidence, evidenceEnvironment } from './evidenceTrust';
+import { evidenceEnvironment } from './evidenceTrust';
+import { recordAndPublish } from './ingest';
+import { emergencyRouter } from './routes/emergencies';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -222,16 +224,16 @@ app.post('/api/events', async (req: AuthenticatedRequest, res) => {
     return res.status(409).json({ error: 'no_outstanding_request', message: 'No open acceptance request for this case and hospital.' });
   }
 
-  // Trust boundary: provenance is derived here from the authenticated principal, never from the payload.
-  const stamped = stampTrustedEvidence(event, req.auth!);
-  const recordResult = await stateStore.recordEvent(stamped);
-  if (recordResult.isDuplicate) {
+  // Trust boundary: provenance is derived from the authenticated principal, never from the payload.
+  const { duplicate } = await recordAndPublish(req.auth!, event);
+  if (duplicate) {
     return res.status(200).json({ status: 'duplicate_ignored', eventId: event.eventId });
   }
-
-  await eventBus.publish(stamped);
   res.status(202).json({ status: 'accepted', eventId: event.eventId });
 });
+
+// Command endpoints (validated, authorized, state-checked; they emit canonical events).
+app.use('/api', emergencyRouter());
 
 app.post('/api/demo/reset', requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
   resetEngines();
