@@ -31,7 +31,7 @@ phase's acceptance criteria were met **and** verified; frontend-only progress is
 | 10 | Medical telemetry foundation | ✅ Done | see Phase 10 section |
 | 11 | Operational mode, demo mode, provenance | ✅ Done | see Phase 11 section |
 | 12 | Security, privacy and audit hardening | ✅ Done | see Phase 12 section |
-| 13 | End-to-end integration and regression testing | ⏳ | |
+| 13 | End-to-end integration and regression testing | ✅ Done | see Phase 13 section |
 | 14 | Final quality gate and documentation | ⏳ | |
 
 ---
@@ -535,3 +535,62 @@ Authentication on every `/api` route; the event-submission allowlist (system and
 ### Not claimed
 
 No regulatory compliance is claimed. Remaining gaps (production identity, durable encrypted storage, AWS clinical domain, rate limiting, break-glass, tamper-evident audit, consent) are listed in `docs/security-review.md` §3.
+
+---
+
+## Phase 13 — End-to-end integration and regression testing (✅ 2026-10-13)
+
+### The 20-step journey — `tests/integration/e2e-journey.test.ts` (real API on :4104)
+
+One deterministic narrative after a demo reset, with a fixed scene, the demo patient's case reference (`CASE-BLR-876`) and a synthetic PNG. The mapping stack is deliberately unreachable (Valhalla/OSRM on a closed port), so routing runs on the labelled synthetic fallback throughout.
+
+| Step | What is checked |
+|---|---|
+| 1 | Crew `demo-amb-2` reports the emergency (`POST /api/emergencies`) → case `CASE-BLR-876`, crew assigned |
+| 2 | The map-pin starting location is the case location; intake method recorded |
+| 3 | Symptoms and suspected cause are separate fields; no diagnosis field |
+| 4 | `care.requirement.created`: emergency, trauma, ICU (rule-based) |
+| 5 | Referrals to the capable network hospitals only (Hebbal, Whitefield, Indiranagar) |
+| 6 | Hebbal receives the referral (REST + realtime); Koramangala (incapable) does not |
+| 7 | Indiranagar and Hebbal accept, Whitefield rejects — explicit, referral-bound answers |
+| 8 | The crew's referral overview shows each answer; the patient receives the destination |
+| 9 | Indiranagar reports it cannot take patients → the crew is rerouted to Hebbal (`route.recalculated` old → new); the route is labelled synthetic |
+| 10 | GPS geofence at Hebbal → unit `ARRIVED`, case `ARRIVED`, still **no** encounter |
+| 11 | Hebbal records the arrival and the handover |
+| 12 | Encounter `IN_CARE`; the crew is released |
+| 13 | Dr. Ravi Kumar is assigned |
+| 14 | The doctor prescribes (IV ceftriaxone) |
+| 15 | The doctor uploads a verified chest X-ray and records a final imaging report with it, shared |
+| 16 | The patient's encounter is `IN_CARE` with the doctor; case `HANDED_OVER` (state B source) |
+| 17 | The patient reads the prescription and the report and downloads the exact scan bytes |
+| 18 | Another patient gets 404 on the encounter, prescriptions, reports and the scan |
+| 19 | Vital signs: clinician-entered (`MANUAL_CLINICIAN`) and simulated (`DEVICE_SIMULATED`, `SYNTHETIC_DEMO`), freshness, no device integration |
+| 20 | All sockets closed; a new connection + refresh restores the encounter, records and the full ordered case history; realtime resumes |
+
+### Failure scenarios (same suite)
+
+| Scenario | Check |
+|---|---|
+| Hospital does not respond | No destination is assumed; referrals stay outstanding with a deadline. (The 15-minute deadline itself is a frozen protocol constant; its unanswered closure is tested with a simulated clock in `tests/unit/referral-lifecycle.test.ts`.) |
+| Referral answer expires | A 1.5-second acceptance lapses → case-scoped `hospital.acceptance.expired` (`RESPONSE_VALIDITY`); the overview marks it not current |
+| Hospital rejects | A hospital that accepted then rejects → the crew is withdrawn from it and holds (`destination.changed` UNASSIGNED) until another acceptance |
+| Hospital becomes unavailable | Step 9 |
+| Duplicate events | Same event twice → `duplicate_ignored`; a retried command returns the same answer and changes nothing |
+| Unauthorized handover | Crew, patient, another hospital, another clinician, management → 403/404 |
+| Doctor at another hospital | Another coordinator → 404; a foreign doctor → 422 |
+| Another patient's records | 404 (prescriptions, vital signs) |
+| Another patient's document | 404, also by swapping identifiers (a crew through the encounter path) |
+| Realtime drops and reconnects | Step 20; a dropped socket receives nothing further |
+| Live data provider unavailable | Mapping falls back to the labelled synthetic provider; `/api/health` reports the fallback and the synthetic flag |
+| Missing / invalid field | Intake without symptoms → 400 naming the field; SpO₂ 140 % → 400; nothing stored |
+
+### Regression
+
+| Command | Result |
+|---|---|
+| `tsx tests/integration/e2e-journey.test.ts` (new) | ✅ 39 passed (run twice: stable) |
+| Flagship scenario `scripts/simulate-full.ts` against a short-lived API (scratch runner; the dev stack stays stopped) | ✅ `SCENARIO COMPLETE` — reset → accept → reroute → GPS arrival → AI sidecar events; shadow: 4 traces, 0 disagreements, 0 failures; no API handler crashes |
+| `npm run test:integration` (parity, mapping parity, runtime 124, journey 302, operational mode 14, e2e 39) | ✅ exit 0 |
+| `npm run test:unit` (37 suites) / `npm run typecheck` | ✅ exit 0 |
+
+Existing suites were not weakened: the only pre-existing assertion that changed (Phase 11, intake legacy shape) now asserts both modes explicitly.
