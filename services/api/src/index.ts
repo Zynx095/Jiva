@@ -1,8 +1,10 @@
 import { hashPolicy } from '@jiva/feasibility';
 import { evidenceEnvironment } from './evidenceTrust';
 import { recordAndPublish } from './ingest';
+import { checkReferralAnswer } from './acceptanceCorrelation';
 import { emergencyRouter } from './routes/emergencies';
 import { directoryRouter } from './routes/directory';
+import { referralRouter } from './routes/referrals';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -11,7 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { eventBus } from './eventBus';
 import {
   initializeStateEngines, mappingProvider, resetEngines, getEpoch,
-  hasOutstandingRequest, outstandingRequestsForHospital,
+  outstandingRequest, outstandingRequestsForHospital,
 } from './stateEngines';
 import { initializeIntelligenceEngine, resetIntelligence, getAiStatus } from './intelligenceEngine';
 import { feasibilityShadow, feasibilityMode, decisionAuthority } from './feasibility';
@@ -219,10 +221,12 @@ app.post('/api/events', async (req: AuthenticatedRequest, res) => {
   const denial = authorizeEventSubmission(req.auth!, event);
   if (denial) return res.status(403).json({ error: 'forbidden', message: denial });
 
-  // Acceptance protocol: a hospital may only answer a request it actually received.
-  if (event.eventType === 'hospital.acceptance.received' &&
-      !hasOutstandingRequest(event.payload.caseId, event.payload.hospitalId)) {
-    return res.status(409).json({ error: 'no_outstanding_request', message: 'No open acceptance request for this case and hospital.' });
+  // Acceptance protocol: a hospital may only answer the open referral it actually received, by its id,
+  // with a possible validity window (shared rule with the AWS ingestion lambda).
+  if (event.eventType === 'hospital.acceptance.received') {
+    const p = event.payload;
+    const verdict = checkReferralAnswer(outstandingRequest(p.caseId, p.hospitalId), p, Date.now());
+    if (!verdict.ok) return res.status(verdict.status).json({ error: verdict.error, message: verdict.message });
   }
 
   // Trust boundary: provenance is derived from the authenticated principal, never from the payload.
@@ -237,6 +241,8 @@ app.post('/api/events', async (req: AuthenticatedRequest, res) => {
 app.use('/api', emergencyRouter());
 // Public facility directory (read-only, listing data only; never part of routing).
 app.use('/api', directoryRouter());
+// Case referral overview (listed vs assessed vs answered vs reported capacity).
+app.use('/api', referralRouter());
 
 app.post('/api/demo/reset', requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
   resetEngines();

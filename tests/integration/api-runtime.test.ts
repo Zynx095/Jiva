@@ -31,7 +31,14 @@ async function req(method: string, p: string, persona?: string, body?: unknown, 
   let json: any; try { json = JSON.parse(text); } catch { /* not json */ }
   return { status: res.status, json, text };
 }
-const post = (persona: string | undefined, ev: unknown) => req('POST', '/api/events', persona, ev);
+/** Answers must name their referral: '@LATEST' is resolved to the latest request for (case, hospital) in the ledger. */
+async function withRequestId(ev: any) {
+  if (ev?.eventType !== 'hospital.acceptance.received' || ev.payload?.requestId !== '@LATEST') return ev;
+  const hist = (await req('GET', '/api/events/history?limit=1000', 'demo-mgmt-1')).json as any[];
+  const r = hist?.find(e => e.eventType === 'hospital.acceptance.requested' && e.payload.caseId === ev.payload.caseId && e.payload.hospitalId === ev.payload.hospitalId);
+  return { ...ev, payload: { ...ev.payload, requestId: r?.payload.requestId ?? 'AR-none' } };
+}
+const post = async (persona: string | undefined, ev: unknown) => req('POST', '/api/events', persona, await withRequestId(ev));
 const alive = async () => (await req('GET', '/api/health')).status === 200;
 
 const ev = (eventType: string, payload: any, source: any, extra: any = {}) =>
@@ -42,7 +49,7 @@ const dispatch = (amb: string, caseId: string) =>
   ev('ambulance.dispatched', { ambulanceId: amb, caseId, destination: { latitude: 13.04, longitude: 77.59 }, estimatedEtaMinutes: 8 }, { type: 'system', id: 'dispatch' });
 const response = (caseId: string, hospitalId: string, status: string, o: any = {}) =>
   ev('hospital.acceptance.received', {
-    responseId: `R-${uuid().slice(0, 8)}`, requestId: 'AR', caseId, hospitalId, status,
+    responseId: `R-${uuid().slice(0, 8)}`, requestId: '@LATEST', caseId, hospitalId, status,
     acceptedCapabilities: [], limitations: [], respondedAt: new Date().toISOString(),
     validUntil: new Date(Date.now() + 30 * 60000).toISOString(), responderRole: 'COORD', source: 'SYNTHETIC_DEMO', ...o,
   }, { type: 'hospital', id: hospitalId });
