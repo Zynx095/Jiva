@@ -326,9 +326,11 @@ export class JivaAwsStack extends cdk.Stack {
 
     // ----------------------------------------------------
     // 7b. API GATEWAY WEBSOCKET: realtime fan-out
-    //     $connect requires IAM (SigV4) auth. The broadcast Lambda does not yet apply
-    //     per-role event filtering, so the socket is deliberately NOT open to anonymous
-    //     browsers. A Cognito-token Lambda authorizer + filtering is the next step.
+    //     $connect requires IAM (SigV4) auth, so the socket is NOT open to anonymous browsers.
+    //     The broadcast Lambda verifies a principal at $connect (Cognito JWT via ?token=) and
+    //     delivers each event only to connections allowed to receive it (same rules as local
+    //     Socket.IO; fail closed). Opening it to browsers still needs a Cognito-token authorizer
+    //     on $connect instead of IAM — not changed here (nothing is deployed).
     // ----------------------------------------------------
     const wsIntegration = new WebSocketLambdaIntegration('WsHandlerIntegration', webSocketLambda);
     const webSocketApi = new apigwv2.WebSocketApi(this, 'JivaWebSocketApi', {
