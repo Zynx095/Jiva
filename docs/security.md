@@ -9,11 +9,14 @@
 
 ### 2. Role-Based Access Control (RBAC)
 Authorization is enforced **server-side** in `services/api/src/authorization.ts` for every REST endpoint, every submitted event (role + source-identity binding) and every Socket.IO event. Locally, identities come from fixed **DEMO personas** (`x-jiva-demo-user` header / socket `auth.demoUser`); unknown or missing credentials get 401 and there is no default role. This is demo authentication, not production authentication. In AWS, API Gateway uses a Cognito authorizer (synthesized, not deployed).
-- **`PATIENT`**: Isolated strictly to their own emergency case ID. Cannot view internal hospital operational states, rejection rationales, or network topologies.
-- **`AMBULANCE`**: Scoped strictly to the paramedic's active ambulance unit and assigned patient.
-- **`HOSPITAL`**: Clinicians and triage officers can only view and mutate the operational acceptance capacity of their own assigned facility.
-- **`MANAGEMENT`**: Network-wide situational awareness across all ambulances, hospitals, and emergencies.
-- **`ADMIN`**: Destructive infrastructure management.
+- **`PATIENT`**: Isolated strictly to their own emergency case ID. Cannot view internal hospital operational states, rejection rationales, or network topologies. Reads their own encounter, prescriptions, and the reports, documents and vital signs released to them; never writes clinical records.
+- **`AMBULANCE`**: Scoped strictly to the paramedic's active ambulance unit and assigned patient (an encounter summary until the handover releases the unit).
+- **`HOSPITAL`** (coordination staff): answers referrals and reports capacity for its own facility; records arrivals and handovers and assigns doctors there. No access to clinical content.
+- **`CLINICIAN`**: clinical records (prescriptions, reports, documents, vital signs) only for encounters assigned to them at their own hospital; other encounters are invisible.
+- **`MANAGEMENT`**: Network-wide situational awareness across all ambulances, hospitals, and emergencies; encounter summaries only, never clinical content.
+- **`ADMIN`**: Destructive infrastructure management and the audit log.
+
+The full matrix, the audit trail and the remaining gaps are documented in [security-review.md](security-review.md).
 
 ### 3. Least Privilege IAM Policies
 - Each Lambda execution role is restricted to its required actions:

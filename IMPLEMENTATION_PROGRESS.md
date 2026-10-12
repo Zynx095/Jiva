@@ -30,7 +30,7 @@ phase's acceptance criteria were met **and** verified; frontend-only progress is
 | 9 | Patient dashboard and in-hospital experience | ✅ Done | see Phase 9 section |
 | 10 | Medical telemetry foundation | ✅ Done | see Phase 10 section |
 | 11 | Operational mode, demo mode, provenance | ✅ Done | see Phase 11 section |
-| 12 | Security, privacy and audit hardening | ⏳ | |
+| 12 | Security, privacy and audit hardening | ✅ Done | see Phase 12 section |
 | 13 | End-to-end integration and regression testing | ⏳ | |
 | 14 | Final quality gate and documentation | ⏳ | |
 
@@ -501,3 +501,37 @@ Only ambulance GPS (`ambulance.location.updated`) existed. No medical measuremen
 - The routing providers were not changed (directive): in either mode, the mapping fallback chain can still end in the mock provider; such routes stay labelled `synthetic` and the health report flags it. Disabling the mock fallback in operational deployments is a configuration decision for the routing owners (`MAPPING_PROVIDER=valhalla|osrm`).
 - The operational path of this repository is the AWS stack (API Gateway + Cognito + Lambda); the local Express API in operational mode accepts only verified JWTs, so it is mostly useful to prove that nothing synthetic is loaded.
 - Demo tooling (simulators, demo controls, AWS demo scripts) is unchanged and remains demo-only by authorization (management/admin personas exist only in demo auth).
+
+---
+
+## Phase 12 — Security, privacy and audit hardening (✅ 2026-10-13)
+
+The full review (checklist, audit trail, remaining gaps) is in [`docs/security-review.md`](docs/security-review.md). This section lists what changed.
+
+### Findings fixed
+
+| # | Finding | Fix | Files |
+|---|---|---|---|
+| 1 | AWS realtime fan-out posted **every** event to **every** connection (pre-existing issue #4). | The broadcast Lambda verifies a principal at `$connect` (JWT via `?token=`, never stored; unsigned claims and, in production, demo personas refused) and delivers each event only to connections allowed by the same `canReceiveEvent` rules as Socket.IO, in the recipient's copy; connections without a verified principal receive nothing. The CDK comment now states the remaining step (a Cognito-token authorizer instead of IAM on `$connect`); no infrastructure change. | `services/api/src/lambdas/websocketHandler.ts`, `infrastructure/aws/lib/aws-stack.ts` (comment) |
+| 2 | Insecure default: a process configured as production (`ENVIRONMENT`/`NODE_ENV`) but not switched to operational mode would accept demo personas. | The API refuses to start in that configuration, with an explicit message. | `services/api/src/index.ts` |
+| 3 | No way to read the audit log. | `GET /api/audit` for administrators only (filters by encounter/case, bounded), reading it is itself audited; `AuditRecord.entityType` gains `AUDIT`. | `services/api/src/routes/audit.ts`, `packages/domain-models/src/clinical.ts` |
+| 4 | The AI sidecar collected every event, incl. clinical-record events and staff identities, as model context (sent to Bedrock when enabled). | Clinical-record events are excluded; encounter events reach it with the actor's role only. | `services/api/src/intelligenceEngine.ts` |
+| 5 | Unbounded in-memory growth: remembered command results and lapsed upload tickets. | Command results capped (20,000, oldest first); lapsed tickets purged when a new one is issued. | `services/api/src/clinical/{store,documents}.ts` |
+| 6 | Missing response hardening header. | `X-Content-Type-Options: nosniff` on every API response (with `Cache-Control: no-store` from Phase 9). | `services/api/src/index.ts` |
+
+### Reviewed and found adequate (no change)
+
+Authentication on every `/api` route; the event-submission allowlist (system and clinical events cannot be submitted); hospital/patient/encounter isolation; record-id-to-encounter checks; strict command bodies (no mass assignment); upload validation; download headers; log hygiene (identifiers only; no payloads, no document bytes); error responses (no internals); secrets scan (none; `config.auth.demoAuthSecret` is an unused placeholder).
+
+### Tests
+
+| Command | Result |
+|---|---|
+| `tsx tests/unit/realtime-isolation.test.ts` (new) | ✅ 5 checks: a case event reaches only that patient and coordination (never another patient or an anonymous connection); referrals only to the hospital asked; encounter events with role-only copies for the patient and full copies for same-hospital staff; clinical record events never to coordination or another hospital; `$connect` principal: none without credentials, unsigned claims refused, verified token accepted, forged token refused, demo persona refused in production and accepted in demo, nothing token-like stored |
+| `tsx tests/integration/clinical-journey.test.ts` (+Phase 12: 15) | ✅ 302 passed: all 17 new endpoints → 401 unauthenticated; `nosniff` + `no-store`; malformed JSON → `{"error":"malformed_json"}`; management, coordinator, doctor, patient and crew cannot read the audit log; invalid filter 400; the administrator's encounter trail contains every expected write, read, download and denial; every entry has actor/action/entity/outcome/time; a denial carries its reason; no clinical content in the trail; audit reads are audited |
+| `tsx tests/integration/operational-mode.test.ts` (+1) | ✅ 14 passed: `ENVIRONMENT=production` without `JIVA_ENVIRONMENT=production` → the API refuses to start |
+| `npm run typecheck` / `test:unit` (37 suites) / `test:integration` / `build:lambdas` / `cdk synth --quiet` (no deploy) | ✅ all exit 0; cdk warnings are pre-existing (Lambda runtime `nodejs20.x` deprecated; `pointInTimeRecovery` deprecated) |
+
+### Not claimed
+
+No regulatory compliance is claimed. Remaining gaps (production identity, durable encrypted storage, AWS clinical domain, rate limiting, break-glass, tamper-evident audit, consent) are listed in `docs/security-review.md` §3.

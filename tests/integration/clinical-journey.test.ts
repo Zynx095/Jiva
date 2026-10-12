@@ -726,6 +726,52 @@ async function demoProvenance(api: Api, ctx: { caseId: string }) {
   check('the demo hospitals are labelled', ((await api.get(P.mgmt, '/api/hospitals')).json as any[]).every(h => h.dataStatus === 'SYNTHETIC_DEMO'));
 }
 
+// ------------------------------------------------------------------------------------------ phase 12
+
+async function securityAndAudit(api: Api, ctx: { caseId: string; encounterId: string }) {
+  console.log('\n[Phase 12] Security, privacy and audit');
+  const { encounterId, caseId } = ctx;
+
+  // authentication on every new endpoint
+  const routes: Array<[string, string]> = [
+    ['GET', '/api/encounters'], ['GET', `/api/encounters/${encounterId}`], ['POST', '/api/hospitals/HOSP-BLR-001/arrivals'], ['POST', `/api/encounters/${encounterId}/handover`],
+    ['POST', `/api/encounters/${encounterId}/doctor`], ['GET', '/api/hospitals/HOSP-BLR-001/clinicians'], ['GET', `/api/encounters/${encounterId}/prescriptions`],
+    ['POST', `/api/encounters/${encounterId}/prescriptions`], ['GET', `/api/encounters/${encounterId}/reports`], ['GET', `/api/encounters/${encounterId}/documents`],
+    ['POST', `/api/encounters/${encounterId}/documents`], ['PUT', '/api/uploads/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'], ['GET', `/api/encounters/${encounterId}/vitals`],
+    ['POST', `/api/encounters/${encounterId}/vitals`], ['GET', '/api/audit'], ['GET', `/api/cases/${caseId}/referrals`], ['POST', '/api/emergencies'],
+  ];
+  const unauth = [];
+  for (const [m, r] of routes) {
+    const res = await api.req(m, r, undefined, m === 'GET' ? undefined : {});
+    if (res.status !== 401) unauth.push(`${m} ${r} → ${res.status}`);
+  }
+  check('every new endpoint requires authentication (401)', unauth.length === 0, unauth.join('; '));
+  const any = await api.get(P.pat1, '/api/encounters');
+  check('API responses carry nosniff and no-store', any.headers.get('x-content-type-options') === 'nosniff' && any.headers.get('cache-control') === 'no-store');
+  const bad = await api.req('POST', `/api/encounters/${encounterId}/prescriptions`, P.doc3, undefined, { raw: '{"medication":' });
+  check('malformed JSON → 400 without internals', bad.status === 400 && bad.text === '{"error":"malformed_json"}', bad.text);
+
+  // audit log
+  for (const [name, persona] of [['management', P.mgmt], ['the coordinator', P.h1], ['the doctor', P.doc3], ['the patient', P.pat1], ['a crew', P.a1]] as const) {
+    check(`${name} cannot read the audit log → 403`, (await api.get(persona, '/api/audit')).status === 403);
+  }
+  check('an invalid filter → 400', (await api.get(P.admin, '/api/audit?encounterId=../../x')).status === 400);
+  const log = await api.get(P.admin, `/api/audit?encounterId=${encounterId}&limit=2000`);
+  const entries = (log.json?.entries ?? []) as any[];
+  check('the administrator reads the encounter audit trail', log.status === 200 && entries.length > 20, `${log.status} ${entries.length}`);
+  const actions = new Set(entries.map(e => `${e.action}:${e.outcome}`));
+  const expected = ['encounter.arrival.record:ALLOWED', 'encounter.handover.record:ALLOWED', 'encounter.doctor.assign:ALLOWED', 'prescription.create:ALLOWED', 'prescription.amend:ALLOWED', 'prescription.discontinue:ALLOWED', 'report.create:ALLOWED', 'report.amend:ALLOWED', 'document.upload.intent:ALLOWED', 'document.upload:ALLOWED', 'document.download:ALLOWED', 'telemetry.record:ALLOWED', 'telemetry.simulate:ALLOWED', 'prescription.read:ALLOWED', 'prescription.create:DENIED', 'document.upload:DENIED', 'document.download:DENIED'];
+  const missing = expected.filter(a => !actions.has(a));
+  check('writes, reads, downloads and denials are all in the trail', missing.length === 0, `missing: ${missing.join(', ')}`);
+  check('every entry names actor, action, entity, outcome and time', entries.every(e => e.actor?.userId && e.actor.role && e.action && e.entityType && e.outcome && !Number.isNaN(Date.parse(e.at))));
+  const denial = entries.find(e => e.action === 'prescription.create' && e.outcome === 'DENIED' && e.actor.userId === 'demo-hosp-1');
+  check('a denial records who tried and why (machine-readable reason)', denial?.reasonCode === 'ASSIGNED_CLINICIAN_ONLY');
+  const text = JSON.stringify(log.json);
+  check('the audit trail contains no clinical content (no medication, finding, title, file name or value)', !/Amoxicillin|Paracetamol|Hb 1|Complete blood count|chest-xray|No acute abnormality/.test(text));
+  const again = (await api.get(P.admin, '/api/audit?limit=50')).json?.entries as any[];
+  check('reading the audit log is itself audited', again.some(e => e.action === 'audit.read' && e.outcome === 'ALLOWED' && e.actor.userId === 'demo-admin') && again.some(e => e.action === 'audit.read' && e.outcome === 'DENIED' && e.actor.userId === 'demo-mgmt-1'));
+}
+
 // ------------------------------------------------------------------------------------------
 
 async function main() {
@@ -743,6 +789,7 @@ async function main() {
     await patientDashboard(api, journey);
     await medicalTelemetry(api, journey);
     await demoProvenance(api, journey);
+    await securityAndAudit(api, journey);
     check('API process still healthy at the end', (await api.get(undefined, '/api/health')).status === 200);
     check('no handler crashes logged', !/Handler for .* failed|Uncaught exception|Unhandled rejection/.test(api.log()), api.log().match(/.*(failed|Uncaught|Unhandled).*/g)?.slice(0, 3).join('\n'));
   } finally {

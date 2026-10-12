@@ -10,6 +10,7 @@ import { clinicalRecordsRouter } from './routes/clinicalRecords';
 import { documentRouter, resetDocuments } from './routes/documents';
 import { vitalsRouter } from './routes/vitals';
 import { provenanceReport, runtimeMode } from './mode';
+import { auditRouter } from './routes/audit';
 import { resetAccessAudit } from './commands/support';
 import { initializeEncounterEngine, resetEncounterEngine } from './clinical/encounters';
 import { loadRoster } from './clinical/roster';
@@ -44,6 +45,13 @@ process.on('unhandledRejection', (reason) => {
 process.on('uncaughtException', (err) => {
   console.error('[API] Uncaught exception (contained):', err.message);
 });
+
+// Fail closed on an insecure configuration: a process told it is production (ENVIRONMENT/NODE_ENV) but not
+// switched to operational mode (JIVA_ENVIRONMENT) would accept demo personas. Refuse to start instead.
+if (config.environment === 'production' && runtimeMode() === 'DEMO') {
+  console.error('[API] Refusing to start: ENVIRONMENT/NODE_ENV says production, but JIVA_ENVIRONMENT is not "production", so demo personas would be accepted. Set JIVA_ENVIRONMENT=production for real authentication, or unset NODE_ENV/ENVIRONMENT for a local demo.');
+  process.exit(1);
+}
 
 const ready = preloadData().catch(err => console.error('[StateStore] Preload error:', err.message));
 
@@ -156,6 +164,7 @@ app.get('/api/health', async (_req, res) => {
 // demo personas; a cached response must never be shown to the next one).
 app.use('/api', (_req, res, next) => {
   res.set('Cache-Control', 'no-store');
+  res.set('X-Content-Type-Options', 'nosniff');
   next();
 });
 app.use('/api', requireAuth);
@@ -282,6 +291,8 @@ app.use('/api', clinicalRecordsRouter());
 app.use('/api', documentRouter());
 // Vital signs: clinician-entered; a labelled simulated monitor in demo mode only; no device integration.
 app.use('/api', vitalsRouter());
+// Audit log (administrators only; content-free entries).
+app.use('/api', auditRouter());
 
 app.post('/api/demo/reset', requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
   // Demo reset wipes state: it does not exist in operational mode.

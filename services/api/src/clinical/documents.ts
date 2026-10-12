@@ -152,6 +152,8 @@ export class UploadTickets {
   private tickets = new Map<string, UploadTicket>();
 
   issue(doc: DiagnosticDocument, userId: string, now = Date.now()): { token: string; expiresAt: number } {
+    // Lapsed tickets are dropped here, so the table cannot grow without bound.
+    for (const [k, t] of this.tickets) if (t.expiresAt < now && !t.inProgress) this.tickets.delete(k);
     const token = randomBytes(32).toString('base64url');
     const expiresAt = now + UPLOAD_TICKET_TTL_MS;
     this.tickets.set(tokenHash(token), { documentId: doc.documentId, userId, contentType: doc.contentType, sizeBytes: doc.sizeBytes, sha256: doc.sha256, expiresAt, inProgress: false });

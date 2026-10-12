@@ -72,6 +72,8 @@ export interface IClinicalStore {
 
 const MAX_AUDIT = 20_000;
 const MAX_MEASUREMENTS_PER_ENCOUNTER = 5_000;
+/** Remembered command results (idempotent replays); the oldest are forgotten first. */
+const MAX_COMMAND_RESULTS = 20_000;
 
 export class LocalClinicalStore implements IClinicalStore {
   private practitioners = new Map<string, Practitioner>();
@@ -175,7 +177,10 @@ export class LocalClinicalStore implements IClinicalStore {
   }
 
   getCommandResult(key: string) { return this.commands.get(key); }
-  putCommandResult(key: string, result: CommandResult) { this.commands.set(key, result); }
+  putCommandResult(key: string, result: CommandResult) {
+    this.commands.set(key, result);
+    if (this.commands.size > MAX_COMMAND_RESULTS) this.commands.delete(this.commands.keys().next().value as string);
+  }
 
   /** Demo reset: clears every clinical record; the roster is re-seeded by the caller. */
   reset(): void {

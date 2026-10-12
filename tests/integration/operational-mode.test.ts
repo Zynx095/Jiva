@@ -6,7 +6,22 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { check, results, startApi } from './helpers/api';
+import { spawn } from 'child_process';
+import { check, results, ROOT, startApi } from './helpers/api';
+
+/** Start the API with `env` and wait for it to exit (or give up after `ms`). */
+function runUntilExit(env: Record<string, string | undefined>, ms = 40_000): Promise<{ code: number | null; log: string }> {
+  return new Promise(resolve => {
+    const merged: Record<string, string> = {};
+    for (const [k, v] of Object.entries({ ...process.env, ...env })) if (v !== undefined) merged[k] = v; // undefined = unset
+    const child = spawn(process.execPath, [path.join(ROOT, 'node_modules/tsx/dist/cli.mjs'), 'services/api/src/index.ts'], { cwd: ROOT, env: merged, stdio: ['ignore', 'pipe', 'pipe'] });
+    let log = '';
+    child.stdout?.on('data', d => { log += d; });
+    child.stderr?.on('data', d => { log += d; });
+    const timer = setTimeout(() => { child.kill(); resolve({ code: null, log }); }, ms);
+    child.on('exit', code => { clearTimeout(timer); resolve({ code, log }); });
+  });
+}
 
 async function main() {
   console.log('[Test] Operational mode against a real API on :4102');
@@ -38,6 +53,9 @@ async function main() {
       /* best effort */
     }
   }
+  // An insecure configuration fails closed: "production" without operational mode would accept demo personas.
+  const insecure = await runUntilExit({ PORT: '4103', ENVIRONMENT: 'production', NODE_ENV: 'production', JIVA_ENVIRONMENT: undefined, AWS_LAMBDA_FUNCTION_NAME: undefined, MAPPING_PROVIDER: 'mock', JIVA_DOCUMENT_DIR: documentDir });
+  check('ENVIRONMENT=production without JIVA_ENVIRONMENT=production → the API refuses to start', insecure.code === 1 && /Refusing to start/.test(insecure.log), `exit ${insecure.code}`);
   const { passes, failures } = results();
   console.log(`\n${passes} passed, ${failures} failed`);
   if (failures) process.exit(1);
