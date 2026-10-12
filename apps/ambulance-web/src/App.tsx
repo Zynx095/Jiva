@@ -45,6 +45,7 @@ import {
 } from '@jiva/ui/src';
 import { PERSONA } from './api';
 import { useCrew } from './useCrew';
+import { EmergencyIntake, type DraftLocation } from './EmergencyIntake';
 
 const PERSONAS = [
   { value: 'demo-amb-1', label: 'AMB-BLR-001 (demo-amb-1)' },
@@ -105,7 +106,8 @@ export default function App() {
         toast.show({ title: 'Destination withdrawn', description: 'Waiting for another hospital to accept.', tone: 'danger', icon: 'alertTriangle', groupKey: 'route', durationMs: 8000 });
       } else if (e.eventType === 'ambulance.arrived') {
         toast.show({ title: `Arrived at ${name(String(p.hospitalId)) ?? p.hospitalId}`, description: 'Hand over to the emergency team.', tone: 'ok', icon: 'pin', groupKey: 'arrived' });
-      } else if (e.eventType === 'ambulance.dispatched') {
+      } else if (e.eventType === 'ambulance.dispatched' && p.assignmentBasis !== 'REPORTED_BY_CREW') {
+        // A crew-reported case is confirmed by the intake itself; only dispatch assignments need a toast.
         toast.show({ title: `Dispatched to ${String(p.caseId ?? 'a case')}`, tone: 'ok', icon: 'ambulance', groupKey: 'dispatch' });
       }
     },
@@ -115,6 +117,24 @@ export default function App() {
   const crew = useCrew(onLive);
   const now = useNow(5000);
   const { ambulance, patient, hospitals } = crew;
+
+  // Emergency intake: open while the unit is free; the draft location can be picked on the map.
+  const [intakeOpen, setIntakeOpen] = useState(false);
+  const [draftLocation, setDraftLocation] = useState<DraftLocation | null>(null);
+  const [pendingCase, setPendingCase] = useState<{ caseId: string; at: number; assignedHere: boolean; timedOut: boolean } | null>(null);
+  useEffect(() => {
+    if (!pendingCase) return;
+    // Success is read back from authoritative state: the case is now this ambulance's job.
+    if (ambulance?.assignedPatient === pendingCase.caseId && patient?.patientId === pendingCase.caseId) {
+      toast.show({ title: `Emergency ${pendingCase.caseId} created`, description: 'JIVA is asking hospitals that list the needed care.', tone: 'ok', icon: 'checkCircle', groupKey: 'intake', durationMs: 7000 });
+      setPendingCase(null);
+      setIntakeOpen(false);
+      setDraftLocation(null);
+      return;
+    }
+    const t = window.setTimeout(() => setPendingCase((p) => (p && p.caseId === pendingCase.caseId ? { ...p, timedOut: true } : p)), Math.max(0, pendingCase.at + 12_000 - Date.now()));
+    return () => window.clearTimeout(t);
+  }, [pendingCase, ambulance?.assignedPatient, patient?.patientId, toast]);
 
   const hospitalById = useMemo(() => new Map(hospitals.map((h) => [h.hospitalId, h])), [hospitals]);
   const name = useCallback((id: string) => {
@@ -147,6 +167,28 @@ export default function App() {
 
   const destStatus = destination ? acceptanceStatus(statusFor(destination)) : null;
   const next = nextAction({ ambulance, destinationName: destination?.displayName, lost: !!lost && !destination, arrived, destStatus: destination ? statusFor(destination) : undefined });
+
+  // The unit may report a new emergency only while free (mirrors the server's check).
+  const free = !!ambulance && ambulance.status !== 'UNAVAILABLE' && (!ambulance.assignedPatient || ambulance.status === 'AVAILABLE');
+  const showIntake = intakeOpen && (free || !!pendingCase);
+  useEffect(() => {
+    // Dispatch assigned a case while the form was open: the job takes over the panel.
+    if (intakeOpen && !free && !pendingCase) {
+      setIntakeOpen(false);
+      setDraftLocation(null);
+    }
+  }, [intakeOpen, free, pendingCase]);
+
+  /** Did JIVA find any connected hospital it could ask? (from the candidate evaluation for this case) */
+  const referralGap = useMemo(() => {
+    const ev = crew.events.find((e) => e.eventType === 'hospital.candidate.generated' && e.payload.caseId === caseId);
+    const cands = Array.isArray(ev?.payload.candidates) ? (ev.payload.candidates as Array<{ missingCapabilities?: string[]; operationalEligibility?: string }>) : [];
+    if (!ev || cands.length === 0) return null;
+    const askable = cands.filter((c) => (c.missingCapabilities ?? []).length === 0 && c.operationalEligibility !== 'INELIGIBLE');
+    if (askable.length > 0) return null;
+    const missing = [...new Set(cands.flatMap((c) => c.missingCapabilities ?? []))];
+    return { missing };
+  }, [crew.events, caseId]);
 
   const timeline = useMemo<TimelineItem[]>(
     () =>
@@ -210,7 +252,9 @@ export default function App() {
               <span className="text-ink-500">No case</span>
             )}
           </Fact>
-          <Fact label="Condition" title={patient?.activeConditions.join(', ')}>{patient?.activeConditions.join(', ') || <span className="text-ink-500">—</span>}</Fact>
+          <Fact label={patient?.reportedSymptoms?.length ? 'Reported symptoms' : 'Condition'} title={patient?.activeConditions.join(', ')}>
+            {patient?.reportedSymptoms?.join(', ') || patient?.activeConditions.join(', ') || <span className="text-ink-500">—</span>}
+          </Fact>
           <Fact label="Destination">
             {destination ? (
               <span className="flex flex-wrap items-center gap-1.5">
@@ -246,7 +290,19 @@ export default function App() {
             fitBoundsOnUpdate
             focus={focus}
             bottomLeft={<MapLegend showEmergency />}
+            onPick={showIntake && !pendingCase ? (p) => setDraftLocation({ latitude: p.lat, longitude: p.lng, method: 'MAP_PIN', source: 'Map pin' }) : undefined}
+            topLeft={
+              showIntake && !pendingCase ? (
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/95 px-2.5 py-1.5 text-xs font-semibold text-ink-800 shadow-sm ring-1 ring-ink-200">
+                  <Icon name="crosshair" size={13} />
+                  Tap the map where the patient is
+                </span>
+              ) : undefined
+            }
           >
+            {showIntake && draftLocation && (
+              <EmergencyMarker patientId="New report" lat={draftLocation.latitude} lng={draftLocation.longitude} condition={draftLocation.source} selected />
+            )}
             {others.map((h) => (
               <HospitalMarker
                 key={h.hospitalId}
@@ -321,14 +377,48 @@ export default function App() {
                 </JivaCard>
               )}
 
+              {referralGap && (
+                <JivaCard accent="danger" role="alert">
+                  <p className="flex items-center gap-1.5 text-sm font-semibold text-danger-700">
+                    <Icon name="alertTriangle" size={16} />
+                    No connected hospital could be asked
+                  </p>
+                  <p className="mt-1 text-[13px] text-ink-700">
+                    {referralGap.missing.length
+                      ? <>No connected hospital lists {referralGap.missing.map((c) => capabilityLabel(c)).join(', ')}, so JIVA could not send a referral.</>
+                      : 'Every connected hospital is currently unable to take this case.'}
+                  </p>
+                  <p className="mt-1 text-xs text-ink-500">Contact dispatch or call the nearest suitable hospital directly. JIVA never sends a patient to a hospital that has not accepted.</p>
+                </JivaCard>
+              )}
+
               {patient && (
                 <JivaCard>
                   <CardHeader title="Patient" icon="user" subtitle={caseId} level={2} />
                   <dl className="mt-3 space-y-2 text-sm">
-                    <div>
-                      <dt className="text-xs font-semibold text-ink-500">Reported condition</dt>
-                      <dd className="font-medium text-ink-900">{patient.activeConditions.join(', ') || 'Not reported'}</dd>
-                    </div>
+                    {patient.reportedSymptoms?.length ? (
+                      <>
+                        <div>
+                          <dt className="text-xs font-semibold text-ink-500">Reported symptoms</dt>
+                          <dd className="font-medium text-ink-900">{patient.reportedSymptoms.join(', ')}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs font-semibold text-ink-500">Suspected cause (unconfirmed)</dt>
+                          <dd className="font-medium text-ink-900">{patient.suspectedCause || <span className="text-ink-500">Not given</span>}</dd>
+                        </div>
+                        {patient.intake?.notes && (
+                          <div>
+                            <dt className="text-xs font-semibold text-ink-500">Crew notes</dt>
+                            <dd className="text-ink-800">{patient.intake.notes}</dd>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div>
+                        <dt className="text-xs font-semibold text-ink-500">Reported condition</dt>
+                        <dd className="font-medium text-ink-900">{patient.activeConditions.join(', ') || 'Not reported'}</dd>
+                      </div>
+                    )}
                     <div>
                       <dt className="text-xs font-semibold text-ink-500">Care needed (assessed)</dt>
                       <dd className="mt-1 flex flex-wrap gap-1">
@@ -368,10 +458,47 @@ export default function App() {
                 </JivaCard>
               )}
 
-              {!caseId && (
+              {showIntake ? (
+                <EmergencyIntake
+                  ambulance={ambulance}
+                  hospitals={hospitals}
+                  location={draftLocation}
+                  onLocation={setDraftLocation}
+                  onCancel={() => {
+                    setIntakeOpen(false);
+                    setDraftLocation(null);
+                  }}
+                  onSubmitted={(id, assignedHere) => {
+                    if (!assignedHere) {
+                      toast.show({ title: `Recorded as ${id}`, description: 'This ambulance could not be assigned to it. Dispatch will assign a unit.', tone: 'warn', icon: 'alertTriangle', groupKey: 'intake', durationMs: 9000 });
+                      setIntakeOpen(false);
+                      setDraftLocation(null);
+                      return;
+                    }
+                    setPendingCase({ caseId: id, at: Date.now(), assignedHere, timedOut: false });
+                    void crew.refresh();
+                  }}
+                  pending={pendingCase ? { caseId: pendingCase.caseId, timedOut: pendingCase.timedOut } : null}
+                />
+              ) : free ? (
                 <JivaCard>
-                  <EmptyState icon="ambulance" title="Available — waiting for dispatch" description="When dispatch assigns this ambulance to an emergency, the patient, destination and route appear here automatically." />
+                  <EmptyState
+                    icon="ambulance"
+                    title="Available"
+                    description="Dispatch assignments appear here automatically. If your crew is already with a patient, report the emergency yourself."
+                    action={
+                      <JivaButton variant="danger" icon="siren" onClick={() => setIntakeOpen(true)}>
+                        Report an emergency
+                      </JivaButton>
+                    }
+                  />
                 </JivaCard>
+              ) : (
+                !caseId && (
+                  <JivaCard>
+                    <EmptyState icon="ban" title="Out of service" description="This unit is marked unavailable and cannot take a case." />
+                  </JivaCard>
+                )
               )}
 
               {timeline.length > 0 && (
@@ -415,6 +542,7 @@ function nextAction({ ambulance, destinationName, lost, arrived, destStatus }: {
   if (arrived) return { title: `Hand over at ${destinationName ?? 'the hospital'}`, detail: 'Arrived. The emergency team has your handoff brief.', tone: 'ok' };
   if (!ambulance.assignedPatient) return { title: 'Available', detail: 'Waiting for dispatch.', tone: 'neutral' };
   if (lost) return { title: 'Hold — finding a new destination', detail: 'The previous hospital can no longer take this patient. JIVA is waiting for another hospital to accept.', tone: 'danger' };
+  if (!destinationName && ambulance.status === 'ON_SCENE') return { title: 'Stay with the patient', detail: 'You reported this emergency. JIVA is asking hospitals that offer the required care; a destination appears as soon as one accepts.', tone: 'warn' };
   if (!destinationName) return { title: 'Proceed to the patient', detail: 'JIVA is asking hospitals that offer the required care. A destination appears as soon as one accepts.', tone: 'warn' };
   if (destStatus === 'UNAVAILABLE' || destStatus === 'REJECTED') return { title: 'Destination no longer available', detail: 'JIVA is re-evaluating eligible hospitals.', tone: 'danger' };
   if (destStatus === 'ACCEPTED') return { title: `Drive to ${destinationName}`, detail: 'The hospital confirmed it can receive this patient.', tone: 'ok' };

@@ -20,7 +20,7 @@ phase's acceptance criteria were met **and** verified; frontend-only progress is
 |---|---|---|---|
 | 0 | Baseline, repository safety, tracking | ✅ Done | (this file) |
 | 1 | Domain models, event contracts, authorization | ✅ Done | see Phase 1 section |
-| 2 | Ambulance emergency intake | ⏳ | |
+| 2 | Ambulance emergency intake | ✅ Done | see Phase 2 section |
 | 3 | Real hospital directory and map coverage | ⏳ | |
 | 4 | Hospital referrals and explicit acceptance | ⏳ | |
 | 5 | Arrival, handover, encounter creation | ⏳ | |
@@ -150,3 +150,35 @@ Recorded here so later phases stay consistent. Each is the least invasive option
 ### Next
 
 Phase 2 — ambulance emergency intake (command endpoint, engine handling of structured intake and crew assignment, AWS parity, ambulance UI).
+
+---
+
+## Phase 2 — Ambulance emergency intake (✅ 2026-10-12)
+
+### What changed
+
+| Area | Files | Summary |
+|---|---|---|
+| Shared intake rules | `services/api/src/intake.ts` | `deriveCareRequirement` = frozen `assessRequiredCapabilities` ∪ crew-requested care (rule-derived needs can never be removed); `composeCondition` keeps the legacy one-line condition with the cause prefixed `Suspected:`; `patientFromEmergency` projects symptoms, suspected cause, requested care and intake provenance as separate fields; `ambulanceCanAttend`. Used by BOTH the local engine and the AWS emergency lambda. |
+| Engine | `services/api/src/stateEngines.ts`, `lambdas/core/emergencyCore.ts`, `lambdas/core/ambulanceCore.ts` | An emergency whose source is an ambulance assigns that crew through a system `ambulance.dispatched` (`assignmentBasis: REPORTED_BY_CREW`, `causationId` = the report) → status `ON_SCENE`. A busy or out-of-service unit is never reassigned. `care.requirement.created` carries `capabilitySources` when the crew added care. Legacy events produce exactly the legacy state (unit-tested). |
+| Command | `services/api/src/routes/emergencies.ts`, `ingest.ts`, `serviceArea.ts`, `commands/support.ts` | `POST /api/emergencies` (AMBULANCE only): strict validation → idempotency (`clientRequestId`; 422 on key reuse) → per-ambulance lock → service-area check (422) → unit free (409 `ambulance_busy` / `ambulance_unavailable`) → case reference not already open (409 `case_exists`) → server-generated `CASE-XXXXXXXX` unless the patient shared one → canonical event validated against `AnyEventSchema` and the shared submission policy → trust stamp → ledger → bus. Content-free audit entries for allowed and denied reports. `POST /api/events` now shares the same `recordAndPublish` tail (behaviour unchanged). |
+| Ambulance app | `apps/ambulance-web/src/EmergencyIntake.tsx`, `App.tsx`, `api.ts` | "Report an emergency" while the unit is free: location from this device (geolocation, accuracy shown), the ambulance's last GPS fix, a map pin (tap the map) or typed coordinates; severity; symptom chips + free text; suspected cause labelled unconfirmed; care chips showing how many connected hospitals list each (warning when none); optional patient reference (format-checked, no names or ID numbers); notes; review step; submit with pending and error states; a retry reuses the idempotency key. Success is confirmed from authoritative state (the case becomes this unit's job), with a 12 s "not visible yet" fallback. Job view: "Stay with the patient" next action, symptoms / suspected cause / crew notes, and a "No connected hospital could be asked" alert when the candidate evaluation leaves nobody to ask. Route map, decision bar, hospital answers and reroute card are unchanged. |
+| Shared UI | `packages/ui/src/Map/JivaMap.tsx`, `lib/events.ts` | Backward-compatible `onPick` (crosshair cursor, reports the clicked point); crew-reported dispatch described as "attending". |
+
+### Tests
+
+| Command | Result |
+|---|---|
+| `tsx tests/unit/emergency-intake.test.ts` (new) | ✅ 9 checks |
+| `tsx tests/unit/aws-lambda-parity.test.ts` (+3 scenarios: S7 crew report, S7b care nobody lists, S7c busy crew) | ✅ 15 checks, local and AWS identical |
+| `tsx tests/integration/clinical-journey.test.ts` (new, real API on :4101) | ✅ 40 passed: intake → case with separate symptoms/cause → crew ON_SCENE → referrals to capable hospitals only; idempotent retry; key reuse 422; busy 409; case_exists 409; patient-shared reference; out-of-area 422; validation 400s; 401/403 for every other role; generic `/api/events` path bound to the crew's own unit; realtime scoping |
+| `npm run typecheck` | ✅ exit 0 |
+| `npm run test:unit` (28 suites) | ✅ exit 0 |
+| `npm run test:integration` | ✅ exit 0 (runtime 124/0, journey 40/0) |
+| Browser (headless Edge via the DevTools protocol against `npm run dev`; scratch tooling, not committed) | ✅ 12/12: form opens, validation messages, emulated device location ±18 m, map-tap pin, unlisted-care warning, review shows symptoms and cause separately, submit → job view "Stay with the patient", backend ON_SCENE, no console errors, no horizontal overflow at 390 px. One earlier run timed out waiting for the emulated geolocation; the re-run passed (harness timing). |
+
+### Decisions and limitations
+
+- Ambulance-originated creation is a product requirement (Journey A step 1); the minimum change is that the crew may report as itself. The crew's assignment is derived by the engine, not a new crew permission.
+- Patient identity is linked only through a case reference the patient shares (demo personas are bound to `CASE-BLR-876/877`). A verified production patient-link flow does not exist — documented limitation.
+- The synthetic network lists only emergency/trauma/ICU/ventilator; asking for other care leaves nobody to refer to, which the UI states plainly instead of inventing capability.

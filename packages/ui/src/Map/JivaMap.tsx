@@ -61,6 +61,11 @@ export interface JivaMapProps {
   fit?: MapFit | null;
   /** Click on empty map (not a marker). */
   onBackgroundClick?: () => void;
+  /**
+   * Location picking: when set, a click on the map reports the clicked point and the cursor becomes a
+   * crosshair. Markers keep their own click behaviour.
+   */
+  onPick?: (point: { lat: number; lng: number }) => void;
   /** Overlay slots. Top-right holds the camera tools; bottom-right the zoom and attribution. */
   topLeft?: React.ReactNode;
   bottomLeft?: React.ReactNode;
@@ -127,6 +132,7 @@ export const JivaMap: React.FC<JivaMapProps> = ({
   focus,
   fit,
   onBackgroundClick,
+  onPick,
   topLeft,
   bottomLeft,
   tools = true,
@@ -142,6 +148,15 @@ export const JivaMap: React.FC<JivaMapProps> = ({
   useEffect(() => {
     backgroundClick.current = onBackgroundClick;
   }, [onBackgroundClick]);
+  const pick = useRef(onPick);
+  useEffect(() => {
+    pick.current = onPick;
+  }, [onPick]);
+  // Crosshair cursor while picking a location.
+  useEffect(() => {
+    if (!mapInstance) return;
+    mapInstance.getCanvas().style.cursor = onPick ? 'crosshair' : '';
+  }, [mapInstance, onPick]);
 
   // Initialize MapLibre
   useEffect(() => {
@@ -176,7 +191,10 @@ export const JivaMap: React.FC<JivaMapProps> = ({
       setIsLoaded(true);
       map.resize();
     });
-    map.on('click', () => backgroundClick.current?.());
+    map.on('click', (e) => {
+      backgroundClick.current?.();
+      pick.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+    });
 
     setMapInstance(map);
 

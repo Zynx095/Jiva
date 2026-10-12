@@ -168,6 +168,11 @@ export function describeEvent(e: JivaEvent, name: NameResolver, audience: Audien
     }
     case 'ambulance.dispatched': {
       const eta = num(p, 'estimatedEtaMinutes');
+      if (str(p, 'assignmentBasis') === 'REPORTED_BY_CREW') {
+        return patient
+          ? { ...base, title: 'An ambulance crew is with you', detail: `Ambulance ${A} reported your emergency`, tone: 'ok', icon: 'ambulance', category: 'ambulance', notable: true }
+          : { ...base, title: `${A} is attending${caseId ? ` ${caseId}` : ''}`, detail: 'The crew reported this emergency from the scene', tone: 'ok', icon: 'ambulance', category: 'ambulance', notable: true };
+      }
       return patient
         ? { ...base, title: 'An ambulance is on the way', detail: dotJoin([`Ambulance ${A}`, eta !== undefined && `About ${eta} min to reach you`]), tone: 'ok', icon: 'ambulance', category: 'ambulance', notable: true }
         : { ...base, title: `${A} dispatched`, detail: dotJoin([caseId && `To ${caseId}`, eta !== undefined && `${eta} min to scene`]), tone: 'ok', icon: 'ambulance', category: 'ambulance', notable: true };
