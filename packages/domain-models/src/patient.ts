@@ -1,3 +1,5 @@
+import type { DataStatus } from './hospital';
+
 export interface GeoPoint {
   latitude: number;
   longitude: number;
@@ -45,6 +47,8 @@ export interface PatientState {
   intake?: EmergencyIntake;
   /** Hospital encounter, once a hospital has recorded the patient's arrival. */
   encounterId?: string;
+  /** SYNTHETIC_DEMO for every case created in demo mode; absent for operational cases. */
+  dataStatus?: DataStatus;
   lastUpdated: string;
   provenance: Provenance[];
 }

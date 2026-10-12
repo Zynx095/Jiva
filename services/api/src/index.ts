@@ -9,6 +9,7 @@ import { encounterRouter } from './routes/encounters';
 import { clinicalRecordsRouter } from './routes/clinicalRecords';
 import { documentRouter, resetDocuments } from './routes/documents';
 import { vitalsRouter } from './routes/vitals';
+import { provenanceReport, runtimeMode } from './mode';
 import { resetAccessAudit } from './commands/support';
 import { initializeEncounterEngine, resetEncounterEngine } from './clinical/encounters';
 import { loadRoster } from './clinical/roster';
@@ -117,10 +118,23 @@ app.get('/api/health', async (_req, res) => {
     : { mode: mappingProvider.name, activeProvider: mappingProvider.name };
   const isAllHealthy = eventBusHealthy && dbHealthy && realtimeHealthy;
 
+  const [hospitals, ambulances] = await Promise.all([stateStore.listHospitals(), stateStore.listAmbulances()]);
+  const ai = getAiStatus();
   res.status(isAllHealthy ? 200 : 503).json({
     status: isAllHealthy ? 'HEALTHY' : 'DEGRADED',
     environment: config.environment,
-    demoAuth: true,
+    mode: runtimeMode(),
+    demoAuth: runtimeMode() === 'DEMO',
+    provenance: provenanceReport({
+      hospitals: hospitals.length,
+      syntheticHospitals: hospitals.filter(h => h.dataStatus === 'SYNTHETIC_DEMO').length,
+      ambulances: ambulances.length,
+      syntheticAmbulances: ambulances.filter(a => a.dataStatus === 'SYNTHETIC_DEMO').length,
+      clinicians: clinicalStore.countPractitioners(),
+      mappingProvider: String(mappingStatus.activeProvider ?? mappingProvider.name),
+      mappingSynthetic: mappingStatus.activeProvider === 'mock',
+      aiProvider: String(ai.provider),
+    }),
     timestamp: new Date().toISOString(),
     components: {
       api: { status: 'HEALTHY', port: config.port },
@@ -133,7 +147,7 @@ app.get('/api/health', async (_req, res) => {
         synthetic: mappingStatus.activeProvider === 'mock',
         ...mappingStatus,
       },
-      ai: { status: 'AVAILABLE', ...getAiStatus() },
+      ai: { status: 'AVAILABLE', ...ai },
     },
   });
 });
@@ -270,6 +284,8 @@ app.use('/api', documentRouter());
 app.use('/api', vitalsRouter());
 
 app.post('/api/demo/reset', requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
+  // Demo reset wipes state: it does not exist in operational mode.
+  if (runtimeMode() !== 'DEMO') return res.status(404).json({ error: 'not_found' });
   resetEngines();
   resetIntelligence();
   clinicalStore.reset();

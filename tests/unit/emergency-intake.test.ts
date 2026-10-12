@@ -22,6 +22,18 @@ const emergency = (payload: Partial<PatientEmergencyCreated['payload']>, source 
   payload: { condition: 'x', location: { latitude: 13.04, longitude: 77.59 }, severity: 'HIGH', ...payload },
 });
 
+/** Run `fn` with JIVA_ENVIRONMENT set (Phase 11 mode switch), restoring the previous value. */
+function inMode<T>(environment: 'production' | 'demo', fn: () => T): T {
+  const saved = process.env.JIVA_ENVIRONMENT;
+  process.env.JIVA_ENVIRONMENT = environment;
+  try {
+    return fn();
+  } finally {
+    if (saved === undefined) delete process.env.JIVA_ENVIRONMENT;
+    else process.env.JIVA_ENVIRONMENT = saved;
+  }
+}
+
 run('Phase 2 — emergency intake rules', async () => {
   await check('rule-derived capabilities are always kept; reporter additions are appended once', () => {
     const r = deriveCareRequirement({ condition: 'Suspected: road traffic accident · Reported: bleeding', severity: 'CRITICAL', requestedCapabilities: ['ORTHOPAEDICS', 'ICU', 'ORTHOPAEDICS'] });
@@ -64,8 +76,14 @@ run('Phase 2 — emergency intake rules', async () => {
 
   await check('legacy dispatch-reported emergency projects exactly the legacy patient shape (no new fields)', () => {
     const e = emergency({ condition: 'Severe polytrauma', severity: 'CRITICAL' }, { type: 'system', id: 'dispatch' } as never);
-    const p = patientFromEmergency(e, 'CASE-T1', deriveCareRequirement(e.payload));
-    eq(Object.keys(p).sort(), ['activeConditions', 'careRequirements', 'currentLocation', 'currentStatus', 'lastUpdated', 'patientId', 'provenance'], 'legacy keys only');
+    const legacy = ['activeConditions', 'careRequirements', 'currentLocation', 'currentStatus', 'lastUpdated', 'patientId', 'provenance'];
+    // Operational mode: exactly the legacy shape.
+    const op = inMode('production', () => patientFromEmergency(e, 'CASE-T1', deriveCareRequirement(e.payload)));
+    eq(Object.keys(op).sort(), legacy, 'legacy keys only');
+    // Demo mode (Phase 11): the same shape plus the demo-case label — still none of the intake fields.
+    const demo = inMode('demo', () => patientFromEmergency(e, 'CASE-T1', deriveCareRequirement(e.payload)));
+    eq(Object.keys(demo).sort(), [...legacy, 'dataStatus'].sort(), 'legacy keys + demo label');
+    eq(demo.dataStatus, 'SYNTHETIC_DEMO', 'demo label');
   });
 
   await check('only an ambulance source identifies a reporting crew', () => {

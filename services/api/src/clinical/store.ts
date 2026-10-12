@@ -30,6 +30,7 @@ export interface IClinicalStore {
   setRoster(practitioners: Practitioner[]): void;
   getPractitioner(practitionerId: string): Practitioner | undefined;
   listPractitioners(hospitalId: string): Practitioner[];
+  countPractitioners(): number;
 
   // encounters
   getEncounter(encounterId: string): HospitalEncounter | undefined;
@@ -92,6 +93,10 @@ export class LocalClinicalStore implements IClinicalStore {
 
   listPractitioners(hospitalId: string): Practitioner[] {
     return [...this.practitioners.values()].filter(p => p.hospitalId === hospitalId);
+  }
+
+  countPractitioners(): number {
+    return this.practitioners.size;
   }
 
   getEncounter(encounterId: string): HospitalEncounter | undefined {

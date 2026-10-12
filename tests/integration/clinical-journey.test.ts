@@ -709,6 +709,23 @@ async function medicalTelemetry(api: Api, ctx: { caseId: string; encounterId: st
   sock.s.close();
 }
 
+// ------------------------------------------------------------------------------------------ phase 11
+
+async function demoProvenance(api: Api, ctx: { caseId: string }) {
+  console.log('\n[Phase 11] Demo mode and data provenance');
+  const health = (await api.get(undefined, '/api/health')).json;
+  const p = health?.provenance;
+  check('health reports DEMO mode with demo authentication', health?.mode === 'DEMO' && health.demoAuth === true);
+  check('the synthetic network is counted as synthetic (4 hospitals, 3 ambulances)', p?.datasets?.network?.syntheticHospitals === 4 && p.datasets.network.syntheticAmbulances === 3);
+  check('the clinician roster is labelled synthetic; the simulator is demo-only', p?.datasets?.clinicians?.dataStatus === 'SYNTHETIC_DEMO' && p.providers.telemetry.simulator === true && p.providers.telemetry.medicalDevices === false);
+  check('mock routing and mock AI are reported as synthetic', p?.providers?.mapping?.synthetic === true && p.providers.ai.synthetic === true);
+  check('no live integration is claimed', p && Object.values(p.liveIntegrations).every(v => v === false));
+  const pat = ((await api.get(P.mgmt, '/api/patients')).json as any[]).find(x => x.patientId === ctx.caseId);
+  check('cases created in demo mode are labelled demo cases', pat?.dataStatus === 'SYNTHETIC_DEMO');
+  check('the demo fleet is labelled', ((await api.get(P.mgmt, '/api/ambulances')).json as any[]).every(a => a.dataStatus === 'SYNTHETIC_DEMO'));
+  check('the demo hospitals are labelled', ((await api.get(P.mgmt, '/api/hospitals')).json as any[]).every(h => h.dataStatus === 'SYNTHETIC_DEMO'));
+}
+
 // ------------------------------------------------------------------------------------------
 
 async function main() {
@@ -725,6 +742,7 @@ async function main() {
     await diagnosticDocuments(api, journey);
     await patientDashboard(api, journey);
     await medicalTelemetry(api, journey);
+    await demoProvenance(api, journey);
     check('API process still healthy at the end', (await api.get(undefined, '/api/health')).status === 200);
     check('no handler crashes logged', !/Handler for .* failed|Uncaught exception|Unhandled rejection/.test(api.log()), api.log().match(/.*(failed|Uncaught|Unhandled).*/g)?.slice(0, 3).join('\n'));
   } finally {

@@ -1,6 +1,7 @@
 import type { CapabilityType, EmergencyIntake, PatientState } from '@jiva/domain-models';
 import type { PatientEmergencyCreated } from '@jiva/event-schema';
 import { assessRequiredCapabilities } from './stateTransitions';
+import { isDemoMode } from './mode';
 
 /**
  * Emergency intake rules shared by the LOCAL state engine and the AWS emergency lambda (one
@@ -75,6 +76,8 @@ export function patientFromEmergency(event: PatientEmergencyCreated, patientId: 
   if (requirement.reporterRequested.length) patient.requestedCapabilities = [...requirement.reporterRequested];
   const intake = intakeOf(event);
   if (intake) patient.intake = intake;
+  // Demo cases are labelled as such; operational and demo cases never share a process (see mode.ts).
+  if (isDemoMode()) patient.dataStatus = 'SYNTHETIC_DEMO';
   return patient;
 }
 
