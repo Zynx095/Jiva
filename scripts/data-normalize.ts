@@ -64,22 +64,15 @@ function processInstitutions() {
     const isManipal = item.name.includes('Manipal');
 
     const location = isBaptist
-      ? { latitude: 13.0334, longitude: 77.5925, coordinateSource: 'GEOCODED' }
+      ? { latitude: 13.0334, longitude: 77.5925, coordinateSource: 'MANUAL_UNVERIFIED' }
       : isManipal
-      ? { latitude: 12.9592, longitude: 77.6485, coordinateSource: 'GEOCODED' }
+      ? { latitude: 12.9592, longitude: 77.6485, coordinateSource: 'MANUAL_UNVERIFIED' }
       : undefined;
 
     const tier: FacilityTier = isBaptist || isManipal ? 'TERTIARY_CARE' : inferFacilityTier(item.type);
 
-    const capabilities = {
-      emergency: true,
-      trauma: true,
-      icu: true,
-      ventilator: true,
-      cardiology: true,
-      neurology: true,
-      orthopaedics: true,
-    };
+    // Services are NOT listed in the manual extract: they stay unknown (never assumed from the facility type).
+    const capabilities = {};
 
     const operationalState = {
       emergency: 'UNKNOWN' as const,
@@ -160,6 +153,7 @@ function processInstitutions() {
       },
       capabilities: {
         value: capabilities,
+        notes: 'Services are not listed in this source; they stay unknown until a source states them.',
         source: prov.sourceId,
         sourceType: prov.sourceType,
         observedAt: prov.retrievedAt,
@@ -195,11 +189,12 @@ function processInstitutions() {
     if (location) {
       evidence.location = {
         value: location,
-        source: 'geocoder-nominatim',
-        sourceType: 'GEOCODER',
+        source: 'manual-entry',
+        sourceType: 'MANUAL_ENTRY',
         observedAt: prov.retrievedAt,
-        confidence: 0.9,
-        dataStatus: 'PUBLIC_LISTED',
+        confidence: 0.5,
+        dataStatus: 'UNVERIFIED',
+        notes: 'Typed in by a contributor; the earlier geocoder label could not be reproduced. Unverified (see data/directory for OSM-matched coordinates).',
       };
     }
 
@@ -250,11 +245,11 @@ function processBengaluruUrban() {
 
     let location;
     if (item.hospitalName.includes('KC General')) {
-      location = { latitude: 12.9961, longitude: 77.5712, coordinateSource: 'GEOCODED' };
+      location = { latitude: 12.9961, longitude: 77.5712, coordinateSource: 'MANUAL_UNVERIFIED' };
     } else if (item.hospitalName.includes('Jayanagar')) {
-      location = { latitude: 12.9304, longitude: 77.5855, coordinateSource: 'GEOCODED' };
+      location = { latitude: 12.9304, longitude: 77.5855, coordinateSource: 'MANUAL_UNVERIFIED' };
     } else if (item.hospitalName.includes('Bowring')) {
-      location = { latitude: 12.9822, longitude: 77.6016, coordinateSource: 'GEOCODED' };
+      location = { latitude: 12.9822, longitude: 77.6016, coordinateSource: 'MANUAL_UNVERIFIED' };
     }
 
     const tier: FacilityTier = item.hospitalName.includes('Bowring')
@@ -270,12 +265,8 @@ function processBengaluruUrban() {
       country: 'India',
     };
 
-    const capabilities = {
-      emergency: true,
-      icu: true,
-      generalSurgery: true,
-      orthopaedics: true,
-    };
+    // Services are NOT listed in the directory extract: they stay unknown (never assumed from the facility type).
+    const capabilities = {};
 
     const operationalState = {
       emergency: 'UNKNOWN' as const,
@@ -326,6 +317,7 @@ function processBengaluruUrban() {
       },
       capabilities: {
         value: capabilities,
+        notes: 'Services are not listed in this source; they stay unknown until a source states them.',
         source: prov.sourceId,
         sourceType: prov.sourceType,
         observedAt: prov.retrievedAt,
@@ -348,11 +340,12 @@ function processBengaluruUrban() {
     if (location) {
       evidence.location = {
         value: location,
-        source: 'geocoder-nominatim',
-        sourceType: 'GEOCODER',
+        source: 'manual-entry',
+        sourceType: 'MANUAL_ENTRY',
         observedAt: prov.retrievedAt,
-        confidence: 0.95,
-        dataStatus: 'PUBLIC_LISTED',
+        confidence: 0.5,
+        dataStatus: 'UNVERIFIED',
+        notes: 'Typed in by a contributor; the earlier geocoder label could not be reproduced. Unverified (see data/directory for OSM-matched coordinates).',
       };
     }
 
@@ -397,9 +390,9 @@ function processBbmp() {
 
     let location;
     if (item.name.includes('Srirampura')) {
-      location = { latitude: 12.9926, longitude: 77.5641, coordinateSource: 'GEOCODED' };
+      location = { latitude: 12.9926, longitude: 77.5641, coordinateSource: 'MANUAL_UNVERIFIED' };
     } else if (item.name.includes('Ulsoor')) {
-      location = { latitude: 12.9779, longitude: 77.6245, coordinateSource: 'GEOCODED' };
+      location = { latitude: 12.9779, longitude: 77.6245, coordinateSource: 'MANUAL_UNVERIFIED' };
     }
 
     const tier: FacilityTier = item.name.includes('Maternity')
@@ -416,9 +409,8 @@ function processBbmp() {
       country: 'India',
     };
 
-    const capabilities = item.name.includes('Maternity')
-      ? { obstetrics: true, gynaecology: true, neonatology: true }
-      : { emergency: true };
+    // Services are NOT listed in the BBMP extract: they stay unknown (the category alone is not a service list).
+    const capabilities = {};
 
     const operationalState = {
       emergency: 'UNKNOWN' as const,
@@ -469,6 +461,7 @@ function processBbmp() {
       },
       capabilities: {
         value: capabilities,
+        notes: 'Services are not listed in this source; they stay unknown until a source states them.',
         source: prov.sourceId,
         sourceType: prov.sourceType,
         observedAt: prov.retrievedAt,
@@ -491,11 +484,12 @@ function processBbmp() {
     if (location) {
       evidence.location = {
         value: location,
-        source: 'geocoder-nominatim',
-        sourceType: 'GEOCODER',
+        source: 'manual-entry',
+        sourceType: 'MANUAL_ENTRY',
         observedAt: prov.retrievedAt,
-        confidence: 0.95,
-        dataStatus: 'PUBLIC_LISTED',
+        confidence: 0.5,
+        dataStatus: 'UNVERIFIED',
+        notes: 'Typed in by a contributor; the earlier geocoder label could not be reproduced. Unverified (see data/directory for OSM-matched coordinates).',
       };
     }
 
