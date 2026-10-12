@@ -13,11 +13,10 @@ import {
   type EncounterAction, type EncounterFacts,
 } from '../clinical/policy';
 import { projectEncounter, recordProvenance } from '../clinical/views';
-import { asyncRoute, audit, conflict, denied, idempotent, replayOr, validationError, withKeyLock } from '../commands/support';
+import { asyncRoute, audit, CLOCK_SKEW_MS, conflict, denied, idempotent, replayOr, validationError, withKeyLock } from '../commands/support';
 
 type AuthedRequest = Request & { auth?: AuthContext };
 
-const FUTURE_SKEW_MS = 60_000;
 const MAX_BACKDATE_MS = 12 * 3600_000;
 const hospitalName = (id: string) => hospitalsStore.get(id)?.displayName;
 const facts = (e: HospitalEncounter): EncounterFacts => ({ encounterId: e.encounterId, caseId: e.caseId, hospitalId: e.hospitalId, status: e.status, assignedPractitionerId: e.assignedDoctor?.practitionerId });
@@ -99,8 +98,8 @@ export function encounterRouter(): Router {
 
       const arrivedAt = cmd.arrivedAt ?? new Date(now).toISOString();
       const reportedAt = Date.parse(patient.provenance[0]?.timestamp ?? patient.lastUpdated);
-      if (Date.parse(arrivedAt) > now + FUTURE_SKEW_MS) return badTime(res, 'arrivedAt is in the future');
-      if (Date.parse(arrivedAt) < reportedAt - FUTURE_SKEW_MS || Date.parse(arrivedAt) < now - MAX_BACKDATE_MS) return badTime(res, 'arrivedAt is before the emergency was reported, or more than 12 hours ago');
+      if (Date.parse(arrivedAt) > now + CLOCK_SKEW_MS) return badTime(res, 'arrivedAt is in the future');
+      if (Date.parse(arrivedAt) < reportedAt - CLOCK_SKEW_MS || Date.parse(arrivedAt) < now - MAX_BACKDATE_MS) return badTime(res, 'arrivedAt is before the emergency was reported, or more than 12 hours ago');
 
       const encounterId = `ENC-${hospitalId.replace(/^HOSP-/, '')}-${randomBytes(4).toString('hex').toUpperCase()}`;
       const referral = view.request;
@@ -143,7 +142,7 @@ export function encounterRouter(): Router {
       if (enc.status !== 'ARRIVED') return conflict(res, 'already_handed_over', `The handover of ${enc.caseId} was already recorded at ${enc.handover?.handedOverAt}.`);
       const now = Date.now();
       const handedOverAt = cmd.handedOverAt ?? new Date(now).toISOString();
-      if (Date.parse(handedOverAt) > now + FUTURE_SKEW_MS) return badTime(res, 'handedOverAt is in the future');
+      if (Date.parse(handedOverAt) > now + CLOCK_SKEW_MS) return badTime(res, 'handedOverAt is in the future');
       if (Date.parse(handedOverAt) < Date.parse(enc.arrival.arrivedAt)) return badTime(res, 'handedOverAt is before the recorded arrival');
       await publishCommandEvent(auth, {
         eventId: randomUUID(),

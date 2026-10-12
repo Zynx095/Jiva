@@ -14,6 +14,9 @@ import { actorFromAuth, type Decision } from '../clinical/policy';
 
 export const sha256Hex = (data: string | Buffer) => createHash('sha256').update(data).digest('hex');
 
+/** Allowance for client clocks: a client-supplied time may be at most this far in the future. */
+export const CLOCK_SKEW_MS = 60_000;
+
 /**
  * Express 4 does not pass a rejected async handler to the error middleware: the request would hang and the
  * rejection would only be logged. Command handlers are wrapped so a failure answers 500 (no details).

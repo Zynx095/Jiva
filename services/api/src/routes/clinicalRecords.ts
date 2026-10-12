@@ -16,12 +16,11 @@ import {
   amendPrescription, amendReport, createPrescription, createReport, discontinuePrescription, type RecordMeta, type RecordResult,
 } from '../clinical/records';
 import { projectPrescription, projectReport, recordProvenance, type AuthorLookup } from '../clinical/views';
-import { asyncRoute, audit, auditAccess, conflict, denied, idempotent, replayOr, validationError, withKeyLock } from '../commands/support';
+import { asyncRoute, audit, auditAccess, CLOCK_SKEW_MS, conflict, denied, idempotent, replayOr, validationError, withKeyLock } from '../commands/support';
 import { encounterFor, publishCommandEvent } from './encounters';
 
 type AuthedRequest = Request & { auth?: AuthContext };
 
-const FUTURE_SKEW_MS = 60_000;
 const newId = (prefix: string) => `${prefix}-${randomBytes(5).toString('hex').toUpperCase()}`;
 
 /** Authors are shown by their roster name (never their user id). */
@@ -127,7 +126,7 @@ const rejected = <T>(res: Response, r: Extract<RecordResult<T>, { ok: false }>, 
 
 /** Report attachments must be available documents of the same encounter; times may not lie in the future. */
 function reportInputProblem(enc: HospitalEncounter, content: ReportContent): { status: 400 | 422; error: string; message: string } | undefined {
-  if (Date.parse(content.effectiveAt) > Date.now() + FUTURE_SKEW_MS) return { status: 400, error: 'validation_failed', message: 'effectiveAt is in the future' };
+  if (Date.parse(content.effectiveAt) > Date.now() + CLOCK_SKEW_MS) return { status: 400, error: 'validation_failed', message: 'effectiveAt is in the future' };
   if (new Set(content.documentIds).size !== content.documentIds.length) return { status: 400, error: 'validation_failed', message: 'A document is attached twice' };
   for (const id of content.documentIds) {
     const d = clinicalStore.getDocument(id);

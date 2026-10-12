@@ -2,6 +2,7 @@ import { Router, type Request } from 'express';
 import type { AuthContext } from '@jiva/auth';
 import { ambulanceCase, relatedCases } from '../authorization';
 import { referralOverview } from '../referrals';
+import { asyncRoute } from '../commands/support';
 
 type AuthedRequest = Request & { auth?: AuthContext };
 
@@ -14,7 +15,7 @@ type AuthedRequest = Request & { auth?: AuthContext };
  */
 export function referralRouter(): Router {
   const router = Router();
-  router.get('/cases/:id/referrals', async (req: AuthedRequest, res) => {
+  router.get('/cases/:id/referrals', asyncRoute(async (req: AuthedRequest, res) => {
     const auth = req.auth!;
     const caseId = String(req.params.id);
     const privileged = auth.role === 'ADMIN' || auth.role === 'MANAGEMENT';
@@ -26,6 +27,6 @@ export function referralRouter(): Router {
     if (!overview) return res.status(404).json({ error: 'not_found' });
     if (hospital) overview.rows = overview.rows.filter(r => r.hospitalId === auth.hospitalId);
     res.json(overview);
-  });
+  }));
   return router;
 }

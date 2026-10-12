@@ -70,10 +70,6 @@ export function resetEngines(): void {
   decisionAuthority.reset();
 }
 
-export function hasOutstandingRequest(caseId: string, hospitalId: string): boolean {
-  return engine.requests.has(`${caseId}|${hospitalId}`);
-}
-
 /** The open referral (acceptance request) for a case at a hospital, if any. Answered requests stay open for revision. */
 export function outstandingRequest(caseId: string, hospitalId: string): HospitalAcceptanceRequested['payload'] | undefined {
   return engine.requests.get(`${caseId}|${hospitalId}`);

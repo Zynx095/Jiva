@@ -1,5 +1,6 @@
 import type { AuthContext } from '@jiva/auth';
 import type { ActorRef, EncounterStatus } from '@jiva/domain-models';
+import { CLINICAL_RECORD_EVENT_TYPES, ENCOUNTER_EVENT_TYPES } from '@jiva/event-schema';
 
 /**
  * PURE authorization policy for encounters and clinical records (no stores, no I/O), so it can be unit
@@ -152,14 +153,10 @@ export function authorizeAuditRead(auth: AuthContext): Decision {
 
 // ------------------------------------------------------------------ realtime / ledger delivery
 
-export const ENCOUNTER_LIFECYCLE_EVENTS = new Set(['encounter.arrival.recorded', 'encounter.handover.recorded']);
-export const ENCOUNTER_ASSIGNMENT_EVENTS = new Set(['encounter.doctor.assigned']);
-export const CLINICAL_RECORD_EVENTS = new Set([
-  'clinical.prescription.recorded',
-  'clinical.report.recorded',
-  'clinical.document.stored',
-  'clinical.telemetry.recorded',
-]);
+// Derived from the event contracts, so a new clinical event type cannot be missed by the delivery rules.
+export const ENCOUNTER_ASSIGNMENT_EVENTS = new Set<string>(['encounter.doctor.assigned']);
+export const ENCOUNTER_LIFECYCLE_EVENTS = new Set<string>(ENCOUNTER_EVENT_TYPES.filter(t => !ENCOUNTER_ASSIGNMENT_EVENTS.has(t)));
+export const CLINICAL_RECORD_EVENTS = new Set<string>(CLINICAL_RECORD_EVENT_TYPES);
 
 /** Event types whose delivery is decided by `canReceiveClinicalDomainEvent`. */
 export const isClinicalDomainEvent = (eventType: string) =>
