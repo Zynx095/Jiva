@@ -38,3 +38,4 @@ export * from './lib/directory';
 export * from './lib/referrals';
 export * from './lib/encounters';
 export * from './lib/records';
+export * from './lib/vitals';

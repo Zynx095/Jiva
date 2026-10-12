@@ -28,7 +28,7 @@ phase's acceptance criteria were met **and** verified; frontend-only progress is
 | 7 | Clinical records and prescriptions | ✅ Done | see Phase 7 section |
 | 8 | Diagnostic documents and secure file storage | ✅ Done | see Phase 8 section |
 | 9 | Patient dashboard and in-hospital experience | ✅ Done | see Phase 9 section |
-| 10 | Medical telemetry foundation | ⏳ | |
+| 10 | Medical telemetry foundation | ✅ Done | see Phase 10 section |
 | 11 | Operational mode, demo mode, provenance | ⏳ | |
 | 12 | Security, privacy and audit hardening | ⏳ | |
 | 13 | End-to-end integration and regression testing | ⏳ | |
@@ -423,3 +423,37 @@ A production provider would implement the same interface on a private object sto
 - The patient sees what the hospital released: own prescriptions (current version), shared reports and documents, the doctor's name. Internal notes, change reasons, earlier versions and unshared results stay with the care team.
 - No discharge state yet: state B lasts while the encounter is `IN_CARE`.
 - `WhatNext` stays non-clinical (who is caring for you, where updates appear); JIVA does not interpret results.
+
+---
+
+## Phase 10 — Medical telemetry foundation (✅ 2026-10-13)
+
+### Existing telemetry (verified)
+
+Only ambulance GPS (`ambulance.location.updated`) existed. No medical measurement was stored, generated or displayed anywhere. Phase 1 had defined the model (`TelemetryMeasurement` with `source` MANUAL_CLINICIAN / DEVICE_SIMULATED / MEDICAL_DEVICE), validated inputs (`MEASUREMENT_RULES`: unit and plausible range per type; systolic above diastolic), the content-free `clinical.telemetry.recorded` event and the policy (write: assigned clinician; read: assigned clinician and the patient).
+
+### What changed
+
+| Area | Files | Summary |
+|---|---|---|
+| Rules (pure) | `services/api/src/clinical/telemetry.ts` | Batches from validated inputs with the source decided by the server; latest value per type with age and freshness (current ≤ 15 min, recent ≤ 2 h, then old); observation times not in the future and not older than 24 h; **demo-only** simulated bedside monitor (`simulationAllowed()` is false outside DEMO; deterministic per seed, within the validated ranges); the **medical-device contract** (`checkDeviceBatch`: registered device bound to the encounter, strictly increasing sequence, device clock skew ≤ 5 min) with today's registry being empty, so every device batch is refused (`NO_DEVICE_INTEGRATION`). |
+| Contracts | `packages/event-schema/src/commands.ts` | `SimulateTelemetryCommandSchema`; `DeviceObservationBatchSchema` (strict; for review — no endpoint accepts it). |
+| API | `services/api/src/routes/vitals.ts`, `clinical/store.ts`, `index.ts` | `GET /api/encounters/:id/vitals` (assigned clinician, the patient): latest per type + entries + `sources: { medicalDeviceIntegrated: false, simulationAvailable }`; the patient's copy has the recorder's roster name, never a staff id. `POST /api/encounters/:id/vitals`: assigned clinician, in care, strict body (a client cannot claim a source), idempotent, stored with `MANUAL_CLINICIAN`. `POST /api/encounters/:id/vitals/simulate`: exists only in DEMO mode (404 otherwise); assigned clinician; values labelled `DEVICE_SIMULATED`, `SYNTHETIC_DEMO`, device `SIM-BEDSIDE-MONITOR`. No route records `MEDICAL_DEVICE`. Batches and their content-free events are committed together (rolled back if the event fails); writes audited, reads access-audited. |
+| Clinician UI | `apps/hospital-web/src/clinician/{VitalsPanel,useClinician,ClinicianWorkspace}.tsx` | "Vital signs": latest per type with source and freshness badges, entries over time, a form for measured values (empty fields are not sent), and in demo mode a "Simulated monitor (demo)" button; simulated tiles are tinted and labelled. States that no medical device is connected. |
+| Patient UI | `apps/patient-web/src/{InHospital,App,usePatient}.tsx` | "Your vital signs" in state B: value + unit, source ("Entered by clinician" / "Simulated (demo)"), freshness, time; simulated values carry "Simulated for the demo — not a real measurement"; never-measured types are not shown; "No monitoring device is connected to JIVA". |
+| Shared UI | `packages/ui/src/lib/{vitals,events}.ts` | Measurement labels and units, value formatting, source and freshness status, event copy (simulated events are not notable for patients). |
+
+### Tests
+
+| Command | Result |
+|---|---|
+| `tsx tests/unit/medical-telemetry.test.ts` (new) | ✅ 6 checks: ranges, units, BP order, unknown types, client-claimed source refused (measurement and top level); observation-time bounds; freshness; server-decided source and latest-per-type (no invented types); simulator gate, determinism and 200 seeds × 5 values within the validated ranges; device contract strictness and every refusal code |
+| `tsx tests/integration/clinical-journey.test.ts` (+Phase 10: 23) | ✅ 279 passed: empty state shows nothing invented; `medicalDeviceIntegrated: false`; simulator offered to the assigned doctor only; coordinator, patient, other hospital's clinician and another patient refused; implausible value / wrong unit / BP order / future time / claimed device source → 400; manual entry `MANUAL_CLINICIAN`; patient sees value, unit, source, recorder name, freshness, no staff id, no untaken types; simulator labels every value, refused to the patient and coordinator; patient sees simulated values marked as simulated; realtime events carry types and times, never values; no telemetry in the management ledger |
+| `npm run typecheck` / `test:unit` (35 suites) / `test:integration` | ✅ all exit 0 (runtime 124/0, journey 279/0) |
+
+### Decisions and limitations
+
+- **No medical device is integrated, and nothing claims otherwise.** The device contract is defined and tested, but no endpoint accepts device data; device authentication (e.g. mutual TLS or signed device tokens) and a device registry are not built.
+- Operational mode cannot produce a measurement: the simulator route does not exist outside DEMO.
+- The plausibility ranges are input checks, not clinical thresholds; JIVA raises no clinical alarms.
+- Telemetry is stored in memory (capped at 5,000 measurements per encounter) like the other local clinical records.

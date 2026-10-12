@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { HospitalState, PatientState } from '@jiva/domain-models';
-import type { ConnectionState, DocumentRecord, EncounterRecord, JivaEvent, PrescriptionRecord, ReportRecord, RosterEntry } from '@jiva/ui/src';
+import type { ConnectionState, DocumentRecord, EncounterRecord, JivaEvent, PrescriptionRecord, ReportRecord, RosterEntry, VitalsResponse } from '@jiva/ui/src';
 import { apiGet, socket } from '../api';
 
 interface Me {
@@ -16,6 +16,7 @@ export interface EncounterRecords {
   prescriptions: PrescriptionRecord[] | null;
   reports: ReportRecord[] | null;
   documents: DocumentRecord[] | null;
+  vitals: VitalsResponse | null;
 }
 
 const enc = encodeURIComponent;
@@ -46,13 +47,14 @@ export function useClinician(onLiveEvent?: (e: JivaEvent) => void) {
   }, [onLiveEvent]);
 
   const loadRecords = useCallback(async (encounterId: string) => {
-    const [prescriptions, reports, documents] = await Promise.all([
+    const [prescriptions, reports, documents, vitals] = await Promise.all([
       apiGet<PrescriptionRecord[]>(`/api/encounters/${enc(encounterId)}/prescriptions`).catch(() => null),
       apiGet<ReportRecord[]>(`/api/encounters/${enc(encounterId)}/reports`).catch(() => null),
       apiGet<DocumentRecord[]>(`/api/encounters/${enc(encounterId)}/documents`).catch(() => null),
+      apiGet<VitalsResponse>(`/api/encounters/${enc(encounterId)}/vitals`).catch(() => null),
     ]);
     if (selectedRef.current !== encounterId) return; // the selection changed meanwhile
-    setRecords({ encounterId, prescriptions, reports, documents });
+    setRecords({ encounterId, prescriptions, reports, documents, vitals });
   }, []);
 
   const refresh = useCallback(async () => {

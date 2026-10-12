@@ -26,7 +26,7 @@ import {
   type TimelineItem,
 } from '@jiva/ui/src';
 import { PERSONA } from './api';
-import { CareTeamCard, DocumentsCard, MedicationsCard, RecordsNotYet, ReportsCard } from './InHospital';
+import { CareTeamCard, DocumentsCard, MedicationsCard, RecordsNotYet, ReportsCard, VitalsCard } from './InHospital';
 import { usePatient } from './usePatient';
 
 const PERSONAS = [
@@ -319,6 +319,7 @@ export default function App() {
 
           {inCare && encounter ? (
             <>
+              <VitalsCard vitals={records?.encounterId === encounter.encounterId ? records.vitals : undefined} now={now} />
               <MedicationsCard list={records?.encounterId === encounter.encounterId ? records.prescriptions : undefined} />
               <ReportsCard encounterId={encounter.encounterId} list={records?.encounterId === encounter.encounterId ? records.reports : undefined} documents={records?.encounterId === encounter.encounterId ? records.documents : undefined} />
               <DocumentsCard encounterId={encounter.encounterId} list={records?.encounterId === encounter.encounterId ? records.documents : undefined} />

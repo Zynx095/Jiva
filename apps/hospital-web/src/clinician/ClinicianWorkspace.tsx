@@ -30,6 +30,7 @@ import { PERSONA } from '../api';
 import { PERSONAS } from '../personas';
 import { DocumentsPanel } from './DocumentsPanel';
 import { PrescriptionsPanel } from './PrescriptionsPanel';
+import { VitalsPanel } from './VitalsPanel';
 import { ReportsPanel } from './ReportsPanel';
 import { useClinician } from './useClinician';
 
@@ -117,6 +118,7 @@ export function ClinicianWorkspace() {
           {selected ? (
             <>
               <EncounterSummary e={selected} patient={patientOf(selected.caseId)} now={now} />
+              <VitalsPanel encounterId={selected.encounterId} vitals={c.records?.encounterId === selected.encounterId ? c.records.vitals : undefined} onChanged={c.reloadRecords} now={now} />
               <PrescriptionsPanel
                 encounterId={selected.encounterId}
                 list={c.records?.encounterId === selected.encounterId ? c.records.prescriptions : undefined}

@@ -259,6 +259,13 @@ export function describeEvent(e: JivaEvent, name: NameResolver, audience: Audien
         ? { ...base, title: first ? 'A new report is available' : 'A report was updated', detail: 'See your reports for details.', tone: 'ok', icon: 'file', category: 'case', notable: true }
         : { ...base, title: `Report ${first ? 'recorded' : 'updated'}${caseId ? ` · ${caseId}` : ''}`, detail: dotJoin([str(p, 'status')?.toLowerCase(), p.patientVisible === true ? 'shared with the patient' : 'not shared']), tone: 'ok', icon: 'file', category: 'case', notable: true };
     }
+    case 'clinical.telemetry.recorded': {
+      const simulated = str(p, 'source') === 'DEVICE_SIMULATED';
+      const n = num(p, 'measurementCount') ?? 0;
+      return patient
+        ? { ...base, title: simulated ? 'Simulated vital signs added (demo)' : 'New vital signs recorded', detail: 'See your vital signs.', tone: simulated ? 'warn' : 'ok', icon: 'heart', category: 'case', notable: !simulated }
+        : { ...base, title: `${n} vital sign${n === 1 ? '' : 's'} recorded${caseId ? ` · ${caseId}` : ''}`, detail: simulated ? 'Simulated monitor — demo data' : 'Entered by a clinician', tone: simulated ? 'warn' : 'ok', icon: 'heart', category: 'case' };
+    }
     case 'clinical.document.stored':
       return patient
         ? { ...base, title: 'A document was added to your records', detail: 'See your documents and scans.', tone: 'ok', icon: 'file', category: 'case', notable: true }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AmbulanceState, HospitalState, PatientState } from '@jiva/domain-models';
-import type { ConnectionState, DocumentRecord, EncounterRecord, JivaEvent, PatientPrescription, PatientReport } from '@jiva/ui/src';
+import type { ConnectionState, DocumentRecord, EncounterRecord, JivaEvent, PatientPrescription, PatientReport, VitalsResponse } from '@jiva/ui/src';
 import { apiGet, socket } from './api';
 
 type LoadState = 'loading' | 'ready' | 'error';
@@ -15,6 +15,7 @@ export interface PatientRecords {
   prescriptions: PatientPrescription[] | null;
   reports: PatientReport[] | null;
   documents: DocumentRecord[] | null;
+  vitals: VitalsResponse | null;
 }
 
 const enc = encodeURIComponent;
@@ -51,13 +52,14 @@ export function usePatient(onLiveEvent?: (e: JivaEvent) => void) {
 
   /** What the hospital has released to the patient: prescriptions, shared reports, shared documents. */
   const loadRecords = useCallback(async (encounterId: string) => {
-    const [prescriptions, reports, documents] = await Promise.all([
+    const [prescriptions, reports, documents, vitals] = await Promise.all([
       apiGet<PatientPrescription[]>(`/api/encounters/${enc(encounterId)}/prescriptions`).catch(() => null),
       apiGet<PatientReport[]>(`/api/encounters/${enc(encounterId)}/reports`).catch(() => null),
       apiGet<DocumentRecord[]>(`/api/encounters/${enc(encounterId)}/documents`).catch(() => null),
+      apiGet<VitalsResponse>(`/api/encounters/${enc(encounterId)}/vitals`).catch(() => null),
     ]);
     if (encounterRef.current !== encounterId) return;
-    setRecords({ encounterId, prescriptions, reports, documents });
+    setRecords({ encounterId, prescriptions, reports, documents, vitals });
   }, []);
 
   const fetchState = useCallback(async () => {

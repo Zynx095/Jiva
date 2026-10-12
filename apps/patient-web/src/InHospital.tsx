@@ -8,9 +8,15 @@ import {
   JivaCard,
   JivaSkeleton,
   JivaStatus,
+  MEASUREMENT_ORDER,
+  MEASUREMENT_TEXT,
+  cx,
   dataStatus,
   formatBytes,
   formatDateTime,
+  formatMeasurementValue,
+  measurementFreshness,
+  measurementSource,
   medicationLine,
   prescriptionStatus,
   reportStatus,
@@ -20,6 +26,7 @@ import {
   type IconName,
   type PatientPrescription,
   type PatientReport,
+  type VitalsResponse,
 } from '@jiva/ui/src';
 import { apiBlob } from './api';
 
@@ -250,6 +257,54 @@ function DocumentRow({ encounterId, d, compact }: { encounterId: string; d: Docu
       {preview && <img src={preview} alt={d.title} className="mt-2 max-h-72 rounded-lg ring-1 ring-ink-200" />}
       {!compact && d.dataStatus === 'SYNTHETIC_DEMO' && <p className="mt-1 text-xs text-ink-500">{dataStatus(d.dataStatus).label}: a synthetic file for the demo.</p>}
     </div>
+  );
+}
+
+/**
+ * Vital signs with their source and age on every value. Simulated (demo) readings are marked as such;
+ * old readings are marked as old. Types that were never measured are not shown.
+ */
+export function VitalsCard({ vitals, now }: { vitals: VitalsResponse | null | undefined; now: number }) {
+  const types = vitals ? MEASUREMENT_ORDER.filter((t) => vitals.latest[t]) : [];
+  return (
+    <Section id="vitals" icon="heart" title="Your vital signs" subtitle="As recorded by your care team">
+      {vitals === undefined ? (
+        <div className="space-y-2">
+          <JivaSkeleton className="h-14" />
+        </div>
+      ) : vitals === null ? (
+        <p className="text-sm text-danger-700">Your vital signs could not be loaded right now. They are retried automatically.</p>
+      ) : types.length === 0 ? (
+        <p className="text-sm text-ink-500">No vital signs have been recorded for you yet.</p>
+      ) : (
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {types.map((t) => {
+            const m = vitals.latest[t]!;
+            const simulated = m.source === 'DEVICE_SIMULATED';
+            return (
+              <li key={t} className={cx('rounded-xl p-3 ring-1 ring-inset', simulated ? 'bg-warn-50/50 ring-warn-200' : 'bg-ink-25 ring-ink-200')}>
+                <p className="text-xs font-semibold text-ink-500">{MEASUREMENT_TEXT[t].label}</p>
+                <p className="text-xl font-semibold tabular-nums text-ink-900">
+                  {formatMeasurementValue(m)} <span className="text-sm font-medium text-ink-500">{MEASUREMENT_TEXT[t].unit}</span>
+                </p>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  <JivaStatus meta={measurementSource(m.source)} />
+                  <JivaStatus meta={measurementFreshness(m.freshness)} />
+                </div>
+                <p className="mt-1 text-xs text-ink-500">
+                  {formatDateTime(m.observedAt)} ({timeAgo(m.observedAt, now)})
+                  {m.recordedByName && !simulated ? ` · ${m.recordedByName}` : ''}
+                </p>
+                {simulated && <p className="mt-1 text-xs font-semibold text-warn-800">Simulated for the demo — not a real measurement.</p>}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {vitals && !vitals.sources.medicalDeviceIntegrated && (
+        <p className="mt-3 text-xs text-ink-500">No monitoring device is connected to JIVA; values are those your care team recorded.</p>
+      )}
+    </Section>
   );
 }
 
