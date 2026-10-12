@@ -7,6 +7,7 @@ import { directoryRouter } from './routes/directory';
 import { referralRouter } from './routes/referrals';
 import { encounterRouter } from './routes/encounters';
 import { clinicalRecordsRouter } from './routes/clinicalRecords';
+import { documentRouter, resetDocuments } from './routes/documents';
 import { resetAccessAudit } from './commands/support';
 import { initializeEncounterEngine, resetEncounterEngine } from './clinical/encounters';
 import { loadRoster } from './clinical/roster';
@@ -62,6 +63,8 @@ initializeStateEngines();
 initializeIntelligenceEngine();
 initializeEncounterEngine();
 clinicalStore.setRoster(loadRoster());
+// Local documents are as ephemeral as the in-memory records that reference them.
+void resetDocuments();
 
 // Every event on the bus (external and system-generated) goes into the audit ledger.
 eventBus.on('*', (event: AnyEvent) => {
@@ -254,6 +257,8 @@ app.use('/api', referralRouter());
 app.use('/api', encounterRouter());
 // Prescriptions and diagnostic reports (assigned clinician writes; patient reads own, released records).
 app.use('/api', clinicalRecordsRouter());
+// Diagnostic documents: upload intent, ticket-bound binary upload with integrity checks, authorized download.
+app.use('/api', documentRouter());
 
 app.post('/api/demo/reset', requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
   resetEngines();
@@ -262,6 +267,7 @@ app.post('/api/demo/reset', requireRole('ADMIN'), async (req: AuthenticatedReque
   clinicalStore.setRoster(loadRoster());
   resetEncounterEngine();
   resetAccessAudit();
+  await resetDocuments();
   await localStoreInstance.reset();
   await eventBus.publish({
     eventId: uuidv4(),

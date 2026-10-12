@@ -3,6 +3,10 @@
  * process on :4101 (mock mapping, demo personas). Each section exercises one workflow end to end over
  * HTTP and Socket.IO, including the authorization and failure paths.
  */
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import { createHash } from 'crypto';
 import { check, envelope, results, startApi, uuid, type Api } from './helpers/api';
 
 const P = {
@@ -519,11 +523,115 @@ async function clinicalRecords(api: Api, ctx: { caseId: string; encounterId: str
   for (const s of Object.values(sock)) s.s.close();
 }
 
+// ------------------------------------------------------------------------------------------ phase 8
+
+const sha = (b: Buffer) => createHash('sha256').update(b).digest('hex');
+const PNG_FILE = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('synthetic chest x-ray for the demo '.repeat(40))]);
+const PDF_FILE = Buffer.from(`%PDF-1.4\n% synthetic ECG trace\n${'0 '.repeat(500)}\n%%EOF\n`, 'latin1');
+const HTML_FILE = Buffer.from('<!doctype html><script>alert(document.cookie)</script>');
+
+const intent = (api: Api, persona: string, encounterId: string, file: Buffer, o: Record<string, unknown> = {}) =>
+  api.post(persona, `/api/encounters/${encounterId}/documents`, {
+    clientRequestId: uuid(), category: 'IMAGING', title: 'Chest X-ray (PA)', fileName: 'chest-xray.png', contentType: 'image/png',
+    sizeBytes: file.length, sha256: sha(file), patientVisible: false, ...o,
+  });
+const upload = (api: Api, persona: string, url: string, file: Buffer, contentType = 'image/png') =>
+  api.req('PUT', url, persona, undefined, { raw: file, headers: { 'content-type': contentType } });
+
+async function diagnosticDocuments(api: Api, ctx: { caseId: string; encounterId: string; gpsEncounter: string }) {
+  console.log('\n[Phase 8] Diagnostic documents and secure file storage');
+  const { encounterId } = ctx;
+  const sock = { doc: await api.socket(P.doc3), patient: await api.socket(P.pat1) };
+
+  // the JSON API keeps its limit: large files never travel through it
+  const big = await api.req('POST', '/api/events', P.mgmt, undefined, { raw: JSON.stringify({ blob: 'x'.repeat(150_000) }) });
+  check('the JSON API keeps its 100 kB limit (150 kB body → 413)', big.status === 413, `${big.status}`);
+
+  // who may declare an upload
+  check('the coordinator cannot upload → 403', (await intent(api, P.h1, encounterId, PNG_FILE)).status === 403);
+  check('the patient cannot upload → 403', (await intent(api, P.pat1, encounterId, PNG_FILE)).status === 403);
+  check("another hospital's clinician → 404", (await intent(api, P.doc1, encounterId, PNG_FILE)).status === 404);
+  check('unauthenticated → 401', (await intent(api, undefined as unknown as string, encounterId, PNG_FILE)).status === 401);
+  // what may be declared
+  check('an unsupported type (text/html) → 400', (await intent(api, P.doc3, encounterId, HTML_FILE, { contentType: 'text/html' })).status === 400);
+  check('more than 20 MB → 400', (await intent(api, P.doc3, encounterId, PNG_FILE, { sizeBytes: 20 * 1024 * 1024 + 1 })).status === 400);
+  check('an empty file → 400', (await intent(api, P.doc3, encounterId, PNG_FILE, { sizeBytes: 0 })).status === 400);
+  check('a malformed sha256 → 400', (await intent(api, P.doc3, encounterId, PNG_FILE, { sha256: 'abc' })).status === 400);
+
+  const body = { clientRequestId: uuid(), category: 'IMAGING', title: 'Chest X-ray (PA)', fileName: '../../secret/chest-xray.png', contentType: 'image/png', sizeBytes: PNG_FILE.length, sha256: sha(PNG_FILE), patientVisible: false };
+  const created = await api.post(P.doc3, `/api/encounters/${encounterId}/documents`, body);
+  const docId: string = created.json?.document?.documentId;
+  const url: string = created.json?.upload?.url;
+  check('the assigned doctor declares an upload → 201, PENDING_UPLOAD, a one-time upload URL', created.status === 201 && created.json.document.status === 'PENDING_UPLOAD' && /^\/api\/uploads\/[A-Za-z0-9_-]{43}$/.test(url ?? ''), created.text);
+  check('the file name is a display name only (no directories)', created.json?.document?.fileName === 'chest-xray.png');
+  check('retrying the declaration returns the same document', (await api.post(P.doc3, `/api/encounters/${encounterId}/documents`, body)).json?.document?.documentId === docId);
+  check('the upload URL is bound to its uploader: the patient → 404', (await upload(api, P.pat1, url, PNG_FILE)).status === 404);
+  check("…and another clinician → 404", (await upload(api, P.doc1, url, PNG_FILE)).status === 404);
+  check('a different content type than declared → 415', (await upload(api, P.doc3, url, PNG_FILE, 'image/jpeg')).status === 415);
+  check('nothing downloadable before the upload → 409', (await api.get(P.doc3, `/api/encounters/${encounterId}/documents/${docId}/content`)).status === 409);
+  const up = await upload(api, P.doc3, url, PNG_FILE);
+  check('upload → 200, verified (size, sha256, signature) and AVAILABLE', up.status === 200 && up.json?.document?.status === 'AVAILABLE' && !!up.json.document.uploadedAt, up.text);
+  check('the upload URL cannot be used twice → 404', (await upload(api, P.doc3, url, PNG_FILE)).status === 404);
+
+  // integrity failures
+  const tampered = await intent(api, P.doc3, encounterId, PNG_FILE);
+  const changed = Buffer.from(PNG_FILE);
+  changed[20] ^= 0xff;
+  const t1 = await upload(api, P.doc3, tampered.json.upload.url, changed);
+  check('bytes that differ from the declared sha256 → 422 HASH_MISMATCH, not stored', t1.status === 422 && t1.json?.reason === 'HASH_MISMATCH', t1.text);
+  const disguised = await intent(api, P.doc3, encounterId, HTML_FILE, { contentType: 'application/pdf', fileName: 'report.pdf', category: 'LABORATORY', title: 'Lab report' });
+  const t2 = await upload(api, P.doc3, disguised.json.upload.url, HTML_FILE, 'application/pdf');
+  check('an HTML page declared as a PDF → 422 CONTENT_TYPE_MISMATCH (file signature)', t2.status === 422 && t2.json?.reason === 'CONTENT_TYPE_MISMATCH', t2.text);
+  const short = await intent(api, P.doc3, encounterId, PDF_FILE, { contentType: 'application/pdf', fileName: 'ecg.pdf', category: 'ECG', title: 'ECG' });
+  const t3 = await upload(api, P.doc3, short.json.upload.url, PDF_FILE.subarray(0, 100), 'application/pdf');
+  check('a file of another size than declared → 400 size_mismatch, nothing read or stored', t3.status === 400 && t3.json?.error === 'size_mismatch', t3.text);
+  const listed = (await api.get(P.doc3, `/api/encounters/${encounterId}/documents`)).json as any[];
+  check('rejected uploads are listed as REJECTED with the reason (never silently dropped)', listed.filter(d => d.status === 'REJECTED').map(d => d.rejectionReason).sort().join(',') === 'CONTENT_TYPE_MISMATCH,HASH_MISMATCH', JSON.stringify(listed.map(d => [d.status, d.rejectionReason])));
+
+  // an upload window that lapses
+  const lapsing = await intent(api, P.doc3, encounterId, PNG_FILE, { title: 'Lapsing upload' });
+  await new Promise(r => setTimeout(r, 3300));
+  const late = await upload(api, P.doc3, lapsing.json.upload.url, PNG_FILE);
+  check('an upload after its window → 410, the document closed as UPLOAD_EXPIRED', late.status === 410 && ((await api.get(P.doc3, `/api/encounters/${encounterId}/documents`)).json as any[]).some(d => d.documentId === lapsing.json.document.documentId && d.rejectionReason === 'UPLOAD_EXPIRED'), late.text);
+
+  // download
+  const dl = await api.get(P.doc3, `/api/encounters/${encounterId}/documents/${docId}/content`);
+  check('the doctor downloads exactly the uploaded bytes', dl.status === 200 && dl.body.equals(PNG_FILE));
+  check('download headers: declared type, attachment, nosniff, no-store, sandbox', dl.headers.get('content-type') === 'image/png' && /^attachment;/.test(dl.headers.get('content-disposition') ?? '') && dl.headers.get('x-content-type-options') === 'nosniff' && /no-store/.test(dl.headers.get('cache-control') ?? '') && /sandbox/.test(dl.headers.get('content-security-policy') ?? ''));
+  check('not shared yet: the patient does not see it', !((await api.get(P.pat1, `/api/encounters/${encounterId}/documents`)).json as any[]).some(d => d.documentId === docId));
+  check('not shared yet: the patient cannot download it → 404', (await api.get(P.pat1, `/api/encounters/${encounterId}/documents/${docId}/content`)).status === 404);
+  check('the coordinator cannot download clinical documents → 403', (await api.get(P.h1, `/api/encounters/${encounterId}/documents/${docId}/content`)).status === 403);
+  check('management cannot → 403', (await api.get(P.mgmt, `/api/encounters/${encounterId}/documents/${docId}/content`)).status === 403);
+  check('another patient → 404', (await api.get(P.pat2, `/api/encounters/${encounterId}/documents/${docId}/content`)).status === 404);
+  check("another hospital's clinician, through their own encounter → 404 (no identifier swapping)", (await api.get(P.doc1, `/api/encounters/${ctx.gpsEncounter}/documents/${docId}/content`)).status === 404);
+
+  // attach to a report and share it: the patient can now open the image
+  const rep = await api.post(P.doc3, `/api/encounters/${encounterId}/reports`, reportBody({ category: 'IMAGING', title: 'Chest X-ray', findings: 'No acute abnormality (synthetic).', documentIds: [docId], status: 'FINAL' }));
+  check('an imaging report with the X-ray attached → 201', rep.status === 201 && rep.json?.report?.current?.documentIds?.[0] === docId, rep.text);
+  check('a rejected document cannot be attached → 422', (await api.post(P.doc3, `/api/encounters/${encounterId}/reports`, reportBody({ documentIds: [tampered.json.document.documentId] }))).json?.error === 'invalid_document');
+  const shared = await api.post(P.doc3, `/api/encounters/${encounterId}/reports/${rep.json?.report?.reportId}/amend`, { ...reportBody({ category: 'IMAGING', title: 'Chest X-ray', findings: 'No acute abnormality (synthetic).', documentIds: [docId], status: 'FINAL', patientVisible: true, effectiveAt: rep.json?.report?.current?.effectiveAt }), expectedVersion: 1, changeReason: 'Shared with the patient' });
+  check('the report is shared with the patient', shared.status === 200 && shared.json.report.current.patientVisible === true, shared.text);
+  const pr = ((await api.get(P.pat1, `/api/encounters/${encounterId}/reports`)).json as any[]).find(r => r.title === 'Chest X-ray');
+  check('the patient sees the report with its image attached', pr?.documentIds?.includes(docId));
+  const pdoc = ((await api.get(P.pat1, `/api/encounters/${encounterId}/documents`)).json as any[]).find(d => d.documentId === docId);
+  check('…and the document in their list, without staff ids or the hash', !!pdoc && pdoc.uploadedBy?.displayName === 'Dr. Ravi Kumar' && !JSON.stringify(pdoc).includes('demo-doc-3') && !('sha256' in pdoc));
+  const pdl = await api.get(P.pat1, `/api/encounters/${encounterId}/documents/${docId}/content`);
+  check('…and downloads the same bytes', pdl.status === 200 && pdl.body.equals(PNG_FILE));
+  check('another patient still cannot → 404', (await api.get(P.pat2, `/api/encounters/${encounterId}/documents/${docId}/content`)).status === 404);
+
+  await new Promise(r => setTimeout(r, 300));
+  const stored = sock.doc.events.filter(e => e.eventType === 'clinical.document.stored');
+  check('realtime: the doctor is told the document is stored — metadata only, never the bytes', stored.length === 1 && stored[0].payload.documentId === docId && JSON.stringify(stored[0]).length < 2000);
+  check('realtime: the patient was not told about the unshared upload', !sock.patient.events.some(e => e.eventType === 'clinical.document.stored'));
+  for (const s of Object.values(sock)) s.s.close();
+}
+
 // ------------------------------------------------------------------------------------------
 
 async function main() {
   console.log('[Test] Emergency-to-care journey against a real API on :4101');
-  const api = await startApi(4101);
+  const documentDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jiva-journey-docs-'));
+  const api = await startApi(4101, { JIVA_DOCUMENT_DIR: documentDir, JIVA_UPLOAD_TICKET_TTL_MS: '3000' });
   try {
     await emergencyIntake(api);
     await facilityDirectory(api);
@@ -531,10 +639,16 @@ async function main() {
     const journey = await arrivalAndHandover(api);
     await doctorAssignment(api, journey);
     await clinicalRecords(api, journey);
+    await diagnosticDocuments(api, journey);
     check('API process still healthy at the end', (await api.get(undefined, '/api/health')).status === 200);
     check('no handler crashes logged', !/Handler for .* failed|Uncaught exception|Unhandled rejection/.test(api.log()), api.log().match(/.*(failed|Uncaught|Unhandled).*/g)?.slice(0, 3).join('\n'));
   } finally {
     api.stop();
+    try {
+      fs.rmSync(documentDir, { recursive: true, force: true });
+    } catch {
+      /* best effort: a temporary directory */
+    }
   }
   const { passes, failures } = results();
   console.log(`\n${passes} passed, ${failures} failed`);

@@ -19,7 +19,7 @@ export function check(name: string, cond: boolean, detail = '') {
 }
 export const results = () => ({ passes, failures });
 
-export interface ApiResponse { status: number; json: any; text: string; headers: Headers }
+export interface ApiResponse { status: number; json: any; text: string; body: Buffer; headers: Headers }
 
 export interface Api {
   url: string;
@@ -56,7 +56,7 @@ export async function startApi(port: number, env: Record<string, string> = {}): 
     const text = buf.toString('utf8');
     let json: any;
     try { json = JSON.parse(text); } catch { /* not json */ }
-    return { status: res.status, json, text, headers: res.headers };
+    return { status: res.status, json, text, body: buf, headers: res.headers };
   };
   const waitFor: Api['waitFor'] = async (fn, ms = 8000) => {
     const start = Date.now();

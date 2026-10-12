@@ -32,14 +32,14 @@ const authorLookup: AuthorLookup = actor => {
 
 const viewFor = (auth: AuthContext): 'CLINICIAN' | 'PATIENT' => (auth.role === 'PATIENT' ? 'PATIENT' : 'CLINICIAN');
 
-/** Attachments of this encounter that were released to the patient (documents: Phase 8). */
+/** Attachments of a report shared with the patient: its verified documents of the same encounter. */
 const releasedDocuments = (encounterId: string) => (ids: string[]) =>
   ids.filter(id => {
     const d = clinicalStore.getDocument(id);
-    return !!d && d.encounterId === encounterId && d.status === 'AVAILABLE' && d.patientVisible;
+    return !!d && d.encounterId === encounterId && d.status === 'AVAILABLE';
   });
 
-const target = (enc: HospitalEncounter, entityType: 'PRESCRIPTION' | 'REPORT', entityId?: string) =>
+export const target = (enc: HospitalEncounter, entityType: 'PRESCRIPTION' | 'REPORT' | 'DOCUMENT', entityId?: string) =>
   ({ entityType, ...(entityId ? { entityId } : {}), encounterId: enc.encounterId, caseId: enc.caseId, hospitalId: enc.hospitalId });
 
 function metaFor(auth: AuthContext, enc: HospitalEncounter): RecordMeta {
@@ -53,7 +53,7 @@ function metaFor(auth: AuthContext, enc: HospitalEncounter): RecordMeta {
  * Re-check, under the encounter's lock, that the caller may still write (the doctor may have been
  * reassigned between the first check and the lock) and that the patient is in hospital care.
  */
-function writableEncounter(req: AuthedRequest, res: Response, encounterId: string, action: EncounterAction, auditAction: string): HospitalEncounter | undefined {
+export function writableEncounter(req: AuthedRequest, res: Response, encounterId: string, action: EncounterAction, auditAction: string): HospitalEncounter | undefined {
   const auth = req.auth!;
   const enc = clinicalStore.getEncounter(encounterId);
   const facts = clinicalStore.encounterFacts(encounterId);
@@ -63,7 +63,7 @@ function writableEncounter(req: AuthedRequest, res: Response, encounterId: strin
   }
   const decision = authorizeEncounterAction(auth, facts, action);
   if (!decision.allowed) {
-    audit(auth, auditAction, 'DENIED', { ...target(enc, action.startsWith('report') ? 'REPORT' : 'PRESCRIPTION'), reasonCode: decision.code });
+    audit(auth, auditAction, 'DENIED', { ...target(enc, action.startsWith('report') ? 'REPORT' : action.startsWith('document') ? 'DOCUMENT' : 'PRESCRIPTION'), reasonCode: decision.code });
     denied(res, decision);
     return undefined;
   }
