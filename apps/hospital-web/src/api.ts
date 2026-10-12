@@ -63,3 +63,17 @@ export function commandError<T>(r: CommandResponse<T>): string | null {
   if (r.status === 403) return `Not allowed: ${r.body.message || 'this persona cannot do this for this hospital'}.`;
   return r.body.message || r.body.error || `JIVA rejected the request (${r.status}).`;
 }
+
+/** Fetch a protected file (diagnostic document) as a Blob, with this persona's credentials. */
+export async function apiBlob(path: string): Promise<Blob> {
+  const res = await fetch(API_URL + path, { headers: headers() });
+  if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
+  return res.blob();
+}
+
+/** PUT raw bytes to an upload URL issued by the API (the URL is single-use and bound to this persona). */
+export async function apiPutFile(path: string, file: Blob, contentType: string): Promise<CommandResponse> {
+  const res = await fetch(API_URL + path, { method: 'PUT', headers: headers({ 'content-type': contentType }), body: file });
+  const json = (await res.json().catch(() => ({}))) as CommandResponse['body'];
+  return { status: res.status, body: json };
+}

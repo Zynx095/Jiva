@@ -147,3 +147,66 @@ export function reportStatus(status?: string): StatusMeta {
       return { label: 'Unknown', tone: 'neutral', icon: 'help' };
   }
 }
+
+/** A diagnostic document as the API lists it (clinician view adds status, hash and uploader identity). */
+export interface DocumentRecord {
+  documentId: string;
+  encounterId: string;
+  category: string;
+  title: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  status?: 'PENDING_UPLOAD' | 'AVAILABLE' | 'REJECTED';
+  rejectionReason?: string;
+  patientVisible?: boolean;
+  sha256?: string;
+  createdAt?: string;
+  uploadedAt?: string;
+  uploader?: RecordAuthor;
+  uploadedBy?: RecordAuthor | EncounterActor;
+  dataStatus: string;
+}
+
+export const DOCUMENT_TYPES: Record<string, { label: string; extensions: string[] }> = {
+  'application/pdf': { label: 'PDF', extensions: ['.pdf'] },
+  'image/png': { label: 'PNG image', extensions: ['.png'] },
+  'image/jpeg': { label: 'JPEG image', extensions: ['.jpg', '.jpeg'] },
+  'application/dicom': { label: 'DICOM', extensions: ['.dcm'] },
+};
+
+/** Largest file the upload workflow accepts (mirrors MAX_DOCUMENT_BYTES on the server). */
+export const MAX_DOCUMENT_BYTES = 20 * 1024 * 1024;
+
+/** The accepted content type of a picked file (browsers report nothing for DICOM), or undefined. */
+export function documentTypeOf(file: { name: string; type: string }): string | undefined {
+  if (file.type && DOCUMENT_TYPES[file.type]) return file.type;
+  const lower = file.name.toLowerCase();
+  return Object.entries(DOCUMENT_TYPES).find(([, t]) => t.extensions.some((x) => lower.endsWith(x)))?.[0];
+}
+
+export function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+const REJECTION_TEXT: Record<string, string> = {
+  HASH_MISMATCH: 'the file changed during upload',
+  SIZE_MISMATCH: 'the file size did not match',
+  CONTENT_TYPE_MISMATCH: 'the file is not the type it claims to be',
+  UPLOAD_EXPIRED: 'the upload was not completed in time',
+};
+
+export function documentStatus(d: Pick<DocumentRecord, 'status' | 'rejectionReason'>): StatusMeta {
+  switch (d.status) {
+    case 'AVAILABLE':
+      return { label: 'Verified', tone: 'ok', icon: 'shield', hint: 'Size, checksum and file type were verified on upload.' };
+    case 'PENDING_UPLOAD':
+      return { label: 'Awaiting upload', tone: 'warn', icon: 'clock' };
+    case 'REJECTED':
+      return { label: 'Not stored', tone: 'danger', icon: 'xCircle', hint: `Rejected: ${REJECTION_TEXT[d.rejectionReason ?? ''] ?? 'the upload failed'}.` };
+    default:
+      return { label: 'Available', tone: 'ok', icon: 'file' };
+  }
+}

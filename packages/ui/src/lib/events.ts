@@ -259,6 +259,10 @@ export function describeEvent(e: JivaEvent, name: NameResolver, audience: Audien
         ? { ...base, title: first ? 'A new report is available' : 'A report was updated', detail: 'See your reports for details.', tone: 'ok', icon: 'file', category: 'case', notable: true }
         : { ...base, title: `Report ${first ? 'recorded' : 'updated'}${caseId ? ` · ${caseId}` : ''}`, detail: dotJoin([str(p, 'status')?.toLowerCase(), p.patientVisible === true ? 'shared with the patient' : 'not shared']), tone: 'ok', icon: 'file', category: 'case', notable: true };
     }
+    case 'clinical.document.stored':
+      return patient
+        ? { ...base, title: 'A document was added to your records', detail: 'See your documents and scans.', tone: 'ok', icon: 'file', category: 'case', notable: true }
+        : { ...base, title: `Document stored${caseId ? ` · ${caseId}` : ''}`, detail: dotJoin([str(p, 'category')?.toLowerCase(), 'checksum and file type verified']), tone: 'ok', icon: 'file', category: 'case', notable: true };
     case 'ai.handoff.generated':
       return { ...base, title: `Handoff brief${hospitalId ? ` for ${H(hospitalId)}` : ''}`, detail: str(p, 'summary'), tone: 'neutral', icon: 'brief', category: 'ai' };
     case 'ai.anomaly.explained':

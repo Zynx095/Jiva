@@ -28,6 +28,7 @@ import {
 } from '@jiva/ui/src';
 import { PERSONA } from '../api';
 import { PERSONAS } from '../personas';
+import { DocumentsPanel } from './DocumentsPanel';
 import { PrescriptionsPanel } from './PrescriptionsPanel';
 import { ReportsPanel } from './ReportsPanel';
 import { useClinician } from './useClinician';
@@ -121,7 +122,13 @@ export function ClinicianWorkspace() {
                 list={c.records?.encounterId === selected.encounterId ? c.records.prescriptions : undefined}
                 onChanged={c.reloadRecords}
               />
-              <ReportsPanel encounterId={selected.encounterId} list={c.records?.encounterId === selected.encounterId ? c.records.reports : undefined} onChanged={c.reloadRecords} />
+              <ReportsPanel
+                encounterId={selected.encounterId}
+                list={c.records?.encounterId === selected.encounterId ? c.records.reports : undefined}
+                documents={c.records?.encounterId === selected.encounterId ? (c.records.documents ?? []) : []}
+                onChanged={c.reloadRecords}
+              />
+              <DocumentsPanel encounterId={selected.encounterId} list={c.records?.encounterId === selected.encounterId ? c.records.documents : undefined} onChanged={c.reloadRecords} />
             </>
           ) : (
             c.loaded && (

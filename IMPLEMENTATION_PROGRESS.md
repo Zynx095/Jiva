@@ -26,7 +26,7 @@ phase's acceptance criteria were met **and** verified; frontend-only progress is
 | 5 | Arrival, handover, encounter creation | ✅ Done | see Phases 5–6 section |
 | 6 | Doctor assignment | ✅ Done | see Phases 5–6 section |
 | 7 | Clinical records and prescriptions | ✅ Done | see Phase 7 section |
-| 8 | Diagnostic documents and secure file storage | ⏳ | |
+| 8 | Diagnostic documents and secure file storage | ✅ Done | see Phase 8 section |
 | 9 | Patient dashboard and in-hospital experience | ⏳ | |
 | 10 | Medical telemetry foundation | ⏳ | |
 | 11 | Operational mode, demo mode, provenance | ⏳ | |
@@ -349,3 +349,46 @@ Phase 1 had defined the record models (`Prescription`, `DiagnosticReport` with v
 - Coordinators (role `HOSPITAL`) never see clinical content — separation of duties from Phase 1.
 - No discharge workflow: records can be written while the encounter is `IN_CARE`; there is no end of encounter yet.
 - No medication terminology (free text, bounded and validated), no drug-interaction or allergy checks, no e-prescription transmission. Records live in the in-memory clinical store (lost on restart / demo reset); a production store must be encrypted and durable (not built).
+
+---
+
+## Phase 8 — Diagnostic documents and secure file storage (✅ 2026-10-13)
+
+### Existing storage architecture (verified)
+
+| Item | Finding |
+|---|---|
+| Local API body limit | `express.json({ limit: '100kb' })` in `services/api/src/index.ts` — **unchanged**. |
+| File storage | None for clinical files. The CDK stack has one private S3 bucket for audit reports/snapshots (`JivaAuditBucket`, S3-managed encryption, Block Public Access); nothing writes documents to it and nothing is deployed. No S3 client is a dependency of the API. |
+| Model | Phase 1 defined `DiagnosticDocument` (status `PENDING_UPLOAD` / `AVAILABLE` / `REJECTED`, sha256, size, type, `patientVisible`), the `DocumentUploadIntentCommandSchema` (20 MB maximum, PDF / PNG / JPEG / DICOM) and the content-free `clinical.document.stored` event. |
+
+### What changed
+
+| Area | Files | Summary |
+|---|---|---|
+| Storage and integrity | `services/api/src/clinical/documents.ts` | `DocumentStorage` interface + `LocalDocumentStorage` (development): files under `JIVA_DOCUMENT_DIR` (default `data/local/documents/`, git-ignored), named by the server-generated id (`DOC-<16 hex>.bin`), never by the uploaded name; uploads land in a temporary file in the same directory and are committed by rename; `clear()` removes only files matching the provider's own patterns. File-signature checks for PDF (`%PDF-`), PNG, JPEG and DICOM (`DICM` after the 128-byte preamble). Display-name sanitising (no directories or control characters) and RFC 6266/5987 `Content-Disposition`. Upload tickets: 32 random bytes (base64url), single document, single user, declared size/type/sha256, 10 minutes (`JIVA_UPLOAD_TICKET_TTL_MS`), only a hash of the token kept in memory. |
+| Workflow | `services/api/src/routes/documents.ts`, `index.ts` | (1) `POST /api/encounters/:id/documents` — upload intent (assigned clinician, patient in care, strict body, idempotent) → `PENDING_UPLOAD` + a one-time `PUT /api/uploads/:token` URL. (2) `PUT /api/uploads/:token` — authenticated and bound to the declaring user (anyone else: the same 404 as an unknown token); content type must equal the declaration (415); a `Content-Length` other than the declared size is refused before reading (400); the body is **streamed** to disk while counted and hashed (no buffering in memory, a body larger than declared is cut off); accepted only if size, sha256 and file signature match → `AVAILABLE` + content-free `clinical.document.stored`; otherwise `REJECTED` with the reason (`HASH_MISMATCH`, `SIZE_MISMATCH`, `CONTENT_TYPE_MISMATCH`) and nothing stored. An interrupted upload stores nothing and may be retried with the same ticket until it lapses; a lapsed declaration is closed as `UPLOAD_EXPIRED` (visible, never silently kept). (3) `GET /api/encounters/:id/documents` — clinician: all, with status and reasons; patient: verified documents released at upload **or attached to a report shared with them**. (4) `GET /api/encounters/:id/documents/:documentId/content` — the document must belong to the encounter in the path; patient only if visible as above; streamed with `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff`, `Cache-Control: private, no-store`, `Content-Security-Policy: default-src 'none'; sandbox`. Every download is audited; denials too. Local documents are ephemeral like the rest of local state (cleared at start and on demo reset). |
+| Reports | `services/api/src/routes/clinicalRecords.ts` | Attachments of a shared report are visible to the patient (sharing a report shares its attachments). Only verified documents of the same encounter can be attached. |
+| Clinician UI | `apps/hospital-web/src/clinician/{DocumentsPanel,ReportsPanel,useClinician,ClinicianWorkspace}.tsx`, `src/api.ts` | **Documents and scans**: pick a file (type and size checked before sending), the browser computes the sha256, declares, uploads, and shows the server's verdict (Verified / Not stored with the reason / Awaiting upload); preview for images and download through the API (credentials in the request, an object URL in the browser — no public URL). Reports: attach verified documents; attachments listed on each report. |
+| Shared UI | `packages/ui/src/lib/{records,events}.ts` | Document type/size helpers, verification status with plain reasons, event copy. |
+| Test helper | `tests/integration/helpers/api.ts` | Responses also carry the raw bytes (download comparison). |
+
+### Production object storage (designed, not built, nothing deployed)
+
+A production provider would implement the same interface on a private object store: an S3 bucket with Block Public Access, SSE-KMS, TLS-only bucket policy, versioning, lifecycle rules for incomplete uploads and retention; the intent returns a **presigned PUT** bound to `Content-Length`, `Content-Type` and `x-amz-checksum-sha256` (S3 verifies the checksum); an `ObjectCreated` notification runs the signature check and marks the document `AVAILABLE`; downloads stay behind the API (or short-lived presigned GETs issued only after the same authorization check, with `response-content-disposition=attachment`). Not implemented: no S3 client dependency was added, and an untestable provider would be a mock-only claim.
+
+### Tests
+
+| Command | Result |
+|---|---|
+| `tsx tests/unit/diagnostic-documents.test.ts` (new) | ✅ 5 checks: signatures (genuine files pass; HTML-as-PDF, PDF-as-PNG, PNG-as-JPEG, DICOM without preamble, empty fail); display names (paths, control characters, bounds); download header encoding; local storage (id format, atomic commit, read-back, crafted id cannot escape, clears only its own files); tickets (bound to user, token not stored in clear, revocation) |
+| `tsx tests/integration/clinical-journey.test.ts` (+Phase 8: 40) | ✅ 246 passed: 150 kB JSON still 413; coordinator / patient / other hospital's clinician / anonymous cannot declare; type, size, empty and hash validation; declaration → one-time URL; display name sanitised; idempotent declaration; URL bound to its uploader (patient and another clinician → 404); wrong content type 415; nothing downloadable before upload; upload verified → `AVAILABLE`; URL single-use; tampered bytes → `HASH_MISMATCH`; HTML disguised as PDF → `CONTENT_TYPE_MISMATCH`; size mismatch refused; rejected uploads listed with reasons; lapsed window → 410 + `UPLOAD_EXPIRED`; byte-exact download with the safe headers; unshared: patient cannot list or download; coordinator, management, another patient, and another hospital's clinician (identifier swapping through their own encounter) refused; rejected document cannot be attached; attached to a shared report → the patient lists and downloads the same bytes, without staff ids or the hash; realtime: metadata-only event to the doctor, nothing to the patient for an unshared upload |
+| `npm run typecheck` / `test:unit` (33 suites) / `test:integration` | ✅ all exit 0 (runtime 124/0, journey 246/0) |
+| Browser | ⚠️ Not run (dev stack stopped by the environment for low memory, not restarted); covered by typecheck and production builds. |
+
+### Decisions and limitations
+
+- The binary upload is a separate, ticket-bound endpoint; the JSON limit stays 100 kB and no file touches the event bus or the ledger.
+- A document's visibility to the patient is decided at upload, or by sharing a report it is attached to. There is no separate "share this file" command and no deletion endpoint (medical records are retained; local files are ephemeral by design of local mode).
+- Local files are not encrypted at rest (development only); production requires an encrypted object store as above.
+- DICOM files are stored and downloadable but not rendered in the browser (no DICOM viewer).

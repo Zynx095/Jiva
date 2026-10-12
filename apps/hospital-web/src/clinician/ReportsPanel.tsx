@@ -13,6 +13,7 @@ import {
   fromDateTimeLocal,
   reportStatus,
   toDateTimeLocal,
+  type DocumentRecord,
   type ReportRecord,
 } from '@jiva/ui/src';
 import { CommandError, Field, inputClass, sendCommand, useIdempotencyKey } from '../ui';
@@ -57,7 +58,7 @@ const reportsPath = (encounterId: string, reportId?: string) =>
  * it is explicitly shared; a final report can be corrected (it becomes "Amended") but never returns to
  * preliminary.
  */
-export function ReportsPanel({ encounterId, list, onChanged }: { encounterId: string; list: ReportRecord[] | null | undefined; onChanged: () => void }) {
+export function ReportsPanel({ encounterId, list, documents, onChanged }: { encounterId: string; list: ReportRecord[] | null | undefined; documents: DocumentRecord[]; onChanged: () => void }) {
   const [creating, setCreating] = useState(false);
   return (
     <JivaCard>
@@ -76,6 +77,7 @@ export function ReportsPanel({ encounterId, list, onChanged }: { encounterId: st
       {creating && (
         <ReportForm
           encounterId={encounterId}
+          documents={documents}
           onSaved={() => {
             setCreating(false);
             onChanged();
@@ -94,7 +96,7 @@ export function ReportsPanel({ encounterId, list, onChanged }: { encounterId: st
         <ul className="mt-3 divide-y divide-ink-100">
           {list.map((r) => (
             <li key={r.reportId} className="py-3">
-              <ReportItem report={r} encounterId={encounterId} onChanged={onChanged} />
+              <ReportItem report={r} encounterId={encounterId} documents={documents} onChanged={onChanged} />
             </li>
           ))}
         </ul>
@@ -103,7 +105,7 @@ export function ReportsPanel({ encounterId, list, onChanged }: { encounterId: st
   );
 }
 
-function ReportItem({ report, encounterId, onChanged }: { report: ReportRecord; encounterId: string; onChanged: () => void }) {
+function ReportItem({ report, encounterId, documents, onChanged }: { report: ReportRecord; encounterId: string; documents: DocumentRecord[]; onChanged: () => void }) {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const keyFor = useIdempotencyKey();
@@ -139,6 +141,12 @@ function ReportItem({ report, encounterId, onChanged }: { report: ReportRecord; 
           {c.conclusion}
         </p>
       )}
+      {c.documentIds.length > 0 && (
+        <p className="mt-1 text-xs text-ink-600">
+          Attached: {c.documentIds.map((id) => documents.find((d) => d.documentId === id)?.title ?? id).join(', ')}
+          {c.patientVisible ? ' (shared with the report)' : ''}
+        </p>
+      )}
       <p className="mt-1 text-xs text-ink-500">
         v{c.version} · {c.action === 'CREATED' ? 'written' : 'updated'} {formatDateTime(c.recordedAt)} by {c.author.displayName}
         {c.changeReason ? ` · “${c.changeReason}”` : ''}
@@ -169,6 +177,7 @@ function ReportItem({ report, encounterId, onChanged }: { report: ReportRecord; 
         <ReportForm
           encounterId={encounterId}
           base={report}
+          documents={documents}
           onSaved={() => {
             setEditing(false);
             onChanged();
@@ -197,8 +206,10 @@ function ReportItem({ report, encounterId, onChanged }: { report: ReportRecord; 
   );
 }
 
-function ReportForm({ encounterId, base, onSaved, onRefresh, onCancel }: { encounterId: string; base?: ReportRecord; onSaved: () => void; onRefresh: () => void; onCancel: () => void }) {
+function ReportForm({ encounterId, base, documents, onSaved, onRefresh, onCancel }: { encounterId: string; base?: ReportRecord; documents: DocumentRecord[]; onSaved: () => void; onRefresh: () => void; onCancel: () => void }) {
   const [d, setD] = useState<ReportDraft>(() => draftOf(base));
+  const [attached, setAttached] = useState<string[]>(() => base?.current.documentIds ?? []);
+  const attachable = documents.filter((x) => x.status === 'AVAILABLE');
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const keyFor = useIdempotencyKey();
@@ -208,7 +219,7 @@ function ReportForm({ encounterId, base, onSaved, onRefresh, onCancel }: { encou
   const ready = d.title.trim() && fromDateTimeLocal(d.effectiveAt) && (!base || reason.trim());
 
   const submit = async () => {
-    const content = bodyOf(d, base?.current.documentIds ?? []);
+    const content = bodyOf(d, attached);
     const body = base ? { ...content, expectedVersion: base.current.version, changeReason: reason.trim() } : content;
     const r = await sendCommand(reportsPath(encounterId, base?.reportId), { clientRequestId: keyFor(body), ...body });
     setError(r.error);
@@ -254,6 +265,23 @@ function ReportForm({ encounterId, base, onSaved, onRefresh, onCancel }: { encou
             Share with the patient
           </label>
         </div>
+        {attachable.length > 0 && (
+          <fieldset className="space-y-1 sm:col-span-2">
+            <legend className="text-xs font-semibold text-ink-700">Attach verified documents</legend>
+            {attachable.map((x) => (
+              <label key={x.documentId} className="flex items-center gap-2 text-sm text-ink-800">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-brand-700"
+                  checked={attached.includes(x.documentId)}
+                  onChange={(e) => setAttached((prev) => (e.target.checked ? [...prev, x.documentId] : prev.filter((y) => y !== x.documentId)))}
+                />
+                {x.title} <span className="text-xs text-ink-500">({x.fileName})</span>
+              </label>
+            ))}
+            <p className="text-xs text-ink-500">Sharing the report with the patient also shares its attachments.</p>
+          </fieldset>
+        )}
         {base && (
           <Field label="Reason for the change" htmlFor={id('why')} required className="sm:col-span-2" hint="Kept in the report history.">
             <input id={id('why')} className={cx(inputClass, 'h-9')} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={300} />
