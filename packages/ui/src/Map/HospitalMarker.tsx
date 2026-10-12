@@ -1,21 +1,35 @@
 import React, { useEffect, useRef } from 'react';
-import { Marker as MapLibreMarker, Popup as MapLibrePopup } from 'maplibre-gl';
+import { Marker as MapLibreMarker } from 'maplibre-gl';
 import { useMap } from './MapContext';
+import { iconSvg } from '../components/Icon';
+import { acceptanceStatus } from '../lib/status';
+import { hospitalShortName } from '../lib/labels';
 
 const escapeHtml = (v: unknown) =>
   String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
-
 
 export interface HospitalMarkerProps {
   hospitalId: string;
   name: string;
   lat: number;
   lng: number;
+  /** Acceptance state (ACCEPTED, LIMITED, PENDING, REJECTED, UNAVAILABLE, EXPIRED, UNKNOWN). */
   emergencyStatus: string;
   dataStatus?: string;
   onClick?: () => void;
+  selected?: boolean;
+  /** De-emphasise (filtered context, not the destination). */
+  dimmed?: boolean;
+  /** Short name shown in the hover label; defaults to the part after "—". */
+  label?: string;
+  /** Overrides the status text in the label/announcement. */
+  statusLabel?: string;
 }
 
+/**
+ * Rounded-square hospital marker. Colour = acceptance tone, the corner glyph repeats it, and the label
+ * spells it out, so the status never depends on colour alone.
+ */
 export const HospitalMarker: React.FC<HospitalMarkerProps> = ({
   hospitalId,
   name,
@@ -24,106 +38,62 @@ export const HospitalMarker: React.FC<HospitalMarkerProps> = ({
   emergencyStatus,
   dataStatus,
   onClick,
+  selected,
+  dimmed,
+  label,
+  statusLabel,
 }) => {
   const { map, isLoaded } = useMap();
   const markerRef = useRef<MapLibreMarker | null>(null);
+  const elRef = useRef<HTMLButtonElement | null>(null);
+  const clickRef = useRef(onClick);
+  useEffect(() => {
+    clickRef.current = onClick;
+  }, [onClick]);
 
-  // Status color mapping
-  const getPinColor = (status: string) => {
-    switch (status) {
-      case 'ACCEPTED':
-        return '#10B981'; // Emerald
-      case 'LIMITED':
-        return '#F59E0B'; // Amber
-      case 'REJECTED':
-        return '#EF4444'; // Red
-      case 'UNAVAILABLE':
-        return '#DC2626'; // Dark Red
-      default:
-        return '#6B7280'; // Neutral grey: UNKNOWN / no current response (never implies available)
-    }
-  };
-
+  // Create once per map; later prop changes only touch attributes (no flicker, no re-mount).
   useEffect(() => {
     if (!map || !isLoaded) return;
-
-    // Create marker DOM element
-    const el = document.createElement('div');
-    el.className = 'jiva-hospital-marker cursor-pointer group transition-transform hover:scale-110';
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'jiva-mk jiva-mk--hospital';
     el.dataset.hospitalId = hospitalId;
-    el.title = `${name} (${hospitalId})`;
-    el.style.width = '32px';
-    el.style.height = '32px';
-    el.style.display = 'flex';
-    el.style.alignItems = 'center';
-    el.style.justifyContent = 'center';
-
-    const color = getPinColor(emergencyStatus);
-
-    el.innerHTML = `
-      <div style="
-        position: relative;
-        background: ${color};
-        color: white;
-        width: 28px;
-        height: 28px;
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 2px solid white;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-      ">
-        <span style="
-          transform: rotate(45deg);
-          font-size: 13px;
-          font-weight: 900;
-          color: white;
-        ">🏥</span>
-      </div>
-    `;
-
-    // Popup content
-    const popupHtml = `
-      <div style="font-family: sans-serif; padding: 6px 2px; color: #111;">
-        <div style="font-weight: 700; font-size: 13px; margin-bottom: 4px;">${escapeHtml(name)}</div>
-        <div style="font-size: 11px; margin-bottom: 4px;">
-          Status: <strong style="color: ${color};">${escapeHtml(emergencyStatus)}</strong>
-        </div>
-        ${
-          dataStatus === 'SYNTHETIC_DEMO'
-            ? `<div style="font-size: 10px; color: #D97706; font-weight: 600;">DEMO / SYNTHETIC DATA</div>`
-            : `<div style="font-size: 10px; color: #059669; font-weight: 600;">PROVENANCE: ${escapeHtml(dataStatus || 'UNVERIFIED')}</div>`
-        }
-      </div>
-    `;
-
-    const popup = new MapLibrePopup({ offset: 25, closeButton: true })
-      .setHTML(popupHtml);
-
-    if (onClick) {
-      el.addEventListener('click', onClick);
-    }
-
-    const marker = new MapLibreMarker({ element: el })
-      .setLngLat([lng, lat])
-      .setPopup(popup)
-      .addTo(map);
-
+    el.addEventListener('click', (e) => {
+      e.stopPropagation(); // keep the map's background click (deselect) from firing
+      clickRef.current?.();
+    });
+    elRef.current = el;
+    const marker = new MapLibreMarker({ element: el }).setLngLat([lng, lat]).addTo(map);
     markerRef.current = marker;
-
     return () => {
       marker.remove();
       markerRef.current = null;
+      elRef.current = null;
     };
-  }, [map, isLoaded, lat, lng, name, emergencyStatus, dataStatus]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, isLoaded, hospitalId]);
 
-  // Update position if coordinates change
   useEffect(() => {
-    if (markerRef.current) {
-      markerRef.current.setLngLat([lng, lat]);
-    }
+    const el = elRef.current;
+    if (!el) return;
+    const meta = acceptanceStatus(emergencyStatus);
+    const text = statusLabel ?? meta.label;
+    const short = label ?? hospitalShortName(name);
+    const demo = dataStatus === 'SYNTHETIC_DEMO' ? ' (demo data)' : '';
+    el.dataset.tone = meta.tone;
+    el.dataset.selected = selected ? 'true' : 'false';
+    el.dataset.dimmed = dimmed ? 'true' : 'false';
+    el.style.zIndex = selected ? '3' : '1';
+    el.setAttribute('aria-label', `${name}: ${text}${demo}`);
+    el.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    el.innerHTML = `
+      <span class="jiva-mk__body"><span class="jiva-mk__h" aria-hidden="true">H</span></span>
+      <span class="jiva-mk__badge">${iconSvg(meta.icon, 11, 2.6)}</span>
+      <span class="jiva-mk__label">${escapeHtml(short)}<small>${escapeHtml(text)}</small></span>`;
+  }, [map, isLoaded, hospitalId, emergencyStatus, statusLabel, label, name, selected, dimmed, dataStatus]);
+
+  useEffect(() => {
+    markerRef.current?.setLngLat([lng, lat]);
   }, [lat, lng]);
 
   return null;

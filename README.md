@@ -28,7 +28,7 @@ JIVA's rule is simple: **never assume a bed is open.** Public data tells us what
 - **Care Feasibility Engine.** Checks clinical capability, evidence quality, and acceptance. It runs in **shadow mode only**.
 - **Provider-agnostic routing.** Valhalla, OSRM, or a labelled synthetic fallback, chosen through a fallback chain.
 - **AI sidecar.** Produces handoff briefs and timeline summaries. It emits only `ai.*` events and has no routing authority.
-- **Four role-scoped apps.** Management, Ambulance, Hospital, and Patient, all updated live over Socket.IO.
+- **Four role-scoped apps.** Management, Ambulance, Hospital, and Patient, all updated live over Socket.IO and built on one shared design system ([`DESIGN.md`](DESIGN.md)).
 - **Local-first, AWS-ready.** The same design runs in memory locally and is modeled in CDK for AWS.
 
 ## Architecture
@@ -101,10 +101,10 @@ npm run simulate:full:blr  # flagship scenario: request → accept → reroute �
 ```text
 jiva/
 ├── apps/
-│   ├── management-web/    Command center: map, incidents, decision trace
-│   ├── ambulance-web/     EMS view: route, destination, alternatives
-│   ├── hospital-web/      ED clinician accept / limited / reject
-│   └── patient-web/       Own-case journey, server ETA, uncertainty shown
+│   ├── management-web/    Command center: network map, incidents, search, decision trace
+│   ├── ambulance-web/     Crew view: next action, route, reroute explainer, hospital answers
+│   ├── hospital-web/      ED console: timed requests, accept / limits / decline, arrivals
+│   └── patient-web/       Own-case journey, what happens next, activity, SOS
 ├── packages/
 │   ├── event-schema/      Zod definitions of canonical events
 │   ├── domain-models/     Patient, Hospital, Ambulance, protocol types
@@ -114,7 +114,7 @@ jiva/
 │   ├── realtime/          Socket.IO and AWS WebSocket adapters
 │   ├── auth/              Demo personas, RBAC, Cognito JWT verification
 │   ├── config/            Shared runtime configuration
-│   └── ui/                Shared components (MapLibre map)
+│   └── ui/                JIVA design system: tokens, components, map (see DESIGN.md)
 ├── services/api/          Express + Socket.IO + event bus + state engines
 ├── infrastructure/aws/    CDK stack and bundled Lambda assets
 ├── scripts/               Simulators, data pipeline, AWS management
@@ -244,7 +244,8 @@ These are directional, not committed.
 | [`docs/aws-architecture.md`](docs/aws-architecture.md) | AWS design |
 | [`docs/demo-runbook.md`](docs/demo-runbook.md) | Running the demo |
 | [`docs/feasibility-promotion-readiness.md`](docs/feasibility-promotion-readiness.md) | Path to authoritative mode |
-| [`docs/handoffs/`](docs/handoffs) | Phase 6.1–6.7 handoffs |
+| [`DESIGN.md`](DESIGN.md) | Design system: tokens, status language, components, map and interaction rules |
+| [`docs/handoffs/`](docs/handoffs) | Phase 6.1–6.7 handoffs and the UI/UX upgrade handoff |
 | [`docs/pitch-60-seconds.md`](docs/pitch-60-seconds.md) | The pitch |
 
 ---

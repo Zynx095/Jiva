@@ -26,3 +26,17 @@ export async function apiPost(path: string, body?: unknown, persona = PERSONA): 
 }
 
 export const socket = io(API_URL, { auth: { demoUser: PERSONA } });
+
+/** Submits an event as this persona. Resolves to null on success, or a sentence explaining the failure. */
+export async function sendEvent(event: Record<string, unknown>): Promise<string | null> {
+  try {
+    const res = await apiPost('/api/events', event);
+    if (res.ok) return null;
+    const body = await res.json().catch(() => ({}));
+    if (res.status === 409) return 'This request is no longer open — it may have expired, been answered already, or been withdrawn.';
+    if (res.status === 403) return `Not allowed: ${body.message || 'this persona cannot act for this hospital'}.`;
+    return body.message || body.error || `The API rejected the update (${res.status}).`;
+  } catch {
+    return 'Cannot reach the JIVA API. Check the connection and try again.';
+  }
+}

@@ -1,195 +1,401 @@
-import { useCallback, useEffect, useState } from 'react';
-import type { AmbulanceState, HospitalState, PatientState } from '@jiva/domain-models';
-import { apiGet, socket, PERSONA } from './api';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  AppHeader,
+  ConnectionPill,
+  DemoBadge,
+  EmptyState,
+  Flash,
+  Icon,
+  JivaButton,
+  JivaCard,
+  JivaTimeline,
+  PersonaSelect,
+  JivaSkeleton,
+  capabilityLabel,
+  cx,
+  describeEvent,
+  formatClock,
+  hospitalShortName,
+  joinList,
+  minutesFromSeconds,
+  timeAgo,
+  useNow,
+  useToast,
+  type IconName,
+  type JivaEvent,
+  type TimelineItem,
+} from '@jiva/ui/src';
+import { PERSONA } from './api';
+import { usePatient } from './usePatient';
 
-type LoadState = 'loading' | 'ready' | 'error';
+const PERSONAS = [
+  { value: 'demo-patient-1', label: 'CASE-BLR-876 (demo-patient-1)' },
+  { value: 'demo-patient-2', label: 'CASE-BLR-877 (demo-patient-2)' },
+];
+
+const SOURCE_TEXT: Record<string, string> = {
+  system: 'JIVA coordination system',
+  ambulance: 'Ambulance crew device',
+  hospital: 'Hospital',
+  patient: 'You',
+  clinician: 'Clinician',
+  laboratory: 'Laboratory',
+};
 
 export default function App() {
-  const [patient, setPatient] = useState<PatientState | null>(null);
-  const [ambulance, setAmbulance] = useState<AmbulanceState | null>(null);
-  const [hospital, setHospital] = useState<HospitalState | null>(null);
-  const [connected, setConnected] = useState(socket.connected);
-  const [load, setLoad] = useState<LoadState>('loading');
-  const [syncedAt, setSyncedAt] = useState<Date | null>(null);
+  const toast = useToast();
   const [notice, setNotice] = useState<string | null>(null);
-  const [summary, setSummary] = useState<string | null>(null);
-  const [, tick] = useState(0);
+  const nameRef = useRef<(id: string) => string | undefined>(() => undefined);
 
-  // The server scopes every response to this patient's own case.
-  const fetchState = useCallback(async () => {
-    try {
-      const [pats, ambs] = await Promise.all([
-        apiGet<PatientState[]>('/api/patients'),
-        apiGet<AmbulanceState[]>('/api/ambulances'),
-      ]);
-      const me = pats[0] || null;
-      const myAmb = ambs[0] || null;
-      setPatient(me);
-      setAmbulance(myAmb);
-      if (myAmb?.destinationHospital) {
-        const hosps = await apiGet<HospitalState[]>('/api/hospitals');
-        setHospital(hosps.find(h => h.hospitalId === myAmb.destinationHospital) || null);
-      } else {
-        setHospital(null);
+  const onLive = useCallback(
+    (e: JivaEvent) => {
+      if (e.eventType === 'demo.reset') {
+        setNotice(null);
+        return;
       }
-      setLoad('ready');
-      setSyncedAt(new Date());
-    } catch {
-      setLoad('error');
-    }
-  }, []);
+      const p = e.payload;
+      if (e.eventType === 'route.recalculated' && typeof p.oldHospitalId === 'string' && p.oldHospitalId) {
+        const to = nameRef.current(String(p.newHospitalId)) ?? 'another hospital';
+        setNotice(`Your destination changed to ${to} so you reach a hospital that can treat you now.`);
+        toast.show({ title: 'Your destination changed', description: `Now going to ${to}.`, tone: 'warn', icon: 'route', groupKey: 'dest' });
+      } else if (e.eventType === 'route.recalculated') {
+        toast.show({ title: 'A hospital confirmed it can receive you', description: nameRef.current(String(p.newHospitalId)), tone: 'ok', icon: 'checkCircle', groupKey: 'dest' });
+      } else if (e.eventType === 'ambulance.dispatched') {
+        toast.show({ title: 'An ambulance is on the way', tone: 'ok', icon: 'ambulance', groupKey: 'amb' });
+      } else if (e.eventType === 'ambulance.arrived') {
+        toast.show({ title: 'You have arrived', description: 'The emergency team takes over from here.', tone: 'ok', icon: 'pin', groupKey: 'arrived' });
+      }
+    },
+    [toast],
+  );
 
+  const pt = usePatient(onLive);
+  const now = useNow(5000);
+  const { patient, ambulance, hospital } = pt;
+
+  const names = useMemo(() => new Map(pt.hospitals.map((h) => [h.hospitalId, h.displayName])), [pt.hospitals]);
+  const name = useCallback((id: string) => names.get(id), [names]);
   useEffect(() => {
-    fetchState();
-    const onConnect = () => { setConnected(true); fetchState(); };
-    const onDisconnect = () => setConnected(false);
-    const onEvent = (event: any) => {
-      if (event.eventType === 'demo.reset') { setNotice(null); setSummary(null); }
-      if (event.eventType === 'destination.changed' && event.payload.hospitalId !== 'UNASSIGNED' && event.payload.reason?.match(/UNAVAILABLE|REJECTED|expired/i)) {
-        setNotice('Your destination hospital changed so you reach a hospital that can treat you now.');
-      }
-      if (event.eventType === 'ai.summary.generated') setSummary(event.payload.briefSummary);
-      fetchState();
-    };
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-    socket.on('event', onEvent);
-    setConnected(socket.connected); // the socket may have connected before these listeners existed
-    const t = setInterval(() => tick(x => x + 1), 5000);
-    return () => {
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-      socket.off('event', onEvent);
-      clearInterval(t);
-    };
-  }, [fetchState]);
+    nameRef.current = name;
+  }, [name]);
 
   const route = ambulance?.activeRoute && ambulance.activeRoute.hospitalId === ambulance.destinationHospital ? ambulance.activeRoute : undefined;
   const acceptance = hospital?.operationalState?.acceptance;
+  const confirmed = acceptance === 'ACCEPTED' || acceptance === 'LIMITED';
   const arrived = ambulance?.status === 'ARRIVED' || patient?.currentStatus === 'ARRIVED';
-  const secondsAgo = syncedAt ? Math.round((Date.now() - syncedAt.getTime()) / 1000) : null;
+  const eta = arrived ? 0 : minutesFromSeconds(route?.durationSeconds);
+  const summary = pt.events.find((e) => e.eventType === 'ai.summary.generated');
 
   const journey = [
     { label: 'Emergency reported', done: !!patient },
-    { label: 'Ambulance dispatched', done: !!ambulance },
-    { label: 'Hospital confirmed it can receive you', done: acceptance === 'ACCEPTED' || acceptance === 'LIMITED' },
-    { label: 'On the way to hospital', done: ambulance?.status === 'EN_ROUTE_TO_HOSPITAL' || arrived },
-    { label: 'Arrived at hospital', done: arrived },
+    { label: 'Ambulance on the way', done: !!ambulance },
+    { label: 'Hospital confirmed', done: confirmed || arrived },
+    { label: 'Travelling to hospital', done: ambulance?.status === 'EN_ROUTE_TO_HOSPITAL' || arrived },
+    { label: 'Arrived', done: arrived },
   ];
+  const currentStep = journey.findIndex((s) => !s.done);
+
+  const headline = !patient
+    ? { title: 'No active emergency', body: 'If you need urgent help, call 108.', icon: 'checkCircle' as IconName }
+    : arrived
+      ? { title: 'You have arrived', body: `At ${hospital?.displayName ?? 'the hospital'}. The emergency team takes over your care.`, icon: 'pin' as IconName }
+      : hospital && confirmed
+        ? { title: `On the way to ${hospitalShortName(hospital.displayName, hospital.address?.locality)}`, body: `Ambulance ${ambulance?.ambulanceId ?? ''} is taking you to a hospital that confirmed it can receive you.`, icon: 'ambulance' as IconName }
+        : ambulance
+          ? { title: 'Help is on the way', body: `Ambulance ${ambulance.ambulanceId} is coming. We are confirming which hospital can treat you now.`, icon: 'ambulance' as IconName }
+          : { title: 'Your emergency was reported', body: 'An ambulance is being assigned to you.', icon: 'siren' as IconName };
+
+  const timeline = useMemo<TimelineItem[]>(
+    () =>
+      pt.events
+        .filter((e) => e.eventType !== 'ambulance.location.updated')
+        // The route event already says where the patient is going; its paired destination event would repeat it.
+        .filter((e) => !(e.eventType === 'destination.changed' && e.payload.hospitalId !== 'UNASSIGNED'))
+        .map((e) => {
+          const d = describeEvent(e, name, 'patient');
+          return {
+            id: e.eventId,
+            time: e.timestamp,
+            title: d.title,
+            description: d.detail,
+            tone: d.tone,
+            icon: d.icon,
+            details: (
+              <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+                <dt className="text-ink-500">Time</dt>
+                <dd className="text-ink-800">{new Date(e.timestamp).toLocaleString()}</dd>
+                <dt className="text-ink-500">Source</dt>
+                <dd className="text-ink-800">{SOURCE_TEXT[e.source.type] ?? e.source.type}</dd>
+                <dt className="text-ink-500">Data</dt>
+                <dd className="text-ink-800">Demo data — simulated for this demonstration</dd>
+                <dt className="text-ink-500">Reference</dt>
+                <dd className="break-all font-mono text-ink-600">{e.eventId}</dd>
+              </dl>
+            ),
+          };
+        }),
+    [pt.events, name],
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans p-4 md:p-8 flex items-center justify-center">
-      <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
-        <div className="bg-blue-600 text-white p-6 pb-8 text-center rounded-b-[40px] shadow-sm relative">
-          <h1 className="text-2xl font-bold tracking-tight mb-1">JIVA</h1>
-          <p className="text-blue-100 text-sm font-medium">Your care journey</p>
-          <div className="mt-5 inline-block bg-blue-700/50 px-4 py-1.5 rounded-full text-sm font-semibold border border-blue-500/30">
-            {patient?.patientId || 'No active case'}
-          </div>
-          <div className="mt-3 flex justify-center gap-2 text-[11px]">
-            <span className={`px-2 py-0.5 rounded-full ${connected ? 'bg-emerald-500/30 text-emerald-50' : 'bg-red-500/40 text-white'}`}>
-              {connected ? 'Live updates on' : 'Reconnecting… information may be out of date'}
+    <div className="min-h-dvh">
+      <AppHeader
+        app="Your care"
+        context={patient ? `Case ${patient.patientId}` : 'JIVA patient view'}
+        actions={
+          <>
+            <span className="hidden sm:inline-flex">
+              <PersonaSelect value={PERSONA} options={PERSONAS} />
             </span>
-            <span className="px-2 py-0.5 rounded-full bg-amber-400/30 text-amber-50">Demo data</span>
+            <ConnectionPill state={pt.connection} lastSync={pt.syncedAt} />
+            <DemoBadge detail="This is a demonstration with simulated data. In an emergency, call 108." />
+          </>
+        }
+      />
+
+      <main id="main" className="mx-auto grid max-w-5xl gap-5 px-4 py-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:px-6">
+        {pt.load === 'error' && (
+          <div role="alert" className="flex items-start gap-2 rounded-xl bg-danger-50 p-4 text-sm text-danger-700 ring-1 ring-inset ring-danger-200 lg:col-span-2">
+            <Icon name="wifiOff" size={18} className="mt-0.5 shrink-0" />
+            <span className="flex-1">We can't reach JIVA right now and are trying again. Your ambulance crew is still with you — call 108 if you need help.</span>
+            <JivaButton size="sm" variant="danger-soft" icon="refresh" onClick={() => void pt.refresh()}>
+              Try again
+            </JivaButton>
           </div>
-        </div>
+        )}
 
-        <div className="px-6 py-8 space-y-6 -mt-4">
-          {load === 'error' && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4">
-              Can't reach JIVA right now. We'll keep trying — call 108 if you need help.
-            </div>
-          )}
-
-          {notice && (
-            <div role="status" className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl p-4">{notice}</div>
-          )}
-
-          {ambulance ? (
-            <div className="bg-blue-50 rounded-2xl p-5 border border-blue-100 shadow-sm">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-xl" aria-hidden="true">🚑</div>
-                <div>
-                  <h2 className="font-bold text-blue-900">{arrived ? 'You have arrived' : 'Help is on the way'}</h2>
-                  <p className="text-sm text-blue-700">Ambulance {ambulance.ambulanceId}</p>
+        <div className="min-w-0 space-y-5">
+          {/* CURRENT CARE */}
+          <section aria-labelledby="current-care" className="overflow-hidden rounded-2xl bg-white ring-1 ring-ink-200">
+            <div className="bg-brand-700 px-5 pb-5 pt-5 text-white">
+              <p id="current-care" className="text-[13px] font-semibold text-brand-100">
+                Current care
+              </p>
+              {pt.load === 'loading' ? (
+                <div className="mt-2 space-y-2">
+                  <JivaSkeleton className="h-7 w-3/4 opacity-40" />
+                  <JivaSkeleton className="h-4 w-1/2 opacity-40" />
                 </div>
-              </div>
-              <div className="mt-4 pt-4 border-t border-blue-200/50 flex justify-between items-end">
-                <div className="text-xs text-blue-600 font-semibold">Estimated arrival at hospital</div>
-                <div className="text-3xl font-black text-blue-700">
-                  {arrived ? '0' : route ? Math.ceil(route.durationSeconds / 60) : '--'}
-                  <span className="text-lg font-medium text-blue-600 ml-1">min</span>
+              ) : (
+                <div className="mt-1 flex items-start gap-3">
+                  <div className="min-w-0 flex-1">
+                    <h1 className="text-2xl font-semibold leading-8 tracking-[-0.02em]">{headline.title}</h1>
+                    <p className="mt-1 text-[15px] leading-6 text-brand-50">{headline.body}</p>
+                  </div>
+                  <span className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/12 sm:flex">
+                    <Icon name={headline.icon} size={26} strokeWidth={1.75} />
+                  </span>
                 </div>
-              </div>
-              {route?.synthetic && !arrived && (
-                <p className="text-[11px] text-blue-500 mt-2">Estimate from demo routing, without live traffic.</p>
+              )}
+              {patient && !arrived && (
+                <div className="mt-4 flex items-end justify-between gap-3 rounded-xl bg-white/10 px-4 py-3">
+                  <div>
+                    <p className="text-[13px] font-semibold text-brand-100">Estimated arrival at hospital</p>
+                    <p className="text-xs text-brand-100/90">{route?.synthetic || !route?.trafficAware ? 'Estimate from demo routing, without live traffic' : 'Estimate'}</p>
+                  </div>
+                  <Flash value={eta}>
+                    <span className="text-4xl font-semibold tabular-nums tracking-[-0.02em]">{eta ?? '--'}</span>
+                    <span className="ml-1 text-base font-medium text-brand-100">min</span>
+                  </Flash>
+                </div>
               )}
             </div>
-          ) : (
-            <div className="bg-gray-100 rounded-2xl p-5 border border-gray-200 text-center text-gray-500">
-              {load === 'loading' ? 'Loading…' : patient ? 'Finding the nearest ambulance…' : 'No active emergency.'}
+
+            {patient && (
+              <ol className="grid grid-cols-5 gap-1 px-4 py-4" aria-label="Your journey">
+                {journey.map((s, i) => {
+                  const current = i === currentStep;
+                  return (
+                    <li key={s.label} className="flex flex-col items-center gap-1.5 text-center" aria-current={current ? 'step' : undefined}>
+                      <span
+                        className={cx(
+                          'flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-colors duration-300',
+                          s.done ? 'bg-brand-600 text-white' : current ? 'bg-white text-brand-700 ring-2 ring-brand-500' : 'bg-ink-100 text-ink-500',
+                        )}
+                      >
+                        {s.done ? <Icon name="check" size={14} strokeWidth={2.6} /> : i + 1}
+                      </span>
+                      <span className={cx('text-[11px] leading-4 sm:text-xs', s.done ? 'font-semibold text-ink-800' : current ? 'font-semibold text-brand-800' : 'text-ink-500')}>{s.label}</span>
+                      <span className="sr-only">{s.done ? '(done)' : current ? '(in progress)' : '(next)'}</span>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </section>
+
+          {notice && (
+            <div role="status" className="flex animate-enter items-start gap-2.5 rounded-xl bg-warn-50 p-4 text-sm text-warn-900 ring-1 ring-inset ring-warn-200">
+              <Icon name="route" size={18} className="mt-0.5 shrink-0" />
+              <span className="flex-1">{notice}</span>
+              <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss" className="rounded-md p-1 text-warn-800 hover:bg-warn-100">
+                <Icon name="x" size={15} />
+              </button>
             </div>
           )}
 
-          <div>
-            <h3 className="text-xs font-bold text-gray-500 mb-3 px-2">Destination</h3>
-            {hospital ? (
-              <div className={`bg-white border-2 rounded-2xl p-5 shadow-sm ${acceptance === 'ACCEPTED' ? 'border-emerald-100' : 'border-amber-100'}`}>
-                <h4 className="font-bold text-gray-800 text-lg mb-1">{hospital.displayName}</h4>
-                {acceptance === 'ACCEPTED' ? (
-                  <div className="flex items-center gap-2 text-emerald-700 font-medium text-sm">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" aria-hidden="true" />Confirmed it can receive you
-                  </div>
-                ) : acceptance === 'LIMITED' ? (
-                  <div className="flex items-center gap-2 text-amber-700 font-medium text-sm">
-                    <span className="w-2 h-2 rounded-full bg-amber-500" aria-hidden="true" />Can receive you with some limits
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-gray-600 font-medium text-sm">
-                    <span className="w-2 h-2 rounded-full bg-gray-400" aria-hidden="true" />Waiting for the hospital to confirm
-                  </div>
-                )}
-                {hospital.operationalState?.lastConfirmedAt && (
-                  <div className="text-xs text-gray-500 border-t border-gray-100 pt-3 mt-4">
-                    Confirmed at {new Date(hospital.operationalState.lastConfirmedAt).toLocaleTimeString()}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="bg-gray-50 border border-dashed border-gray-300 rounded-2xl p-5 text-sm text-gray-500">
-                {ambulance ? 'Checking which hospital can receive you now…' : 'A hospital will be chosen once one confirms it can treat you.'}
-              </div>
-            )}
-          </div>
+          {patient && (
+            <JivaCard as="section" aria-labelledby="dest-title">
+              <p id="dest-title" className="text-[13px] font-semibold text-ink-500">
+                Your hospital
+              </p>
+              {hospital ? (
+                <>
+                  <p className="mt-1 text-lg font-semibold leading-6 text-ink-900">{hospital.displayName}</p>
+                  <p className={cx('mt-1.5 flex items-center gap-1.5 text-sm font-semibold', acceptance === 'ACCEPTED' ? 'text-brand-700' : acceptance === 'LIMITED' ? 'text-warn-700' : 'text-ink-600')}>
+                    <Icon name={acceptance === 'ACCEPTED' ? 'checkCircle' : acceptance === 'LIMITED' ? 'half' : 'clock'} size={16} />
+                    {acceptance === 'ACCEPTED' ? 'Confirmed it can receive you' : acceptance === 'LIMITED' ? 'Can receive you, with some limits' : 'Waiting for the hospital to confirm'}
+                  </p>
+                  {hospital.operationalState?.lastConfirmedAt && (
+                    <p className="mt-2 border-t border-ink-100 pt-2 text-xs text-ink-500">
+                      Confirmed at {formatClock(hospital.operationalState.lastConfirmedAt)} · {timeAgo(hospital.operationalState.lastConfirmedAt, now)}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="mt-1 text-sm text-ink-600">{ambulance ? 'Checking which hospital can receive you now…' : 'A hospital will be chosen once one confirms it can treat you.'}</p>
+              )}
+            </JivaCard>
+          )}
 
-          <div>
-            <h3 className="text-xs font-bold text-gray-500 mb-4 px-2">Your journey</h3>
-            <ol className="px-2 relative">
-              <div className="absolute left-[13px] top-2 bottom-2 w-0.5 bg-gray-100" aria-hidden="true" />
-              {journey.map((step, i) => {
-                const isCurrent = step.done && !journey[i + 1]?.done;
-                return (
-                  <li key={step.label} className={`flex items-start gap-4 py-3 relative ${step.done ? '' : 'opacity-40'}`}>
-                    <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 border-2 ${step.done ? (isCurrent ? 'bg-blue-500 border-blue-200 ring-4 ring-blue-50' : 'bg-blue-500 border-blue-500') : 'bg-white border-gray-300'}`} />
-                    <div className={`text-sm ${isCurrent ? 'text-blue-700 font-bold' : step.done ? 'text-gray-800 font-medium' : 'text-gray-500'}`}>{step.label}</div>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
+          {patient && <WhatNext patientCare={patient.careRequirements} hospitalName={hospital?.displayName} confirmed={confirmed} arrived={arrived} hasAmbulance={!!ambulance} eta={eta} />}
 
           {summary && (
-            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-sm text-indigo-900">
-              <div className="text-xs font-bold text-indigo-600 mb-1">Summary (AI-generated, for information only)</div>
-              {summary}
-            </div>
+            <JivaCard as="section" aria-labelledby="summary-title">
+              <p id="summary-title" className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-500">
+                <Icon name="brief" size={14} />
+                Summary · AI-generated, for information only
+              </p>
+              <p className="mt-1.5 text-sm text-ink-800">{String(summary.payload.briefSummary ?? '')}</p>
+            </JivaCard>
           )}
 
-          <p className="text-[11px] text-gray-400 text-center">
-            {secondsAgo !== null ? `Updated ${secondsAgo < 5 ? 'just now' : `${secondsAgo}s ago`}` : ''} · signed in as demo persona {PERSONA}
+          <SosCard />
+        </div>
+
+        <div className="min-w-0 space-y-5">
+          <JivaCard as="section" aria-labelledby="activity-title">
+            <h2 id="activity-title" className="text-[15px] font-semibold text-ink-900">
+              Recent activity
+            </h2>
+            <p className="text-[13px] text-ink-500">Tap an entry to see where it came from.</p>
+            <div className="mt-4">
+              {pt.load === 'loading' ? (
+                <div className="space-y-3">
+                  <JivaSkeleton className="h-10" />
+                  <JivaSkeleton className="h-10" />
+                </div>
+              ) : (
+                <JivaTimeline
+                  items={timeline}
+                  detailsLabel="Details"
+                  empty={<EmptyState compact icon="activity" title="Nothing yet" description="Updates about your care appear here as they happen." />}
+                />
+              )}
+            </div>
+          </JivaCard>
+
+          <HealthRecords />
+
+          <p className="px-1 text-center text-xs text-ink-500">
+            {pt.syncedAt ? `Updated ${timeAgo(pt.syncedAt, now)}` : ''} · signed in as demo persona {PERSONA}
           </p>
         </div>
-      </div>
+      </main>
     </div>
+  );
+}
+
+/** Upcoming: what will happen next, in plain words. Never a clinical judgement. */
+function WhatNext({ patientCare, hospitalName, confirmed, arrived, hasAmbulance, eta }: { patientCare: string[]; hospitalName?: string; confirmed: boolean; arrived: boolean; hasAmbulance: boolean; eta?: number }) {
+  const steps: Array<{ icon: IconName; text: ReactNode }> = arrived
+    ? [
+        { icon: 'stethoscope', text: <>The emergency team at <strong className="font-semibold">{hospitalName ?? 'the hospital'}</strong> takes over your care.</> },
+        { icon: 'brief', text: 'A short summary of your journey appears on this page when it is ready.' },
+      ]
+    : confirmed && hospitalName
+      ? [
+          { icon: 'navigation', text: <>The ambulance takes you to <strong className="font-semibold">{hospitalName}</strong>{eta ? <>, in about <strong className="font-semibold">{eta} min</strong></> : null}.</> },
+          { icon: 'checkCircle', text: 'The hospital has confirmed it can receive you and knows you are coming.' },
+          { icon: 'route', text: 'If that changes, JIVA finds another hospital and this page updates straight away.' },
+        ]
+      : hasAmbulance
+        ? [
+            { icon: 'hospital', text: patientCare.length ? <>JIVA is asking hospitals that offer {joinList(patientCare.map((c) => capabilityLabel(c, 'plain').toLowerCase()))} to confirm they can receive you.</> : 'JIVA is asking nearby hospitals to confirm they can receive you.' },
+            { icon: 'clock', text: 'Your hospital appears here as soon as one confirms.' },
+          ]
+        : [{ icon: 'ambulance', text: 'An ambulance is being assigned to you.' }];
+  return (
+    <JivaCard as="section" aria-labelledby="next-title">
+      <h2 id="next-title" className="text-[15px] font-semibold text-ink-900">
+        What happens next
+      </h2>
+      <ul className="mt-3 space-y-2.5">
+        {steps.map((s, i) => (
+          <li key={i} className="flex items-start gap-3 text-sm text-ink-700">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+              <Icon name={s.icon} size={15} />
+            </span>
+            <span className="pt-1">{s.text}</span>
+          </li>
+        ))}
+      </ul>
+    </JivaCard>
+  );
+}
+
+function SosCard() {
+  return (
+    <section aria-labelledby="sos-title" className="flex flex-wrap items-center gap-3 rounded-2xl bg-white p-4 ring-1 ring-danger-200">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-danger-50 text-danger-700">
+        <Icon name="phone" size={20} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <h2 id="sos-title" className="text-[15px] font-semibold text-ink-900">
+          Need urgent help?
+        </h2>
+        <p className="text-[13px] text-ink-600">Call the emergency number, or tell your ambulance crew if you feel worse.</p>
+      </div>
+      <a href="tel:108" className="inline-flex h-11 items-center gap-2 rounded-xl bg-danger-600 px-4 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-danger-700 active:scale-[0.98]">
+        <Icon name="phone" size={16} />
+        Call 108
+      </a>
+    </section>
+  );
+}
+
+/** Clinical records are Phase 7 — shown as not connected rather than faked. */
+function HealthRecords() {
+  const rows: Array<{ icon: IconName; title: string; body: string }> = [
+    { icon: 'pill', title: 'Medications', body: 'Prescriptions from your care team will appear here.' },
+    { icon: 'file', title: 'Reports', body: 'Test results and reports will appear here once shared with you.' },
+    { icon: 'users', title: 'Care team', body: 'The doctors and nurses looking after you will be listed here.' },
+    { icon: 'calendar', title: 'Upcoming', body: 'Follow-up appointments will appear here.' },
+  ];
+  return (
+    <JivaCard as="section" aria-labelledby="records-title">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <h2 id="records-title" className="text-[15px] font-semibold text-ink-900">
+            Your health records
+          </h2>
+          <p className="text-[13px] text-ink-500">Not connected yet. JIVA does not hold clinical records in this version.</p>
+        </div>
+        <span className="rounded-md bg-ink-100 px-1.5 py-0.5 text-xs font-semibold text-ink-600">Coming later</span>
+      </div>
+      <ul className="mt-3 divide-y divide-ink-100">
+        {rows.map((r) => (
+          <li key={r.title} className="flex items-start gap-3 py-2.5" aria-disabled="true">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ink-50 text-ink-500 ring-1 ring-inset ring-ink-200">
+              <Icon name={r.icon} size={16} />
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-ink-700">{r.title}</p>
+              <p className="text-[13px] text-ink-500">{r.body}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </JivaCard>
   );
 }

@@ -1,8 +1,4 @@
 @import "tailwindcss";
-
-body {
-  background-color: #000;
-  color: #fff;
-  margin: 0;
-  font-family: system-ui, "Segoe UI", sans-serif;
-}
+@import "../../../packages/ui/src/styles/jiva.css";
+/* Shared components live outside this app; let Tailwind see their class names. */
+@source "../../../packages/ui/src";

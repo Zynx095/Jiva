@@ -1,66 +1,68 @@
 import React, { useEffect, useRef } from 'react';
-import { Marker as MapLibreMarker, Popup as MapLibrePopup } from 'maplibre-gl';
+import { Marker as MapLibreMarker } from 'maplibre-gl';
 import { useMap } from './MapContext';
+import { iconSvg } from '../components/Icon';
+
+const escapeHtml = (v: unknown) =>
+  String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 
 export interface EmergencyMarkerProps {
   patientId: string;
   lat: number;
   lng: number;
   condition?: string;
+  onClick?: () => void;
+  selected?: boolean;
+  /** Pulse only while the case still needs a destination or is in progress. */
+  active?: boolean;
 }
 
-export const EmergencyMarker: React.FC<EmergencyMarkerProps> = ({
-  patientId,
-  lat,
-  lng,
-  condition = 'Emergency',
-}) => {
+/** Where the emergency was reported: a red point with a soft ring while the case is active. */
+export const EmergencyMarker: React.FC<EmergencyMarkerProps> = ({ patientId, lat, lng, condition = 'Emergency', onClick, selected, active = true }) => {
   const { map, isLoaded } = useMap();
   const markerRef = useRef<MapLibreMarker | null>(null);
+  const elRef = useRef<HTMLButtonElement | null>(null);
+  const clickRef = useRef(onClick);
+  useEffect(() => {
+    clickRef.current = onClick;
+  }, [onClick]);
 
   useEffect(() => {
     if (!map || !isLoaded) return;
-
-    const el = document.createElement('div');
-    el.className = 'jiva-emergency-marker cursor-pointer transition-transform hover:scale-105';
-    el.style.display = 'flex';
-    el.style.alignItems = 'center';
-    el.style.gap = '4px';
-    el.style.background = '#991B1B'; // Red 800
-    el.style.color = '#FEF2F2';
-    el.style.padding = '4px 8px';
-    el.style.borderRadius = '9999px';
-    el.style.fontSize = '11px';
-    el.style.fontWeight = 'bold';
-    el.style.border = '2px solid #F87171'; // Red 400
-    el.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 0 12px rgba(248, 113, 113, 0.5)';
-    el.style.whiteSpace = 'nowrap';
-
-    el.innerHTML = `
-      <span style="font-size: 13px;">🚨</span>
-      <span>${condition}</span>
-    `;
-
-    const popup = new MapLibrePopup({ offset: 20 })
-      .setHTML(`<div style="padding: 4px; font-family: sans-serif;"><strong>Patient ${patientId}</strong><br/>${condition}</div>`);
-
-    const marker = new MapLibreMarker({ element: el })
-      .setLngLat([lng, lat])
-      .setPopup(popup)
-      .addTo(map);
-
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'jiva-mk jiva-mk--emergency';
+    el.dataset.caseId = patientId;
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      clickRef.current?.();
+    });
+    elRef.current = el;
+    const marker = new MapLibreMarker({ element: el }).setLngLat([lng, lat]).addTo(map);
     markerRef.current = marker;
-
     return () => {
       marker.remove();
       markerRef.current = null;
+      elRef.current = null;
     };
-  }, [map, isLoaded, patientId, condition]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, isLoaded, patientId]);
 
   useEffect(() => {
-    if (markerRef.current) {
-      markerRef.current.setLngLat([lng, lat]);
-    }
+    const el = elRef.current;
+    if (!el) return;
+    el.dataset.selected = selected ? 'true' : 'false';
+    el.style.zIndex = selected ? '4' : '2';
+    el.setAttribute('aria-label', `Emergency ${patientId}: ${condition}`);
+    el.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    el.innerHTML = `
+      ${active ? '<span class="jiva-mk__ring"></span>' : ''}
+      <span class="jiva-mk__body">${iconSvg('siren', 12, 2.4)}</span>
+      <span class="jiva-mk__label">${escapeHtml(patientId)}<small>${escapeHtml(condition)}</small></span>`;
+  }, [map, isLoaded, patientId, condition, selected, active]);
+
+  useEffect(() => {
+    markerRef.current?.setLngLat([lng, lat]);
   }, [lat, lng]);
 
   return null;

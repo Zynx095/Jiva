@@ -1,15 +1,4 @@
 @import "tailwindcss";
-
-@theme {
-  --color-dark: #0A0A0A;
-  --color-surface: #1A1A1A;
-  --color-primary: #3B82F6;
-  --color-accent: #10B981;
-}
-
-@layer base {
-  body {
-    background-color: var(--color-dark);
-    color: #f3f4f6; /* gray-100 */
-  }
-}
+@import "../../../packages/ui/src/styles/jiva.css";
+/* Shared components live outside this app; let Tailwind see their class names. */
+@source "../../../packages/ui/src";
