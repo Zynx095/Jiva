@@ -6,6 +6,8 @@ import { emergencyRouter } from './routes/emergencies';
 import { directoryRouter } from './routes/directory';
 import { referralRouter } from './routes/referrals';
 import { encounterRouter } from './routes/encounters';
+import { clinicalRecordsRouter } from './routes/clinicalRecords';
+import { resetAccessAudit } from './commands/support';
 import { initializeEncounterEngine, resetEncounterEngine } from './clinical/encounters';
 import { loadRoster } from './clinical/roster';
 import express, { Request, Response, NextFunction } from 'express';
@@ -250,6 +252,8 @@ app.use('/api', directoryRouter());
 app.use('/api', referralRouter());
 // Hospital arrival, handover, doctor assignment and encounter reads (Journey B).
 app.use('/api', encounterRouter());
+// Prescriptions and diagnostic reports (assigned clinician writes; patient reads own, released records).
+app.use('/api', clinicalRecordsRouter());
 
 app.post('/api/demo/reset', requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
   resetEngines();
@@ -257,6 +261,7 @@ app.post('/api/demo/reset', requireRole('ADMIN'), async (req: AuthenticatedReque
   clinicalStore.reset();
   clinicalStore.setRoster(loadRoster());
   resetEncounterEngine();
+  resetAccessAudit();
   await localStoreInstance.reset();
   await eventBus.publish({
     eventId: uuidv4(),

@@ -44,9 +44,12 @@ export interface IClinicalStore {
   getPrescription(id: string): Prescription | undefined;
   listPrescriptions(encounterId: string): Prescription[];
   putPrescription(p: Prescription): void;
+  /** Only to roll back a write whose canonical event could not be recorded. */
+  removePrescription(id: string): void;
   getReport(id: string): DiagnosticReport | undefined;
   listReports(encounterId: string): DiagnosticReport[];
   putReport(r: DiagnosticReport): void;
+  removeReport(id: string): void;
   getDocument(id: string): DiagnosticDocument | undefined;
   listDocuments(encounterId: string): DiagnosticDocument[];
   putDocument(d: DiagnosticDocument): void;
@@ -122,10 +125,12 @@ export class LocalClinicalStore implements IClinicalStore {
   getPrescription(id: string) { return this.prescriptions.get(id); }
   listPrescriptions(encounterId: string) { return [...this.prescriptions.values()].filter(p => p.encounterId === encounterId); }
   putPrescription(p: Prescription) { this.prescriptions.set(p.prescriptionId, p); }
+  removePrescription(id: string) { this.prescriptions.delete(id); }
 
   getReport(id: string) { return this.reports.get(id); }
   listReports(encounterId: string) { return [...this.reports.values()].filter(r => r.encounterId === encounterId); }
   putReport(r: DiagnosticReport) { this.reports.set(r.reportId, r); }
+  removeReport(id: string) { this.reports.delete(id); }
 
   getDocument(id: string) { return this.documents.get(id); }
   listDocuments(encounterId: string) { return [...this.documents.values()].filter(d => d.encounterId === encounterId); }

@@ -97,6 +97,26 @@ export function withKeyLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
 
 // ------------------------------------------------------------------ audit
 
+const lastAccess = new Map<string, number>();
+const ACCESS_AUDIT_WINDOW_MS = 60_000;
+
+/**
+ * Read access to clinical records is audited as well (who looked at which encounter's records). Screens
+ * refresh often, so one reader's repeated reads of the same records are recorded at most once a minute.
+ */
+export function auditAccess(auth: AuthContext, action: string, target: Omit<AuditRecord, 'auditId' | 'at' | 'actor' | 'action' | 'outcome'>): void {
+  const key = `${auth.userId}|${action}|${target.entityId ?? target.encounterId ?? ''}`;
+  const now = Date.now();
+  if ((lastAccess.get(key) ?? 0) > now - ACCESS_AUDIT_WINDOW_MS) return;
+  if (lastAccess.size > 10_000) lastAccess.clear();
+  lastAccess.set(key, now);
+  audit(auth, action, 'ALLOWED', target);
+}
+
+export function resetAccessAudit(): void {
+  lastAccess.clear();
+}
+
 export function audit(
   auth: AuthContext,
   action: string,

@@ -418,6 +418,107 @@ async function doctorAssignment(api: Api, ctx: { caseId: string; encounterId: st
   check('reassign back to demo-doc-3 for the clinical record phases', (await assignDoctor(api, P.h1, encounterId, 'PRAC-BLR-001-01', { reason: 'REASSIGNMENT' })).status === 200);
 }
 
+// ------------------------------------------------------------------------------------------ phase 7
+
+const RX = { medication: 'Amoxicillin', strength: '500 mg', dose: '1 capsule', route: 'ORAL', frequency: 'Every 8 hours', duration: '5 days' };
+const prescribe = (api: Api, persona: string, encounterId: string, o: Record<string, unknown> = {}) =>
+  api.post(persona, `/api/encounters/${encounterId}/prescriptions`, { clientRequestId: uuid(), ...RX, ...o });
+const reportBody = (o: Record<string, unknown> = {}) => ({
+  clientRequestId: uuid(), category: 'LABORATORY', title: 'Complete blood count', findings: 'Hb 13.1 g/dL; WBC 9.8 x10^9/L', conclusion: 'Within normal limits',
+  effectiveAt: new Date(Date.now() - 10 * 60_000).toISOString(), documentIds: [], patientVisible: false, status: 'PRELIMINARY', ...o,
+});
+
+async function clinicalRecords(api: Api, ctx: { caseId: string; encounterId: string; gpsEncounter: string }) {
+  console.log('\n[Phase 7] Clinical records and prescriptions');
+  const { encounterId } = ctx;
+  const sock = { doc: await api.socket(P.doc3), patient: await api.socket(P.pat1), mgmt: await api.socket(P.mgmt), h1: await api.socket(P.h1) };
+
+  // who may write
+  const coord = await prescribe(api, P.h1, encounterId);
+  check('the hospital coordinator cannot prescribe → 403 ASSIGNED_CLINICIAN_ONLY', coord.status === 403 && coord.json?.code === 'ASSIGNED_CLINICIAN_ONLY', coord.text);
+  check('the patient cannot write clinical records → 403 READ_ONLY', (await prescribe(api, P.pat1, encounterId)).json?.code === 'READ_ONLY');
+  check('a clinician of another hospital → 404', (await prescribe(api, P.doc1, encounterId)).status === 404);
+  check('management → 403', (await prescribe(api, P.mgmt, encounterId)).status === 403);
+  check('the released crew → 404', (await prescribe(api, P.a2, encounterId)).status === 404);
+  check('unauthenticated → 401', (await prescribe(api, undefined as unknown as string, encounterId)).status === 401);
+
+  // validation
+  check('missing dose → 400 with the field', (await prescribe(api, P.doc3, encounterId, { dose: undefined })).json?.issues?.some((i: any) => i.path === 'dose'));
+  check('unknown route → 400', (await prescribe(api, P.doc3, encounterId, { route: 'SNORTED' })).status === 400);
+  check('unknown field (author override) → 400', (await prescribe(api, P.doc3, encounterId, { recordedBy: { userId: 'someone-else' } })).status === 400);
+  check('over-long medication name → 400', (await prescribe(api, P.doc3, encounterId, { medication: 'x'.repeat(200) })).status === 400);
+  check('control characters → 400', (await prescribe(api, P.doc3, encounterId, { instructions: 'take\u0000now' })).status === 400);
+
+  // create
+  const body = { clientRequestId: uuid(), ...RX };
+  const created = await api.post(P.doc3, `/api/encounters/${encounterId}/prescriptions`, body);
+  const rx = created.json?.prescription;
+  check('the assigned doctor prescribes → 201, ACTIVE v1, author from the principal', created.status === 201 && rx?.current?.status === 'ACTIVE' && rx.current.version === 1 && rx.current.recordedBy.userId === 'demo-doc-3' && rx.current.author.displayName === 'Dr. Ravi Kumar', created.text);
+  check('retry with the same clientRequestId → same prescription', (await api.post(P.doc3, `/api/encounters/${encounterId}/prescriptions`, body)).json?.prescription?.prescriptionId === rx?.prescriptionId);
+  check('the same key with a different body → 422', (await api.post(P.doc3, `/api/encounters/${encounterId}/prescriptions`, { ...body, dose: '2 capsules' })).status === 422);
+  check('the server list has exactly one prescription (the response is backed by stored state)', ((await api.get(P.doc3, `/api/encounters/${encounterId}/prescriptions`)).json as any[]).length === 1);
+
+  // reads
+  const pv = (await api.get(P.pat1, `/api/encounters/${encounterId}/prescriptions`)).json as any[];
+  check('the patient reads their prescription: medication, prescriber name, no staff ids', pv?.length === 1 && pv[0].medication === 'Amoxicillin' && pv[0].prescribedBy?.displayName === 'Dr. Ravi Kumar' && !JSON.stringify(pv).includes('demo-doc-3') && !('history' in pv[0]));
+  check('another patient → 404', (await api.get(P.pat2, `/api/encounters/${encounterId}/prescriptions`)).status === 404);
+  check('the hospital coordinator cannot read clinical content → 403', (await api.get(P.h1, `/api/encounters/${encounterId}/prescriptions`)).json?.code === 'NO_CLINICAL_ACCESS');
+  check('management cannot read clinical content → 403', (await api.get(P.mgmt, `/api/encounters/${encounterId}/prescriptions`)).status === 403);
+  check('a clinician of another hospital → 404', (await api.get(P.doc1, `/api/encounters/${encounterId}/prescriptions`)).status === 404);
+
+  // amend / discontinue
+  const rxId = rx?.prescriptionId;
+  const amendBody = (o: Record<string, unknown> = {}) => ({ clientRequestId: uuid(), expectedVersion: 1, changeReason: 'Weight-based dose', ...RX, dose: '2 capsules', ...o });
+  check('amending without a reason → 400', (await api.post(P.doc3, `/api/encounters/${encounterId}/prescriptions/${rxId}/amend`, amendBody({ changeReason: undefined }))).status === 400);
+  const stale = await api.post(P.doc3, `/api/encounters/${encounterId}/prescriptions/${rxId}/amend`, amendBody({ expectedVersion: 7 }));
+  check('a stale edit → 409 version_conflict with the current version', stale.status === 409 && stale.json?.error === 'version_conflict' && stale.json.currentVersion === 1, stale.text);
+  check('the coordinator cannot amend → 403', (await api.post(P.h1, `/api/encounters/${encounterId}/prescriptions/${rxId}/amend`, amendBody())).status === 403);
+  const amended = await api.post(P.doc3, `/api/encounters/${encounterId}/prescriptions/${rxId}/amend`, amendBody());
+  check('amend → v2 AMENDED, v1 kept in the history', amended.status === 200 && amended.json?.prescription?.current?.version === 2 && amended.json.prescription.history[0].dose === '1 capsule' && amended.json.prescription.current.changeReason === 'Weight-based dose', amended.text);
+  const disc = await api.post(P.doc3, `/api/encounters/${encounterId}/prescriptions/${rxId}/discontinue`, { clientRequestId: uuid(), expectedVersion: 2, changeReason: 'Rash after the second dose' });
+  check('discontinue → v3 DISCONTINUED', disc.status === 200 && disc.json?.prescription?.current?.status === 'DISCONTINUED' && disc.json.prescription.current.version === 3);
+  check('a discontinued prescription cannot be amended → 409', (await api.post(P.doc3, `/api/encounters/${encounterId}/prescriptions/${rxId}/amend`, amendBody({ expectedVersion: 3 }))).json?.error === 'discontinued');
+  check('a prescription id of another encounter answers 404 (no cross-encounter access)', (await api.post(P.doc1, `/api/encounters/${ctx.gpsEncounter}/prescriptions/${rxId}/discontinue`, { clientRequestId: uuid(), expectedVersion: 3, changeReason: 'x' })).status === 404);
+  const pv2 = (await api.get(P.pat1, `/api/encounters/${encounterId}/prescriptions`)).json as any[];
+  check('the patient sees it discontinued, without the internal reason', pv2[0]?.status === 'DISCONTINUED' && !JSON.stringify(pv2).includes('Rash after'));
+
+  // reports
+  const prelim = await api.post(P.doc3, `/api/encounters/${encounterId}/reports`, reportBody());
+  const report = prelim.json?.report;
+  check('the doctor records a preliminary, unreleased lab report → 201', prelim.status === 201 && report?.current?.status === 'PRELIMINARY' && report.current.patientVisible === false, prelim.text);
+  check('unreleased: the patient does not see it in the list', ((await api.get(P.pat1, `/api/encounters/${encounterId}/reports`)).json as any[]).length === 0);
+  check('unreleased: the patient gets 404 by id', (await api.get(P.pat1, `/api/encounters/${encounterId}/reports/${report?.reportId}`)).status === 404);
+  check('a report dated in the future → 400', (await api.post(P.doc3, `/api/encounters/${encounterId}/reports`, reportBody({ effectiveAt: new Date(Date.now() + 3600_000).toISOString() }))).status === 400);
+  check('attaching an unknown document → 422 invalid_document', (await api.post(P.doc3, `/api/encounters/${encounterId}/reports`, reportBody({ documentIds: ['DOC-NOPE'] }))).json?.error === 'invalid_document');
+  const amendR = (o: Record<string, unknown>) => api.post(P.doc3, `/api/encounters/${encounterId}/reports/${report?.reportId}/amend`, { ...reportBody(), expectedVersion: 1, changeReason: 'Verified', ...o });
+  const fin = await amendR({ status: 'FINAL', patientVisible: true, effectiveAt: report?.current?.effectiveAt });
+  check('finalised and released → FINAL v2, visible to the patient', fin.status === 200 && fin.json?.report?.current?.status === 'FINAL' && fin.json.report.current.patientVisible === true, fin.text);
+  const prv = (await api.get(P.pat1, `/api/encounters/${encounterId}/reports`)).json as any[];
+  check('the patient now reads it: title, findings, author name, no staff ids, no history', prv.length === 1 && prv[0].title === 'Complete blood count' && prv[0].reportedBy?.displayName === 'Dr. Ravi Kumar' && !JSON.stringify(prv).includes('demo-doc-3') && !('history' in prv[0]));
+  check('a final report cannot return to preliminary → 409', (await amendR({ expectedVersion: 2, status: 'PRELIMINARY', patientVisible: true, effectiveAt: report?.current?.effectiveAt })).json?.error === 'final_report');
+  const corr = await amendR({ expectedVersion: 2, status: 'FINAL', patientVisible: true, effectiveAt: report?.current?.effectiveAt, findings: 'Hb 12.9 g/dL; WBC 9.8 x10^9/L', changeReason: 'Transcription error' });
+  check('a corrected final report becomes AMENDED (v3)', corr.json?.report?.current?.status === 'AMENDED' && corr.json.report.current.version === 3);
+  check("another hospital's clinician cannot read it through their own encounter path → 404", (await api.get(P.doc1, `/api/encounters/${ctx.gpsEncounter}/reports/${report?.reportId}`)).status === 404);
+  check('the coordinator cannot read reports → 403', (await api.get(P.h1, `/api/encounters/${encounterId}/reports`)).status === 403);
+
+  // realtime: content-free events, to the doctor and the patient only
+  await new Promise(r => setTimeout(r, 300));
+  const rxEvents = sock.doc.events.filter(e => e.eventType === 'clinical.prescription.recorded');
+  check('realtime: the doctor receives three prescription events, none carrying the medication', rxEvents.length === 3 && !JSON.stringify(rxEvents).includes('Amoxicillin'));
+  check('realtime: the patient receives them, role-only author', sock.patient.events.filter(e => e.eventType === 'clinical.prescription.recorded').length === 3 && !JSON.stringify(sock.patient.events).includes('demo-doc-3'));
+  check('realtime: the patient did not receive the unreleased report version', !sock.patient.events.some(e => e.eventType === 'clinical.report.recorded' && e.payload.version === 1));
+  check('realtime: management and the coordinator receive no clinical events', ![sock.mgmt, sock.h1].some(s => s.events.some(e => e.eventType.startsWith('clinical.'))));
+  const ledger = (await api.get(P.mgmt, '/api/events/history?limit=1000')).json as any[];
+  check('the management ledger read lists no clinical events', !ledger.some(e => e.eventType.startsWith('clinical.')));
+
+  // reassignment moves write access
+  check('reassign to another doctor', (await assignDoctor(api, P.h1, encounterId, 'PRAC-BLR-001-02', { reason: 'SHIFT_HANDOVER' })).status === 200);
+  check('the previous doctor can no longer read or write the records → 404', (await api.get(P.doc3, `/api/encounters/${encounterId}/prescriptions`)).status === 404 && (await prescribe(api, P.doc3, encounterId)).status === 404);
+  check('reassign back to demo-doc-3', (await assignDoctor(api, P.h1, encounterId, 'PRAC-BLR-001-01', { reason: 'REASSIGNMENT' })).status === 200);
+  check('…who reads the full history again', ((await api.get(P.doc3, `/api/encounters/${encounterId}/prescriptions`)).json as any[])[0]?.history?.length === 3);
+  for (const s of Object.values(sock)) s.s.close();
+}
+
 // ------------------------------------------------------------------------------------------
 
 async function main() {
@@ -429,6 +530,7 @@ async function main() {
     await referralsAndAcceptance(api);
     const journey = await arrivalAndHandover(api);
     await doctorAssignment(api, journey);
+    await clinicalRecords(api, journey);
     check('API process still healthy at the end', (await api.get(undefined, '/api/health')).status === 200);
     check('no handler crashes logged', !/Handler for .* failed|Uncaught exception|Unhandled rejection/.test(api.log()), api.log().match(/.*(failed|Uncaught|Unhandled).*/g)?.slice(0, 3).join('\n'));
   } finally {

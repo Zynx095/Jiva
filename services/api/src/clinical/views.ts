@@ -1,5 +1,5 @@
 import type { AuthContext } from '@jiva/auth';
-import type { HospitalEncounter } from '@jiva/domain-models';
+import type { ActorRef, DiagnosticReport, HospitalEncounter, Prescription } from '@jiva/domain-models';
 import type { EncounterView } from './policy';
 import { evidenceEnvironment } from '../evidenceTrust';
 
@@ -33,4 +33,77 @@ export function projectEncounter(enc: HospitalEncounter, view: EncounterView, ho
     };
   }
   return { ...enc, ...(hospitalName ? { hospitalName } : {}) };
+}
+
+// ------------------------------------------------------------------ clinical records
+
+/** Who is shown as the author of a record: the clinician's roster name, never a user id. */
+export interface AuthorName {
+  displayName: string;
+  specialty?: string;
+}
+
+export type AuthorLookup = (actor: ActorRef) => AuthorName | undefined;
+
+const authorOf = (lookup: AuthorLookup, actor: ActorRef): AuthorName => lookup(actor) ?? { displayName: actor.role === 'CLINICIAN' ? 'Clinician' : 'Hospital staff' };
+
+/**
+ * A prescription as a principal may see it.
+ * CLINICIAN (assigned): the full record with every version, author names added.
+ * PATIENT: the current medication and its status, who prescribed it and when — no staff ids, no internal
+ * change reasons.
+ */
+export function projectPrescription(rx: Prescription, view: 'CLINICIAN' | 'PATIENT', lookup: AuthorLookup) {
+  if (view === 'CLINICIAN') {
+    return { ...rx, current: { ...rx.current, author: authorOf(lookup, rx.current.recordedBy) }, history: rx.history.map(v => ({ ...v, author: authorOf(lookup, v.recordedBy) })) };
+  }
+  const first = rx.history[0] ?? rx.current;
+  const c = rx.current;
+  return {
+    prescriptionId: rx.prescriptionId,
+    encounterId: rx.encounterId,
+    medication: c.medication,
+    ...(c.strength ? { strength: c.strength } : {}),
+    dose: c.dose,
+    route: c.route,
+    frequency: c.frequency,
+    ...(c.duration ? { duration: c.duration } : {}),
+    ...(c.instructions ? { instructions: c.instructions } : {}),
+    status: c.status,
+    prescribedAt: first.recordedAt,
+    prescribedBy: authorOf(lookup, first.recordedBy),
+    updatedAt: c.recordedAt,
+    changed: rx.history.some(v => v.action === 'AMENDED'),
+    ...(c.status === 'DISCONTINUED' ? { discontinuedAt: c.recordedAt } : {}),
+    version: c.version,
+    dataStatus: rx.dataStatus,
+  };
+}
+
+/**
+ * A diagnostic report as a principal may see it. PATIENT: only a released report (the caller checks), its
+ * current version, and only attachments released to the patient.
+ */
+export function projectReport(report: DiagnosticReport, view: 'CLINICIAN' | 'PATIENT', lookup: AuthorLookup, patientDocumentIds: (ids: string[]) => string[] = () => []) {
+  if (view === 'CLINICIAN') {
+    return { ...report, current: { ...report.current, author: authorOf(lookup, report.current.recordedBy) }, history: report.history.map(v => ({ ...v, author: authorOf(lookup, v.recordedBy) })) };
+  }
+  const first = report.history[0] ?? report.current;
+  const c = report.current;
+  return {
+    reportId: report.reportId,
+    encounterId: report.encounterId,
+    category: c.category,
+    title: c.title,
+    ...(c.findings ? { findings: c.findings } : {}),
+    ...(c.conclusion ? { conclusion: c.conclusion } : {}),
+    effectiveAt: c.effectiveAt,
+    status: c.status,
+    reportedAt: first.recordedAt,
+    reportedBy: authorOf(lookup, first.recordedBy),
+    updatedAt: c.recordedAt,
+    documentIds: patientDocumentIds(c.documentIds),
+    version: c.version,
+    dataStatus: report.dataStatus,
+  };
 }
