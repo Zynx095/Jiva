@@ -73,11 +73,13 @@ export class JivaAwsStack extends cdk.Stack {
         hospitalId: new cognito.StringAttribute({ mutable: true }),
         ambulanceId: new cognito.StringAttribute({ mutable: true }),
         caseId: new cognito.StringAttribute({ mutable: true }),
+        // CLINICIAN scope: the practitioner (staff record) a doctor's clinical actions are bound to.
+        practitionerId: new cognito.StringAttribute({ mutable: true }),
       },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    // Policy 2 (production identity/trust, Option B): hospitalId/ambulanceId/caseId are the
+    // Policy 2 (production identity/trust, Option B): hospitalId/ambulanceId/caseId/practitionerId are the
     // identity-binding claims the trust chain relies on (authorizeEventSubmission compares
     // auth.hospitalId/ambulanceId/caseId against the payload; evidenceTrust derives HOSPITAL_CONFIRMED
     // from auth.role alone). They stay `mutable: true` so an ADMIN can still correct them via
@@ -96,7 +98,7 @@ export class JivaAwsStack extends cdk.Stack {
     });
 
     // Roles as User Pool Groups
-    const roles = ['ADMIN', 'MANAGEMENT', 'HOSPITAL', 'AMBULANCE', 'PATIENT'];
+    const roles = ['ADMIN', 'MANAGEMENT', 'HOSPITAL', 'CLINICIAN', 'AMBULANCE', 'PATIENT'];
     roles.forEach((roleName) => {
       new cognito.CfnUserPoolGroup(this, `Group-${roleName}`, {
         userPoolId: userPool.userPoolId,

@@ -22,6 +22,7 @@ import {
   authorizeEventSubmission, canReadCase, canReceiveEvent,
   filterAmbulances, filterPatients, sanitizeHospitals,
 } from './authorization';
+import { clinicalStore } from './clinical';
 
 // Last-resort guard: a bug in any async path must be logged, never kill the API.
 process.on('unhandledRejection', (reason) => {
@@ -146,10 +147,11 @@ app.get('/api/hospitals/:id/requests', (req: AuthenticatedRequest, res) => {
   res.json(outstandingRequestsForHospital(String(req.params.id)));
 });
 
-app.get('/api/events/history', requireRole('MANAGEMENT', 'ADMIN'), async (req, res) => {
+app.get('/api/events/history', requireRole('MANAGEMENT', 'ADMIN'), async (req: AuthenticatedRequest, res) => {
   const raw = parseInt(String(req.query.limit ?? '100'), 10);
   const limit = Number.isFinite(raw) ? Math.min(Math.max(raw, 1), 1000) : 100;
-  res.json(await stateStore.listRecentEvents(limit));
+  // Same delivery rules as realtime: clinical-record events are never listed for management/admin.
+  res.json((await stateStore.listRecentEvents(limit)).filter(e => canReceiveEvent(req.auth!, e)));
 });
 
 // Care Feasibility Engine (SHADOW MODE): read-only traces and legacy/engine disagreements.
@@ -234,6 +236,7 @@ app.post('/api/events', async (req: AuthenticatedRequest, res) => {
 app.post('/api/demo/reset', requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
   resetEngines();
   resetIntelligence();
+  clinicalStore.reset();
   await localStoreInstance.reset();
   await eventBus.publish({
     eventId: uuidv4(),

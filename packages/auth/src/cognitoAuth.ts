@@ -7,6 +7,7 @@ export interface CognitoClaims {
   'custom:hospitalId'?: string;
   'custom:ambulanceId'?: string;
   'custom:caseId'?: string;
+  'custom:practitionerId'?: string;
   exp?: number;
 }
 
@@ -29,6 +30,8 @@ export class CognitoAuthProvider {
       role = 'MANAGEMENT';
     } else if (groups.includes('HOSPITAL')) {
       role = 'HOSPITAL';
+    } else if (groups.includes('CLINICIAN')) {
+      role = 'CLINICIAN';
     } else if (groups.includes('AMBULANCE')) {
       role = 'AMBULANCE';
     } else if (groups.includes('PATIENT')) {
@@ -42,6 +45,7 @@ export class CognitoAuthProvider {
       hospitalId: claims['custom:hospitalId'],
       ambulanceId: claims['custom:ambulanceId'],
       caseId: claims['custom:caseId'],
+      practitionerId: claims['custom:practitionerId'],
       isDemo: false,
     };
 
