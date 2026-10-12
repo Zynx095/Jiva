@@ -55,6 +55,8 @@ export interface IClinicalStore {
   putDocument(d: DiagnosticDocument): void;
   addMeasurements(list: TelemetryMeasurement[]): void;
   listMeasurements(encounterId: string): TelemetryMeasurement[];
+  /** Only to roll back a batch whose canonical event could not be recorded. */
+  removeMeasurementBatch(encounterId: string, batchId: string): void;
 
   // audit (append-only; content-free)
   appendAudit(record: AuditRecord): void;
@@ -147,6 +149,11 @@ export class LocalClinicalStore implements IClinicalStore {
 
   listMeasurements(encounterId: string): TelemetryMeasurement[] {
     return [...(this.measurements.get(encounterId) || [])];
+  }
+
+  removeMeasurementBatch(encounterId: string, batchId: string): void {
+    const arr = this.measurements.get(encounterId);
+    if (arr) this.measurements.set(encounterId, arr.filter(m => m.batchId !== batchId));
   }
 
   appendAudit(record: AuditRecord): void {

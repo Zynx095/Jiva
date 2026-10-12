@@ -8,6 +8,7 @@ import { referralRouter } from './routes/referrals';
 import { encounterRouter } from './routes/encounters';
 import { clinicalRecordsRouter } from './routes/clinicalRecords';
 import { documentRouter, resetDocuments } from './routes/documents';
+import { vitalsRouter } from './routes/vitals';
 import { resetAccessAudit } from './commands/support';
 import { initializeEncounterEngine, resetEncounterEngine } from './clinical/encounters';
 import { loadRoster } from './clinical/roster';
@@ -265,6 +266,8 @@ app.use('/api', encounterRouter());
 app.use('/api', clinicalRecordsRouter());
 // Diagnostic documents: upload intent, ticket-bound binary upload with integrity checks, authorized download.
 app.use('/api', documentRouter());
+// Vital signs: clinician-entered; a labelled simulated monitor in demo mode only; no device integration.
+app.use('/api', vitalsRouter());
 
 app.post('/api/demo/reset', requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
   resetEngines();

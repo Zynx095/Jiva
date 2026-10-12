@@ -657,6 +657,58 @@ async function patientDashboard(api: Api, ctx: { caseId: string; encounterId: st
   again.s.close();
 }
 
+// ------------------------------------------------------------------------------------------ phase 10
+
+const vitalsBody = (measurements: unknown[], o: Record<string, unknown> = {}) => ({ clientRequestId: uuid(), measurements, ...o });
+const nowIso = (offsetMin = 0) => new Date(Date.now() + offsetMin * 60_000).toISOString();
+
+async function medicalTelemetry(api: Api, ctx: { caseId: string; encounterId: string }) {
+  console.log('\n[Phase 10] Medical telemetry');
+  const { encounterId } = ctx;
+  const path = `/api/encounters/${encounterId}/vitals`;
+  const sock = await api.socket(P.pat1);
+
+  const empty = (await api.get(P.pat1, path)).json;
+  check('before any measurement: nothing is shown or invented', Object.keys(empty?.latest ?? { x: 1 }).length === 0 && empty.measurements.length === 0);
+  check('no medical device is integrated, and the API says so', empty?.sources?.medicalDeviceIntegrated === false);
+  check('the patient is never offered the simulator', empty?.sources?.simulationAvailable === false);
+  check('the assigned doctor (demo mode) can use the labelled simulator', (await api.get(P.doc3, path)).json?.sources?.simulationAvailable === true);
+
+  // who may record
+  const hr = { type: 'HEART_RATE', value: 98, unit: 'bpm', observedAt: nowIso(-2) };
+  check('the coordinator cannot record or read vital signs → 403', (await api.post(P.h1, path, vitalsBody([hr]))).status === 403 && (await api.get(P.h1, path)).status === 403);
+  check('the patient cannot record → 403', (await api.post(P.pat1, path, vitalsBody([hr]))).json?.code === 'READ_ONLY');
+  check("another hospital's clinician → 404", (await api.post(P.doc1, path, vitalsBody([hr]))).status === 404);
+  check('another patient cannot read → 404', (await api.get(P.pat2, path)).status === 404);
+
+  // validation
+  check('an implausible value → 400', (await api.post(P.doc3, path, vitalsBody([{ ...hr, value: 400 }]))).status === 400);
+  check('a wrong unit → 400', (await api.post(P.doc3, path, vitalsBody([{ type: 'TEMPERATURE', value: 98.6, unit: 'degF', observedAt: nowIso() }]))).status === 400);
+  check('systolic below diastolic → 400', (await api.post(P.doc3, path, vitalsBody([{ type: 'BLOOD_PRESSURE', value: 80, secondaryValue: 90, unit: 'mmHg', observedAt: nowIso() }]))).status === 400);
+  check('a future observation → 400', (await api.post(P.doc3, path, vitalsBody([{ ...hr, observedAt: nowIso(30) }]))).status === 400);
+  check('a client cannot claim a device source → 400', (await api.post(P.doc3, path, vitalsBody([{ ...hr, source: 'MEDICAL_DEVICE' }]))).status === 400);
+
+  const rec = await api.post(P.doc3, path, vitalsBody([hr, { type: 'SPO2', value: 96, unit: '%', observedAt: nowIso(-2) }, { type: 'BLOOD_PRESSURE', value: 128, secondaryValue: 84, unit: 'mmHg', observedAt: nowIso(-2) }]));
+  check('the doctor records vital signs → 201, source MANUAL_CLINICIAN (decided by the server)', rec.status === 201 && rec.json.measurements.length === 3 && rec.json.measurements.every((m: any) => m.source === 'MANUAL_CLINICIAN'), rec.text);
+  const pv = (await api.get(P.pat1, path)).json;
+  check('the patient sees the latest values with unit, source, recorder name and freshness', pv.latest.HEART_RATE?.value === 98 && pv.latest.HEART_RATE.unit === 'bpm' && pv.latest.HEART_RATE.source === 'MANUAL_CLINICIAN' && pv.latest.HEART_RATE.recordedByName === 'Dr. Ravi Kumar' && pv.latest.HEART_RATE.freshness === 'FRESH');
+  check('…without staff ids', !JSON.stringify(pv).includes('demo-doc-3'));
+  check('types never measured stay absent (no invented temperature)', !('TEMPERATURE' in pv.latest));
+
+  const sim = await api.post(P.doc3, `${path}/simulate`, { clientRequestId: uuid() });
+  check('demo simulator → 201, every value labelled DEVICE_SIMULATED / SYNTHETIC_DEMO with the simulated device id', sim.status === 201 && sim.json.simulated === true && sim.json.measurements.length === 5 && sim.json.measurements.every((m: any) => m.source === 'DEVICE_SIMULATED' && m.dataStatus === 'SYNTHETIC_DEMO' && m.deviceId === 'SIM-BEDSIDE-MONITOR'), sim.text);
+  check('the patient cannot run the simulator → 403', (await api.post(P.pat1, `${path}/simulate`, { clientRequestId: uuid() })).status === 403);
+  check('the coordinator cannot → 403', (await api.post(P.h1, `${path}/simulate`, { clientRequestId: uuid() })).status === 403);
+  const pv2 = (await api.get(P.pat1, path)).json;
+  check('the patient sees simulated values marked as simulated, never as a device measurement', pv2.latest.TEMPERATURE?.source === 'DEVICE_SIMULATED' && pv2.measurements.every((m: any) => m.source !== 'MEDICAL_DEVICE'));
+
+  await new Promise(r => setTimeout(r, 300));
+  const ev = sock.events.filter(e => e.eventType === 'clinical.telemetry.recorded');
+  check('realtime: the patient is told about new measurements — types and times only, no values', ev.length === 2 && ev.every(e => !('value' in e.payload) && !JSON.stringify(e.payload).includes('"value"')) && ev.some(e => e.payload.source === 'DEVICE_SIMULATED'));
+  check('the management ledger read lists no telemetry events', !((await api.get(P.mgmt, '/api/events/history?limit=1000')).json as any[]).some(e => e.eventType === 'clinical.telemetry.recorded'));
+  sock.s.close();
+}
+
 // ------------------------------------------------------------------------------------------
 
 async function main() {
@@ -672,6 +724,7 @@ async function main() {
     await clinicalRecords(api, journey);
     await diagnosticDocuments(api, journey);
     await patientDashboard(api, journey);
+    await medicalTelemetry(api, journey);
     check('API process still healthy at the end', (await api.get(undefined, '/api/health')).status === 200);
     check('no handler crashes logged', !/Handler for .* failed|Uncaught exception|Unhandled rejection/.test(api.log()), api.log().match(/.*(failed|Uncaught|Unhandled).*/g)?.slice(0, 3).join('\n'));
   } finally {

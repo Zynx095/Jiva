@@ -39,7 +39,10 @@ const releasedDocuments = (encounterId: string) => (ids: string[]) =>
     return !!d && d.encounterId === encounterId && d.status === 'AVAILABLE';
   });
 
-export const target = (enc: HospitalEncounter, entityType: 'PRESCRIPTION' | 'REPORT' | 'DOCUMENT', entityId?: string) =>
+type RecordEntity = 'PRESCRIPTION' | 'REPORT' | 'DOCUMENT' | 'TELEMETRY';
+const ENTITY_OF: Record<string, RecordEntity> = { prescription: 'PRESCRIPTION', report: 'REPORT', document: 'DOCUMENT', telemetry: 'TELEMETRY' };
+
+export const target = (enc: HospitalEncounter, entityType: RecordEntity, entityId?: string) =>
   ({ entityType, ...(entityId ? { entityId } : {}), encounterId: enc.encounterId, caseId: enc.caseId, hospitalId: enc.hospitalId });
 
 function metaFor(auth: AuthContext, enc: HospitalEncounter): RecordMeta {
@@ -63,7 +66,7 @@ export function writableEncounter(req: AuthedRequest, res: Response, encounterId
   }
   const decision = authorizeEncounterAction(auth, facts, action);
   if (!decision.allowed) {
-    audit(auth, auditAction, 'DENIED', { ...target(enc, action.startsWith('report') ? 'REPORT' : action.startsWith('document') ? 'DOCUMENT' : 'PRESCRIPTION'), reasonCode: decision.code });
+    audit(auth, auditAction, 'DENIED', { ...target(enc, ENTITY_OF[action.split('.')[0]] ?? 'PRESCRIPTION'), reasonCode: decision.code });
     denied(res, decision);
     return undefined;
   }

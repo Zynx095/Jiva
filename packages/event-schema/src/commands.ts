@@ -188,6 +188,27 @@ export const RecordTelemetryCommandSchema = z.object({
   measurements: z.array(MeasurementInputSchema).min(1).max(20),
 }).strict();
 
+/** Demo only: ask the simulated bedside monitor for one labelled, synthetic reading. */
+export const SimulateTelemetryCommandSchema = z.object({
+  clientRequestId: ClientRequestIdSchema,
+}).strict();
+
+/**
+ * Ingestion contract for a FUTURE medical-device integration. No device is integrated: there is no
+ * endpoint that accepts this yet. A batch would have to come from a registered device that authenticates
+ * as a device (never a browser user), bound to the encounter by a clinician, with a per-device sequence
+ * number so replays and reordering are detected. Defined now so the contract is reviewed before any
+ * integration exists; see services/api/src/clinical/telemetry.ts (checkDeviceBatch).
+ */
+export const DeviceObservationBatchSchema = z.object({
+  deviceId: RecordIdSchema,
+  sequence: z.number().int().min(0),
+  encounterId: RecordIdSchema,
+  measurements: z.array(MeasurementInputSchema).min(1).max(100),
+  /** Device clock at transmission. */
+  sentAt: timestamp,
+}).strict();
+
 export type EmergencyIntakeCommand = z.infer<typeof EmergencyIntakeCommandSchema>;
 export type RecordArrivalCommand = z.infer<typeof RecordArrivalCommandSchema>;
 export type RecordHandoverCommand = z.infer<typeof RecordHandoverCommandSchema>;
@@ -200,3 +221,4 @@ export type AmendReportCommand = z.infer<typeof AmendReportCommandSchema>;
 export type DocumentUploadIntentCommand = z.infer<typeof DocumentUploadIntentCommandSchema>;
 export type MeasurementInput = z.infer<typeof MeasurementInputSchema>;
 export type RecordTelemetryCommand = z.infer<typeof RecordTelemetryCommandSchema>;
+export type DeviceObservationBatch = z.infer<typeof DeviceObservationBatchSchema>;
