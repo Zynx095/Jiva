@@ -22,6 +22,7 @@ import {
   timeUntil,
   type EventCategory,
   type TimelineItem,
+  positionUpdateText,
 } from '@jiva/ui/src';
 import { gpsFreshness, hospitalFreshness, isAwaiting, isOpenCase } from '../derive';
 import { useModel } from '../model';
@@ -298,7 +299,7 @@ export function AmbulancesList({ loaded }: { loaded: boolean }) {
                     )}
                   </p>
                   {a.assignedPatient && <RouteFacts ambulance={a} className="mt-0.5 block text-xs" />}
-                  <p className={cx('mt-0.5 text-xs', gps.stale ? 'text-warn-700' : 'text-ink-500')}>{a.locationAsOf ? `GPS ${timeAgo(a.locationAsOf, m.now)}${gps.stale ? ' — stale' : ''}` : gps.text}</p>
+                  <p className={cx('mt-0.5 text-xs', gps.stale ? 'text-warn-700' : 'text-ink-500')}>{a.locationAsOf ? `${positionUpdateText(a, m.now)}${gps.stale ? ' — stale' : ''}` : gps.text}</p>
                 </div>
               </div>
             </button>
@@ -362,7 +363,7 @@ export function ActivityFeed({ loaded }: { loaded: boolean }) {
           options={(Object.keys(CATEGORY_LABEL) as ActivityFilter[]).map((c) => ({ value: c, label: CATEGORY_LABEL[c] }))}
         />
         <ToggleChip icon="pin" pressed={showGps} onChange={setShowGps}>
-          GPS updates
+          Position updates
         </ToggleChip>
       </div>
       {!loaded ? (

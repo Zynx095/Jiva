@@ -32,6 +32,8 @@ import {
   type EncounterRecord,
   type ReferralOverview,
   type TimelineItem,
+  positionSource,
+  positionUpdateText,
 } from '@jiva/ui/src';
 import { apiGet } from '../api';
 import { eventsForCase, gpsFreshness, hospitalFreshness } from '../derive';
@@ -335,7 +337,7 @@ export function AmbulanceDetail({ id }: { id: string }) {
           <h2 className="text-lg font-semibold tracking-[-0.01em] text-ink-900">Ambulance {a.ambulanceId}</h2>
           <JivaStatus meta={ambulanceStatus(a.status)} size="md" />
         </div>
-        <p className="mt-0.5 text-xs text-ink-500">{a.dataStatus === 'SYNTHETIC_DEMO' ? 'Demo unit · synthetic GPS telemetry' : 'Position as reported by the unit'}</p>
+        <p className="mt-0.5 text-xs text-ink-500">{a.dataStatus === 'SYNTHETIC_DEMO' ? 'Demo unit · positions are simulated or set by the crew (no GPS connected)' : 'Position as reported by the unit'}</p>
       </header>
 
       <JivaCard>
@@ -357,9 +359,9 @@ export function AmbulanceDetail({ id }: { id: string }) {
           </DataRow>
           <DataRow label="Arrival">{route ? (a.status === 'ARRIVED' ? 'Arrived' : `${minutesFromSeconds(route.durationSeconds)} min · ${formatKm(route.distanceMeters)}`) : '—'}</DataRow>
           <DataRow label="Route">{route ? `${route.synthetic ? 'Synthetic (mock provider)' : route.provider ?? 'Road route'}${route.trafficAware ? '' : ', no live traffic'} · calculated ${formatClock(route.calculatedAt)}` : '—'}</DataRow>
-          <DataRow label="GPS">
-            <span className={gps.stale ? 'text-warn-700' : undefined}>
-              {a.locationAsOf ? `${timeAgo(a.locationAsOf, m.now)}${a.speedKmh !== undefined ? ` · ${Math.round(a.speedKmh)} km/h` : ''}` : gps.text}
+          <DataRow label="Position">
+            <span className={gps.stale ? 'text-warn-700' : undefined} title={positionSource(a.locationSource).hint}>
+              {a.locationAsOf ? `${positionUpdateText(a, m.now)}${a.speedKmh !== undefined ? ` · ${Math.round(a.speedKmh)} km/h` : ''}` : gps.text}
             </span>
           </DataRow>
         </dl>
@@ -381,7 +383,8 @@ export function AmbulanceDetail({ id }: { id: string }) {
         fields={[
           ['Ambulance id', a.ambulanceId],
           ['Position', a.currentLocation ? `${a.currentLocation.latitude.toFixed(5)}, ${a.currentLocation.longitude.toFixed(5)}` : '—'],
-          ['GPS fix time', a.locationAsOf ?? '—'],
+          ['Position time', a.locationAsOf ?? '—'],
+          ['Position source', a.locationSource ?? 'not stated'],
           ['Heading', a.heading !== undefined ? `${a.heading}°` : '—'],
           ['Last updated', a.lastUpdated],
         ]}

@@ -1,7 +1,7 @@
 import { caseResponses, eventAmbulanceId, eventCaseId, hospitalShortName, isAwaiting } from '@jiva/ui/src';
 import type { AmbulanceState, CandidateSummary, CaseResponse, HospitalState, JivaEvent, PatientState } from './types';
 
-/** At a hospital: the GPS or the hospital placed the patient there (ARRIVED), or the hospital recorded the handover. */
+/** At a hospital: the unit's position or the hospital placed the patient there (ARRIVED), or the hospital recorded the handover. */
 export const isAtHospital = (p: PatientState) => p.currentStatus === 'ARRIVED' || p.currentStatus === 'HANDED_OVER';
 
 /** Open = still being coordinated (not at a hospital yet, not closed). */
@@ -76,9 +76,9 @@ export function hospitalFreshness(h: HospitalState, now: number): Freshness {
   return { text: '', stale: ageMin > 30 };
 }
 
-/** How current an ambulance position is. Units on a job without a recent fix are flagged. */
+/** How current an ambulance position is. Units on a job without a recent update are flagged. */
 export function gpsFreshness(a: AmbulanceState, now: number): Freshness {
-  if (!a.locationAsOf) return { text: isOnJob(a) ? 'No GPS fix since dispatch' : 'Station position', stale: isOnJob(a) };
+  if (!a.locationAsOf) return { text: isOnJob(a) ? 'No position update since dispatch' : 'Station position', stale: isOnJob(a) };
   const ageMin = (now - Date.parse(a.locationAsOf)) / 60_000;
   return { text: '', stale: isOnJob(a) && ageMin > 3 };
 }
