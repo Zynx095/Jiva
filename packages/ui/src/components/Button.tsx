@@ -16,15 +16,15 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
  *   *-soft    — consequential choices shown side by side with a primary (outlined in their tone)
  */
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-brand-700 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.12),0_1px_2px_rgb(32_40_32/0.16)] hover:bg-brand-800 active:bg-brand-900',
-  secondary: 'bg-white text-ink-800 shadow-xs ring-1 ring-inset ring-ink-300 hover:bg-ink-50 hover:text-ink-900 hover:ring-ink-400 active:bg-ink-100',
+  primary: 'jiva-fill-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_1px_2px_rgb(32_40_32/0.18)] hover:jiva-fill-primary-hover hover:shadow-e2',
+  secondary: 'bg-surface text-ink-800 shadow-xs ring-1 ring-inset ring-ink-300 hover:bg-ink-50 hover:text-ink-900 hover:ring-ink-400 active:bg-ink-100',
   tertiary: 'text-brand-700 hover:bg-brand-50 hover:text-brand-800 active:bg-brand-100',
   ghost: 'text-ink-700 hover:bg-ink-100 hover:text-ink-900 active:bg-ink-200',
-  danger: 'bg-danger-600 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.12),0_1px_2px_rgb(32_40_32/0.16)] hover:bg-danger-700 active:bg-danger-800',
-  critical: 'bg-danger-700 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_2px_6px_rgb(168_47_50/0.28)] hover:bg-danger-800 active:bg-danger-900',
-  'danger-soft': 'bg-white text-danger-700 shadow-xs ring-1 ring-inset ring-danger-200 hover:bg-danger-50 hover:ring-danger-300',
-  'warn-soft': 'bg-white text-warn-800 shadow-xs ring-1 ring-inset ring-warn-200 hover:bg-warn-50 hover:ring-warn-300',
-  'ok-soft': 'bg-white text-brand-800 shadow-xs ring-1 ring-inset ring-brand-200 hover:bg-brand-50 hover:ring-brand-300',
+  danger: 'jiva-fill-danger shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_1px_2px_rgb(32_40_32/0.18)] hover:jiva-fill-danger-hover hover:shadow-e2',
+  critical: 'jiva-fill-critical shadow-[inset_0_1px_0_rgb(255_255_255/0.16),0_2px_8px_rgb(168_47_50/0.30)] hover:jiva-fill-critical-hover',
+  'danger-soft': 'bg-surface text-danger-700 shadow-xs ring-1 ring-inset ring-danger-200 hover:bg-danger-50 hover:ring-danger-300',
+  'warn-soft': 'bg-surface text-warn-800 shadow-xs ring-1 ring-inset ring-warn-200 hover:bg-warn-50 hover:ring-warn-300',
+  'ok-soft': 'bg-surface text-brand-800 shadow-xs ring-1 ring-inset ring-brand-200 hover:bg-brand-50 hover:ring-brand-300',
 };
 
 const SIZES: Record<ButtonSize, string> = {

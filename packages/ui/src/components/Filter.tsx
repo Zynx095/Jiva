@@ -28,7 +28,7 @@ const chip = (active: boolean, size: 'sm' | 'md') =>
   cx(
     'inline-flex shrink-0 items-center gap-1.5 rounded-full font-semibold transition-[background-color,color,box-shadow] duration-150 active:scale-[0.97]',
     size === 'sm' ? 'h-7 px-2.5 text-xs' : 'h-8 px-3 text-[13px]',
-    active ? 'bg-ink-900 text-white shadow-xs' : 'bg-white text-ink-700 ring-1 ring-inset ring-ink-200 hover:bg-ink-50 hover:ring-ink-300',
+    active ? 'jiva-fill-inverse shadow-xs' : 'bg-surface text-ink-700 ring-1 ring-inset ring-ink-200 hover:bg-ink-50 hover:ring-ink-300',
   );
 
 /** Instant filter chips. "All" clears; the active count and a clear action appear once something is selected. */

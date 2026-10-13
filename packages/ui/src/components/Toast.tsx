@@ -96,7 +96,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             key={t.id}
             onMouseEnter={() => window.clearTimeout(timers.current.get(t.id))}
             onMouseLeave={() => schedule(t.id, 2500)}
-            className="pointer-events-auto flex animate-toast items-start gap-3 rounded-xl bg-white p-3 pr-2 shadow-lg ring-1 ring-ink-200"
+            className="pointer-events-auto flex animate-toast items-start gap-3 rounded-xl bg-surface-raised p-3 pr-2 shadow-e4 ring-1 ring-ink-200"
           >
             <span className={cx('mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg', TONE_STYLES[t.tone ?? 'neutral'].soft, TONE_STYLES[t.tone ?? 'neutral'].text)}>
               <Icon name={t.icon ?? 'info'} size={16} strokeWidth={2} />

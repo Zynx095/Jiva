@@ -26,9 +26,9 @@ export function JivaCard({ as = 'section', padded = true, accent, selected, clas
   return (
     <Comp
       className={cx(
-        'rounded-xl bg-white ring-1 ring-ink-200',
+        'rounded-xl bg-surface ring-1 ring-ink-200',
         padded && 'p-4 sm:p-5',
-        accent ? ACCENT[accent] : 'shadow-[0_1px_2px_rgb(32_40_32/0.04)]',
+        accent ? ACCENT[accent] : 'shadow-e1',
         selected && 'ring-2 ring-brand-500',
         className,
       )}

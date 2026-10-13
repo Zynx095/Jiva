@@ -36,7 +36,7 @@ export function JivaModal({ open, onClose, title, description, icon, tone = 'neu
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="m-auto max-h-[min(90dvh,720px)] w-[min(92vw,460px)] overflow-y-auto rounded-2xl bg-white p-0 text-ink-900 shadow-lg ring-1 ring-ink-200 backdrop:bg-ink-950/35 open:animate-toast"
+      className="m-auto max-h-[min(90dvh,720px)] w-[min(92vw,460px)] overflow-y-auto rounded-2xl bg-surface-raised p-0 text-ink-900 shadow-e4 ring-1 ring-ink-200 backdrop:bg-ink-950/35 open:animate-toast"
     >
       <div className="p-5 sm:p-6">
         <div className="flex items-start gap-3">

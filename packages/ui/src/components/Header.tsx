@@ -11,7 +11,7 @@ export function JivaLogo({ size = 30, withWordmark = true, className }: { size?:
   return (
     <span className={cx('inline-flex items-center gap-2', className)}>
       <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-        <rect width="32" height="32" rx="9" fill="var(--color-brand-700)" />
+        <rect width="32" height="32" rx="9" fill="var(--logo-fill)" />
         <path d="M6.5 17h4.2l2.6-6.2 4.6 11.4 2.6-5.2h5" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       {withWordmark && <span className="text-[17px] font-bold tracking-[0.08em] text-ink-900">JIVA</span>}
@@ -45,10 +45,10 @@ export function AppHeader({ app, context, center, actions, mainId = 'main' }: Ap
     return () => ro.disconnect();
   }, []);
   return (
-    <header ref={ref} className="sticky top-0 z-30 border-b border-ink-200 bg-white">
+    <header ref={ref} className="sticky top-0 z-30 border-b border-ink-200 bg-surface">
       <a
         href={`#${mainId}`}
-        className="sr-only z-50 rounded-lg bg-brand-700 px-3 py-2 text-sm font-semibold text-white focus:not-sr-only focus:absolute focus:left-3 focus:top-2"
+        className="sr-only z-50 rounded-lg jiva-fill-primary px-3 py-2 text-sm font-semibold focus:not-sr-only focus:absolute focus:left-3 focus:top-2"
       >
         Skip to content
       </a>
@@ -124,7 +124,7 @@ export interface PersonaOption {
 /** DEMO ONLY: switch the persona this screen acts as (reloads with ?as=…). */
 export function PersonaSelect({ value, options, className }: { value: string; options: PersonaOption[]; className?: string }) {
   return (
-    <label className={cx('inline-flex h-7 items-center gap-1.5 rounded-full bg-white pl-2.5 pr-1 text-xs font-semibold text-ink-700 ring-1 ring-inset ring-ink-200', className)}>
+    <label className={cx('inline-flex h-7 items-center gap-1.5 rounded-full bg-surface pl-2.5 pr-1 text-xs font-semibold text-ink-700 ring-1 ring-inset ring-ink-200', className)}>
       <Icon name="user" size={13} />
       <span className="sr-only">Demo persona</span>
       <select

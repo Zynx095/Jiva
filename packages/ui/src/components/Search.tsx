@@ -109,7 +109,7 @@ export function JivaSearch({ items, onSelect, placeholder = 'Search', label = 'S
       <label className="sr-only" htmlFor={`${listId}-input`}>
         {label}
       </label>
-      <div className="flex h-10 items-center gap-2 rounded-xl bg-ink-50 px-3 ring-1 ring-inset ring-ink-200 transition-[box-shadow,background-color] focus-within:bg-white focus-within:ring-2 focus-within:ring-brand-500">
+      <div className="flex h-10 items-center gap-2 rounded-xl bg-ink-50 px-3 ring-1 ring-inset ring-ink-200 transition-[box-shadow,background-color] focus-within:bg-surface focus-within:ring-2 focus-within:ring-brand-500">
         <Icon name="search" size={16} className="shrink-0 text-ink-500" />
         <input
           ref={inputRef}
@@ -131,14 +131,14 @@ export function JivaSearch({ items, onSelect, placeholder = 'Search', label = 'S
           onKeyDown={onKeyDown}
           className="h-full min-w-0 flex-1 bg-transparent text-sm text-ink-900 outline-none placeholder:text-ink-500 [&::-webkit-search-cancel-button]:hidden"
         />
-        <kbd className="hidden shrink-0 rounded-md bg-white px-1.5 py-0.5 font-mono text-[11px] font-semibold text-ink-500 ring-1 ring-ink-200 sm:block">/</kbd>
+        <kbd className="hidden shrink-0 rounded-md bg-surface px-1.5 py-0.5 font-mono text-[11px] font-semibold text-ink-500 ring-1 ring-ink-200 sm:block">/</kbd>
       </div>
       {open && (
         <div
           id={listId}
           role="listbox"
           aria-label={`${label} results`}
-          className="jiva-scroll absolute left-0 right-0 top-[calc(100%+6px)] z-40 max-h-[min(70vh,420px)] animate-fade overflow-y-auto rounded-xl bg-white p-1.5 shadow-lg ring-1 ring-ink-200"
+          className="jiva-scroll absolute left-0 right-0 top-[calc(100%+6px)] z-40 max-h-[min(70vh,420px)] animate-fade overflow-y-auto rounded-xl bg-surface-raised p-1.5 shadow-e4 ring-1 ring-ink-200"
         >
           {flat.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-ink-500">{deferred ? `No matches for “${deferred}”.` : 'Nothing to search yet.'}</p>
@@ -164,7 +164,7 @@ export function JivaSearch({ items, onSelect, placeholder = 'Search', label = 'S
                       className={cx('flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2', selected ? 'bg-brand-50' : 'hover:bg-ink-50')}
                     >
                       {it.icon && (
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-ink-600 ring-1 ring-ink-200">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-600 ring-1 ring-ink-200">
                           <Icon name={it.icon} size={15} />
                         </span>
                       )}
