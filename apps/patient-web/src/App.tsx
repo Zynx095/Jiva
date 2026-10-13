@@ -129,6 +129,9 @@ export default function App() {
           ? { title: 'You have reached the hospital', body: `At ${hospital?.displayName ?? 'the hospital'}. The hospital will confirm your arrival and take over your care.`, icon: 'pin' as IconName }
           : hospital && confirmed
         ? { title: `On the way to ${hospitalShortName(hospital.displayName, hospital.address?.locality)}`, body: `Ambulance ${ambulance?.ambulanceId ?? ''} is taking you to a hospital that confirmed it can receive you.`, icon: 'ambulance' as IconName }
+        : ambulance?.status === 'ON_SCENE' || ambulance?.status === 'EN_ROUTE_TO_HOSPITAL'
+          ? // The crew is already with the patient (it reported the emergency, or is transporting them).
+            { title: 'An ambulance crew is with you', body: `Ambulance ${ambulance.ambulanceId} is looking after you. We are confirming which hospital can treat you now.`, icon: 'ambulance' as IconName }
         : ambulance
           ? { title: 'Help is on the way', body: `Ambulance ${ambulance.ambulanceId} is coming. We are confirming which hospital can treat you now.`, icon: 'ambulance' as IconName }
           : { title: 'Your emergency was reported', body: 'An ambulance is being assigned to you.', icon: 'siren' as IconName };
