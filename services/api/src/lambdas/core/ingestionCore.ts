@@ -6,6 +6,7 @@ import type { IStateStore } from '../../infrastructure/stateStore/types';
 import { authorizeEventSubmission } from '../../authorizationPolicy';
 import { loadLedger } from './deps';
 import { checkReferralAnswer, type OpenReferral } from '../../acceptanceCorrelation';
+import { checkSubmissionState } from '../../submissionState';
 
 export interface IngestionDeps {
   /** Puts one event on the bus (AWS: EventBridge PutEvents). */
@@ -40,6 +41,8 @@ export function authenticateFromApiGateway(event: any): AuthContext | undefined 
  *     matching the caller                                feasibility.trace.recorded, are never submittable)
  *  5. acceptance correlation: a hospital may only     -> 409 no_outstanding_request / request_mismatch,
  *     answer the open request it received, by its id     400 on an impossible validity window
+ *  6. state preconditions: no second emergency for    -> 409 case_exists / ambulance_busy /
+ *     an open case, no dispatch of a busy unit           ambulance_unavailable
  */
 export function createIngestionHandler(d: IngestionDeps) {
   return async (event: any) => {
@@ -92,6 +95,10 @@ export function createIngestionHandler(d: IngestionDeps) {
       const verdict = checkReferralAnswer(open, parsedEvent.payload, now);
       if (!verdict.ok) return json(verdict.status, { error: verdict.error, message: verdict.message });
     }
+
+    // Same state preconditions as the local API (services/api/src/submissionState.ts).
+    const state = await checkSubmissionState(parsedEvent, { patient: id => d.store.getPatient(id), ambulance: id => d.store.getAmbulance(id) });
+    if (!state.ok) return json(state.status, { error: state.error, message: state.message });
 
     // Publish the VALIDATED event (as the local API does), enriched with correlation/causation ids.
     // Trust boundary: provenance is derived from the authenticated principal, never from the payload.
