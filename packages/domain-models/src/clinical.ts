@@ -240,7 +240,7 @@ export interface AuditRecord {
   actor: ActorRef;
   action: string;
   outcome: 'ALLOWED' | 'DENIED';
-  entityType: 'ENCOUNTER' | 'PRESCRIPTION' | 'REPORT' | 'DOCUMENT' | 'TELEMETRY' | 'ROSTER' | 'EMERGENCY' | 'AUDIT';
+  entityType: 'ENCOUNTER' | 'PRESCRIPTION' | 'REPORT' | 'NOTE' | 'DOCUMENT' | 'TELEMETRY' | 'PREHOSPITAL' | 'ROSTER' | 'EMERGENCY' | 'AUDIT' | 'CATALOGUE' | 'DEMO';
   entityId?: string;
   encounterId?: string;
   caseId?: string;

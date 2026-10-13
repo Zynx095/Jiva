@@ -48,5 +48,36 @@ export const TelemetrySourceSchema = z.enum(['MANUAL_CLINICIAN', 'DEVICE_SIMULAT
 export const MeasurementTypeSchema = z.enum(['HEART_RATE', 'SPO2', 'BLOOD_PRESSURE', 'TEMPERATURE', 'RESPIRATORY_RATE']);
 export const DoctorAssignmentReasonSchema = z.enum(['INITIAL_ASSIGNMENT', 'REASSIGNMENT', 'SHIFT_HANDOVER', 'SPECIALTY_REFERRAL']);
 
+/** Dosage forms a prescription or a medication catalogue entry can name. */
+export const MEDICATION_FORMULATIONS = [
+  'TABLET', 'CAPSULE', 'ORAL_SOLUTION', 'ORAL_SUSPENSION', 'INJECTION', 'INFUSION', 'INHALER', 'NEBULISER_SOLUTION',
+  'SPRAY', 'CREAM', 'OINTMENT', 'PATCH', 'SUPPOSITORY', 'DROPS', 'OTHER',
+] as const;
+export const MedicationFormulationSchema = z.enum(MEDICATION_FORMULATIONS);
+
+/**
+ * The kind of diagnostic document (finer than its category): X-ray, CT, MRI, ultrasound, ECG, laboratory or
+ * pathology report, other. Each type belongs to specific categories (see DOCUMENT_TYPE_CATEGORIES).
+ */
+export const DOCUMENT_TYPES = ['XRAY', 'CT', 'MRI', 'ULTRASOUND', 'ECG', 'LAB_REPORT', 'PATHOLOGY_REPORT', 'OTHER'] as const;
+export const DocumentTypeSchema = z.enum(DOCUMENT_TYPES);
+
+/** Categories a document type may be filed under: an X-ray is always imaging, a lab report always laboratory. */
+export const DOCUMENT_TYPE_CATEGORIES: Record<(typeof DOCUMENT_TYPES)[number], ReadonlyArray<z.infer<typeof DiagnosticCategorySchema>>> = {
+  XRAY: ['IMAGING'],
+  CT: ['IMAGING'],
+  MRI: ['IMAGING'],
+  ULTRASOUND: ['IMAGING'],
+  ECG: ['ECG'],
+  LAB_REPORT: ['LABORATORY'],
+  PATHOLOGY_REPORT: ['LABORATORY'],
+  OTHER: ['PROCEDURE', 'OTHER'],
+};
+
+export const documentTypeFits = (category: z.infer<typeof DiagnosticCategorySchema>, type: (typeof DOCUMENT_TYPES)[number]) =>
+  DOCUMENT_TYPE_CATEGORIES[type].includes(category);
+
 export type CapabilityCode = z.infer<typeof CapabilityCodeSchema>;
+export type MedicationFormulation = z.infer<typeof MedicationFormulationSchema>;
+export type DocumentTypeCode = z.infer<typeof DocumentTypeSchema>;
 export type Actor = z.infer<typeof ActorSchema>;
