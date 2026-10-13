@@ -206,7 +206,7 @@ function EncounterCard({ encounter: e, patient, roster, now, onChanged }: { enco
             Encounter {e.encounterId} · arrived {formatClock(arrivedAt)} ({timeAgo(arrivedAt, now)})
           </p>
         </div>
-        <div className="flex flex-col items-end gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           <JivaStatus meta={meta} />
           {e.dataStatus === 'SYNTHETIC_DEMO' && <JivaStatus meta={dataStatus('SYNTHETIC_DEMO')} />}
         </div>

@@ -265,7 +265,7 @@ export default function App() {
               <p className="text-sm text-ink-500">Answers sent for your hospital — from this screen or from the demo controls — are listed here.</p>
             ) : (
               <ul className="divide-y divide-ink-100 rounded-xl bg-white ring-1 ring-ink-200">
-                {recentAnswers.slice(0, 8).map((e) => {
+                {recentAnswers.slice(0, 6).map((e) => {
                   const p = e.payload;
                   const status = String(p.status);
                   const valid = typeof p.validUntil === 'string' ? p.validUntil : undefined;
@@ -281,8 +281,13 @@ export default function App() {
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         <JivaStatus meta={acceptanceStatus(status)} />
-                        {valid && (status === 'ACCEPTED' || status === 'LIMITED') && (
-                          <span className="text-xs text-ink-500">{msUntil(valid, now) > 0 ? `valid ${timeUntil(valid, now)}` : 'expired'}</span>
+                        {encounterCases.has(String(p.caseId)) ? (
+                          <span className="text-xs text-ink-500">Patient arrived</span>
+                        ) : (
+                          valid &&
+                          (status === 'ACCEPTED' || status === 'LIMITED') && (
+                            <span className="text-xs text-ink-500">{msUntil(valid, now) > 0 ? `valid ${timeUntil(valid, now)}` : 'expired'}</span>
+                          )
                         )}
                       </div>
                     </li>
@@ -295,7 +300,7 @@ export default function App() {
 
         <aside className="min-w-0 space-y-6" aria-label="Hospital status and briefs">
           <FacilityPanel hospital={hs.hospital} />
-          <HandoffPanel handoffs={handoffs} />
+          <HandoffPanel handoffs={handoffs} onTheWay={new Set(incoming.map((a) => a.assignedPatient ?? ''))} />
           <ActivityPanel events={hs.events} name={name} />
         </aside>
       </main>
@@ -350,7 +355,7 @@ function StatusStrip({ hospital, now, onUnavailable, onAvailable }: { hospital: 
         ))}
         <span className="hidden h-6 w-px bg-ink-200 md:block" aria-hidden="true" />
         <div className="flex items-center gap-2">
-          <span className="text-[13px] text-ink-500">Your current answer</span>
+          <span className="text-[13px] text-ink-500">Latest answer</span>
           <JivaStatus meta={acc} suffix={op?.acceptanceCaseId && op.acceptance !== 'UNKNOWN' ? ` · ${op.acceptanceCaseId}` : undefined} />
           {live && op?.expiresAt && <span className="text-xs text-ink-500">valid {timeUntil(op.expiresAt, now)}</span>}
         </div>
@@ -414,7 +419,9 @@ function RequestCard({ req, patient, now, onRespond }: { req: AcceptanceRequest;
             <h3 id={`req-${req.requestId}`} className="mt-0.5 text-xl font-semibold tracking-[-0.01em] text-ink-900">
               {req.caseId}
             </h3>
-            <p className="text-xs text-ink-500">Referral {req.requestId} · your answer is tied to this case only</p>
+            <p className="text-xs text-ink-500">
+              Requested {formatClock(req.requestedAt)} ({timeAgo(req.requestedAt, now)}) · referral {req.requestId} · your answer applies to this case only
+            </p>
           </div>
           <div className={cx('rounded-xl px-3 py-2 text-right ring-1 ring-inset', expired ? 'bg-ink-50 ring-ink-200' : urgent ? 'bg-danger-50 ring-danger-200' : 'bg-warn-50 ring-warn-200')} role="timer" aria-live="off">
             <p className={cx('text-xs font-semibold', expired ? 'text-ink-600' : urgent ? 'text-danger-700' : 'text-warn-800')}>{expired ? 'Response window closed' : 'Answer within'}</p>
@@ -449,13 +456,13 @@ function RequestCard({ req, patient, now, onRespond }: { req: AcceptanceRequest;
             <>
               <div className="grid gap-2 sm:grid-cols-3">
                 <AsyncButton size="lg" variant="primary" icon="checkCircle" disabled={expired} pendingText="Sending…" onAction={send('ACCEPTED', [])}>
-                  Accept
+                  Accept emergency
                 </AsyncButton>
                 <JivaButton size="lg" variant="warn-soft" icon="half" disabled={expired} onClick={() => pick('limited')}>
                   Accept with limits
                 </JivaButton>
                 <JivaButton size="lg" variant="danger-soft" icon="xCircle" disabled={expired} onClick={() => pick('rejected')}>
-                  Decline
+                  Decline request
                 </JivaButton>
               </div>
               <p className="mt-2.5 text-xs text-ink-500">
@@ -680,60 +687,94 @@ function FacilityPanel({ hospital }: { hospital: HospitalState | null }) {
   );
 }
 
-function HandoffPanel({ handoffs }: { handoffs: JivaEvent[] }) {
+/**
+ * AI handoff briefs (advisory). Briefs for patients still on the way come first; briefs for patients who
+ * already arrived are kept under "Earlier briefs". The brief restates the crew's report — it is shown as
+ * neutral text, never styled as an alarm or a diagnosis.
+ */
+function HandoffPanel({ handoffs, onTheWay }: { handoffs: JivaEvent[]; onTheWay: Set<string> }) {
+  const latest = new Map<string, JivaEvent>();
+  for (const h of handoffs) {
+    const id = String(h.payload.patientId);
+    if (!latest.has(id)) latest.set(id, h); // newest first
+  }
+  const all = [...latest.values()];
+  const current = all.filter((h) => onTheWay.has(String(h.payload.patientId)));
+  const earlier = all.filter((h) => !onTheWay.has(String(h.payload.patientId)));
   return (
     <JivaCard>
-      <CardHeader title="Handoff briefs" icon="brief" subtitle="AI-generated · advisory only" />
-      {handoffs.length === 0 ? (
+      <CardHeader title="Handoff briefs" icon="brief" subtitle="AI-generated · advisory only · not a diagnosis" />
+      {all.length === 0 ? (
         <p className="mt-3 text-[13px] text-ink-500">A brief appears here when a patient is routed to your hospital.</p>
       ) : (
-        <ul className="mt-3 space-y-3">
-          {handoffs.slice(0, 4).map((h) => {
-            const p = h.payload;
-            const alerts = Array.isArray(p.criticalAlerts) ? (p.criticalAlerts as string[]) : [];
-            const preps = Array.isArray(p.recommendedPreparations) ? (p.recommendedPreparations as string[]) : [];
-            return (
-              <li key={h.eventId} className="rounded-xl bg-ink-25 p-3 ring-1 ring-inset ring-ink-200">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[13px] font-semibold text-ink-900">{String(p.patientId)}</p>
-                  <span className="text-xs text-ink-500">{formatClock(h.timestamp)}</span>
-                </div>
-                <p className="mt-1 text-[13px] text-ink-700">{String(p.summary ?? '')}</p>
-                {alerts.length > 0 && (
-                  <ul className="mt-2 space-y-0.5 text-xs text-danger-700">
-                    {alerts.map((a) => (
-                      <li key={a} className="flex items-center gap-1">
-                        <Icon name="alertTriangle" size={12} />
-                        {a}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {preps.length > 0 && (
-                  <ul className="mt-1.5 space-y-0.5 text-xs text-ink-700">
-                    {preps.map((a) => (
-                      <li key={a} className="flex items-center gap-1">
-                        <Icon name="check" size={12} />
-                        {a}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+        <>
+          {current.length === 0 ? (
+            <p className="mt-3 text-[13px] text-ink-500">No patient is on the way right now.</p>
+          ) : (
+            <ul className="mt-3 space-y-3">
+              {current.map((h) => (
+                <Brief key={h.eventId} h={h} />
+              ))}
+            </ul>
+          )}
+          {earlier.length > 0 && (
+            <details className="mt-3 text-[13px]">
+              <summary className="font-semibold text-ink-600 hover:text-ink-900">Earlier briefs ({earlier.length}) · patients already arrived</summary>
+              <ul className="mt-2 space-y-3">
+                {earlier.map((h) => (
+                  <Brief key={h.eventId} h={h} />
+                ))}
+              </ul>
+            </details>
+          )}
+        </>
       )}
     </JivaCard>
   );
 }
 
+function Brief({ h }: { h: JivaEvent }) {
+  const p = h.payload;
+  const points = Array.isArray(p.criticalAlerts) ? (p.criticalAlerts as string[]) : [];
+  const preps = Array.isArray(p.recommendedPreparations) ? (p.recommendedPreparations as string[]) : [];
+  return (
+    <li className="rounded-xl bg-ink-50 p-3 ring-1 ring-inset ring-ink-200">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[13px] font-semibold text-ink-900">{String(p.patientId)}</p>
+        <span className="text-xs text-ink-500">{formatClock(h.timestamp)}</span>
+      </div>
+      <p className="mt-1 text-[13px] text-ink-700">{String(p.summary ?? '')}</p>
+      {points.length > 0 && (
+        <ul className="mt-2 space-y-0.5 text-xs text-ink-700">
+          {points.map((a) => (
+            <li key={a} className="flex items-start gap-1.5">
+              <Icon name="info" size={12} className="mt-0.5 shrink-0 text-ink-500" />
+              {a}
+            </li>
+          ))}
+        </ul>
+      )}
+      {preps.length > 0 && (
+        <ul className="mt-1.5 space-y-0.5 text-xs text-ink-700">
+          {preps.map((a) => (
+            <li key={a} className="flex items-start gap-1.5">
+              <Icon name="check" size={12} className="mt-0.5 shrink-0 text-ink-500" />
+              {a}
+            </li>
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
+
 function ActivityPanel({ events, name }: { events: JivaEvent[]; name: (id: string) => string | undefined }) {
+  const [more, setMore] = useState(false);
   const items = useMemo<TimelineItem[]>(
     () =>
       events
         .filter((e) => e.eventType !== 'ai.handoff.generated')
-        .slice(0, 25)
+        .slice(0, 40)
         .map((e) => {
           const d = describeEvent(e, name, 'hospital');
           return {
@@ -752,7 +793,12 @@ function ActivityPanel({ events, name }: { events: JivaEvent[]; name: (id: strin
     <JivaCard>
       <CardHeader title="Activity" icon="activity" subtitle="Everything JIVA shared with your hospital" />
       <div className="mt-3">
-        <JivaTimeline items={items} dense detailsLabel="Evidence" empty={<p className="text-[13px] text-ink-500">No activity for your hospital yet.</p>} />
+        <JivaTimeline items={more ? items : items.slice(0, 10)} dense detailsLabel="Evidence" empty={<p className="text-[13px] text-ink-500">No activity for your hospital yet.</p>} />
+        {items.length > 10 && (
+          <JivaButton size="sm" variant="tertiary" icon={more ? 'chevronUp' : 'chevronDown'} onClick={() => setMore((v) => !v)}>
+            {more ? 'Show the latest only' : `Show ${items.length - 10} earlier updates`}
+          </JivaButton>
+        )}
       </div>
     </JivaCard>
   );
