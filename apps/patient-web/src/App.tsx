@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import {
   AppHeader,
   ConnectionPill,
+  DemoPortalLink,
   ModeBadge,
   EmptyState,
   Flash,
@@ -182,6 +183,7 @@ export default function App() {
               <PersonaSelect value={PERSONA} options={PERSONAS} />
             </span>
             <ConnectionPill state={pt.connection} lastSync={pt.syncedAt} />
+            <DemoPortalLink apiUrl={API_URL} />
             <ModeBadge apiUrl={API_URL} detail="This is a demonstration with simulated data. In an emergency, call 108." />
           </>
         }

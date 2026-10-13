@@ -12,6 +12,7 @@ import {
   JivaTabs,
   MEASUREMENT_ORDER,
   MEASUREMENT_TEXT,
+  DemoPortalLink,
   ModeBadge,
   PersonaSelect,
   SkeletonRows,
@@ -113,6 +114,7 @@ export function DoctorWorkspace() {
           <>
             <PersonaSelect value={PERSONA} options={PERSONAS} />
             <ConnectionPill state={c.connection} lastSync={c.lastSync} />
+            <DemoPortalLink apiUrl={API_URL} />
             <ModeBadge apiUrl={API_URL} detail="Synthetic patients, clinicians and records for the demo — not real medical data." />
           </>
         }

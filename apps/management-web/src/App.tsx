@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AppHeader,
   ConnectionPill,
+  DemoPortalLink,
   ModeBadge,
   Icon,
   JivaBreadcrumbs,
@@ -318,6 +319,7 @@ export default function App() {
             <>
               <SystemStatus health={net.health} />
               <ConnectionPill state={net.connection} lastSync={net.lastSync} />
+              <DemoPortalLink apiUrl={API_URL} />
               <ModeBadge apiUrl={API_URL} />
             </>
           }

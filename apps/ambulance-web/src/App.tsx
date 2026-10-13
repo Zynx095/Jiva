@@ -5,6 +5,7 @@ import {
   AppHeader,
   CardHeader,
   ConnectionPill,
+  DemoPortalLink,
   ModeBadge,
   DirectoryFacilityDetails,
   DirectoryLayer,
@@ -298,6 +299,7 @@ export default function App() {
           <>
             <PersonaSelect value={PERSONA} options={PERSONAS} />
             <ConnectionPill state={crew.connection} lastSync={crew.lastSync} />
+            <DemoPortalLink apiUrl={API_URL} />
             <ModeBadge apiUrl={API_URL} detail="Synthetic positions, simulated hospital responses and mock routes. No GPS receiver is connected. Not real capacity." />
           </>
         }

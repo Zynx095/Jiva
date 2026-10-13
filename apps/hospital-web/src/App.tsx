@@ -5,6 +5,7 @@ import {
   AsyncButton,
   CardHeader,
   ConnectionPill,
+  DemoPortalLink,
   ModeBadge,
   EmptyState,
   Icon,
@@ -198,6 +199,7 @@ export default function App() {
           <>
             <PersonaSelect value={PERSONA} options={PERSONAS} />
             <ConnectionPill state={hs.connection} lastSync={hs.lastSync} />
+            <DemoPortalLink apiUrl={API_URL} />
             <ModeBadge apiUrl={API_URL} detail="Simulated hospital: responses you send here are demo data, not real capacity." />
           </>
         }
