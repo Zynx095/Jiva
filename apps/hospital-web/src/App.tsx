@@ -31,6 +31,7 @@ import {
   formatKm,
   hospitalShortName,
   minutesFromSeconds,
+  aiOutputLabel,
   positionSource,
   positionUpdateText,
   msUntil,
@@ -768,7 +769,7 @@ function FacilityPanel({ hospital, onReport }: { hospital: HospitalState | null;
 }
 
 /**
- * AI handoff briefs (advisory). Briefs for patients still on the way come first; briefs for patients who
+ * Automatic handoff briefs (template or AI, advisory). Briefs for patients still on the way come first; briefs for patients who
  * already arrived are kept under "Earlier briefs". The brief restates the crew's report — it is shown as
  * neutral text, never styled as an alarm or a diagnosis.
  */
@@ -783,7 +784,7 @@ function HandoffPanel({ handoffs, onTheWay }: { handoffs: JivaEvent[]; onTheWay:
   const earlier = all.filter((h) => !onTheWay.has(String(h.payload.patientId)));
   return (
     <JivaCard>
-      <CardHeader title="Handoff briefs" icon="brief" subtitle="AI-generated · advisory only · not a diagnosis" />
+      <CardHeader title="Handoff briefs" icon="brief" subtitle={`${aiOutputLabel(all[0]?.payload.generator).label} · not a diagnosis`} />
       {all.length === 0 ? (
         <p className="mt-3 text-[13px] text-ink-500">A brief appears here when a patient is routed to your hospital.</p>
       ) : (
@@ -824,6 +825,9 @@ function Brief({ h }: { h: JivaEvent }) {
         <span className="text-xs text-ink-500">{formatClock(h.timestamp)}</span>
       </div>
       <p className="mt-1 text-[13px] text-ink-700">{String(p.summary ?? '')}</p>
+      <p className="mt-0.5 text-[11px] font-medium text-ink-500" title={aiOutputLabel(p.generator).hint}>
+        {aiOutputLabel(p.generator).label}
+      </p>
       {points.length > 0 && (
         <ul className="mt-2 space-y-0.5 text-xs text-ink-700">
           {points.map((a) => (

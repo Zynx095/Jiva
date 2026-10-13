@@ -79,3 +79,17 @@ export const SEVERITY_TEXT: Record<string, string> = {
   MEDIUM: 'Medium',
   LOW: 'Low',
 };
+
+/**
+ * How an automatic (ai.*) output is labelled, by what produced it. The local default is a deterministic
+ * template that restates recorded facts: it is never called "AI-generated".
+ */
+export function aiOutputLabel(generator: unknown, audience: 'staff' | 'patient' = 'staff'): { label: string; hint: string } {
+  if (generator === 'LLM') {
+    return { label: audience === 'patient' ? 'AI-generated summary · for information only' : 'AI-generated · advisory only', hint: 'Written by an AI service from the recorded facts. It decides nothing and is not a diagnosis.' };
+  }
+  if (generator === 'TEMPLATE') {
+    return { label: audience === 'patient' ? 'Automatic summary · for information only' : 'Automatic summary · template, no AI', hint: 'Built from the recorded facts by a fixed template. No AI service is connected. It decides nothing and is not a diagnosis.' };
+  }
+  return { label: audience === 'patient' ? 'Automatic summary · for information only' : 'Automatic summary · advisory only', hint: 'Generated automatically from the recorded facts. It decides nothing and is not a diagnosis.' };
+}

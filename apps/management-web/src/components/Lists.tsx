@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
+  aiOutputLabel,
   EmptyState,
   Icon,
   JivaFilter,
@@ -79,7 +80,7 @@ function LatestUpdates() {
       if (e.eventType === 'feasibility.trace.recorded' || e.eventType === 'demo.reset') continue;
       const d = describeEvent(e, m.name, 'ops');
       if (d.quiet) continue;
-      out.push({ id: e.eventId, time: e.timestamp, title: d.title, description: d.detail, tone: d.tone, icon: d.icon, meta: d.category === 'ai' ? 'AI-generated · advisory only' : undefined });
+      out.push({ id: e.eventId, time: e.timestamp, title: d.title, description: d.detail, tone: d.tone, icon: d.icon, meta: d.category === 'ai' ? aiOutputLabel(e.payload.generator).label : undefined });
       if (out.length === 5) break;
     }
     return out;
@@ -313,7 +314,7 @@ export function AmbulancesList({ loaded }: { loaded: boolean }) {
 /* ------------------------------------------------------------------ activity */
 
 type ActivityFilter = Exclude<EventCategory, 'system' | 'case'>;
-const CATEGORY_LABEL: Record<ActivityFilter, string> = { decision: 'Decisions', hospital: 'Hospitals', ambulance: 'Ambulances', routing: 'Routing', ai: 'AI briefs' };
+const CATEGORY_LABEL: Record<ActivityFilter, string> = { decision: 'Decisions', hospital: 'Hospitals', ambulance: 'Ambulances', routing: 'Routing', ai: 'Automatic briefs' };
 
 export function ActivityFeed({ loaded }: { loaded: boolean }) {
   const m = useModel();

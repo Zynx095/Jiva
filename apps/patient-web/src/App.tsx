@@ -18,6 +18,7 @@ import {
   hospitalShortName,
   joinList,
   plainCapabilities,
+  aiOutputLabel,
   minutesFromSeconds,
   timeAgo,
   useNow,
@@ -312,9 +313,9 @@ export default function App() {
 
           {summary && (
             <JivaCard as="section" aria-labelledby="summary-title">
-              <p id="summary-title" className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-500">
+              <p id="summary-title" className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-500" title={aiOutputLabel(summary.payload.generator, 'patient').hint}>
                 <Icon name="brief" size={14} />
-                Summary · AI-generated, for information only
+                {aiOutputLabel(summary.payload.generator, 'patient').label}
               </p>
               <p className="mt-1.5 text-sm text-ink-800">{plainCapabilities(String(summary.payload.briefSummary ?? ''))}</p>
             </JivaCard>

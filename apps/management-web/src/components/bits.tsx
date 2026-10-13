@@ -5,6 +5,7 @@ import {
   JivaStatus,
   TechnicalDetails,
   acceptanceStatus,
+  aiOutputLabel,
   capabilityLabel,
   cx,
   eventCaseId,
@@ -147,15 +148,15 @@ export function CandidateTrace({ candidates }: { candidates: CandidateSummary[] 
   );
 }
 
-/** Advisory AI output, always labelled as such. */
+/** Advisory automatic output (template or AI), always labelled by what produced it. */
 export function AiContent({ event }: { event: JivaEvent }) {
   const p = event.payload;
   const list = (k: string) => (Array.isArray(p[k]) ? (p[k] as unknown[]).filter((x): x is string => typeof x === 'string') : []);
   return (
     <div className="space-y-2">
-      <p className="flex items-center gap-1.5 text-xs font-semibold text-ink-500">
+      <p className="flex items-center gap-1.5 text-xs font-semibold text-ink-500" title={aiOutputLabel(p.generator).hint}>
         <Icon name="brief" size={13} />
-        AI-generated · advisory only · cannot change routing
+        {aiOutputLabel(p.generator).label} · cannot change routing
       </p>
       {typeof p.summary === 'string' && <p className="text-[13px] text-ink-800">{p.summary}</p>}
       {typeof p.explanation === 'string' && <p className="text-[13px] text-ink-800">{p.explanation}</p>}
