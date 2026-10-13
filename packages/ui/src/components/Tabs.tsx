@@ -50,8 +50,8 @@ export function JivaTabs<T extends string>({ items, value, onChange, label, idPr
             onClick={() => onChange(t.id)}
             onKeyDown={(e) => onKeyDown(e, i)}
             className={cx(
-              'relative -mb-px flex h-11 shrink-0 items-center gap-1.5 border-b-2 px-2.5 text-sm font-semibold transition-colors duration-150',
-              selected ? 'border-brand-600 text-ink-900' : 'border-transparent text-ink-500 hover:text-ink-800',
+              'relative -mb-px flex h-11 shrink-0 items-center gap-1.5 border-b-2 px-3 text-sm font-semibold transition-colors duration-150',
+              selected ? 'border-brand-700 text-ink-900' : 'border-transparent text-ink-500 hover:border-ink-300 hover:text-ink-800',
             )}
           >
             {t.icon && <Icon name={t.icon} size={15} />}

@@ -36,9 +36,9 @@ export function JivaModal({ open, onClose, title, description, icon, tone = 'neu
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="m-auto w-[min(92vw,440px)] rounded-2xl bg-white p-0 text-ink-900 shadow-lg ring-1 ring-ink-200 backdrop:bg-ink-950/40 open:animate-toast"
+      className="m-auto max-h-[min(90dvh,720px)] w-[min(92vw,460px)] overflow-y-auto rounded-2xl bg-white p-0 text-ink-900 shadow-lg ring-1 ring-ink-200 backdrop:bg-ink-950/35 open:animate-toast"
     >
-      <div className="p-5">
+      <div className="p-5 sm:p-6">
         <div className="flex items-start gap-3">
           {icon && (
             <span className={cx('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl', TONE_STYLES[tone].soft, TONE_STYLES[tone].text)}>
@@ -46,7 +46,7 @@ export function JivaModal({ open, onClose, title, description, icon, tone = 'neu
             </span>
           )}
           <div className="min-w-0">
-            <h2 id={titleId} className="text-base font-semibold leading-6">
+            <h2 id={titleId} className="text-[17px] font-semibold leading-6 tracking-[-0.01em]">
               {title}
             </h2>
             {description && <div className="mt-1 text-sm leading-6 text-ink-600">{description}</div>}
@@ -54,7 +54,7 @@ export function JivaModal({ open, onClose, title, description, icon, tone = 'neu
         </div>
         {children && <div className="mt-4">{children}</div>}
       </div>
-      {actions && <div className="flex flex-wrap justify-end gap-2 border-t border-ink-100 bg-ink-25 px-5 py-3">{actions}</div>}
+      {actions && <div className="flex flex-wrap justify-end gap-2 border-t border-ink-200 bg-ink-50 px-5 py-3 sm:px-6">{actions}</div>}
     </dialog>
   );
 }

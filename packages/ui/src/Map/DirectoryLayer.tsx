@@ -52,8 +52,8 @@ export function DirectoryLayer({ facilities, visible = true, selectedId, onSelec
         source: SOURCE_ID,
         paint: {
           'circle-radius': ['case', ['get', 'selected'], 8, ['match', ['get', 'category'], 'HOSPITAL', 5, 'SPECIALTY_HOSPITAL', 4.5, 'MATERNITY_HOME', 4.5, 3.5]],
-          'circle-color': ['match', ['get', 'category'], 'HOSPITAL', '#4a5550', 'SPECIALTY_HOSPITAL', '#5f6b65', 'MATERNITY_HOME', '#5f6b65', '#96a19b'],
-          'circle-stroke-color': ['case', ['get', 'selected'], '#151b19', ['==', ['get', 'status'], 'MANUAL_UNVERIFIED'], '#b4690e', '#ffffff'],
+          'circle-color': ['match', ['get', 'category'], 'HOSPITAL', '#545c53', 'SPECIALTY_HOSPITAL', '#636b62', 'MATERNITY_HOME', '#636b62', '#9a9f96'],
+          'circle-stroke-color': ['case', ['get', 'selected'], '#202820', ['==', ['get', 'status'], 'MANUAL_UNVERIFIED'], '#9c6b1f', '#ffffff'],
           'circle-stroke-width': ['case', ['get', 'selected'], 2.5, 1.5],
           'circle-opacity': 0.9,
         },

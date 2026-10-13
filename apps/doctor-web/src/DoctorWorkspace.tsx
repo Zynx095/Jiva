@@ -214,7 +214,7 @@ function EncounterHeader({ e, patient, now }: { e: EncounterRecord; patient?: Pa
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           <JivaStatus meta={encounterStatus(e.status)} />
-          {e.dataStatus === 'SYNTHETIC_DEMO' && <JivaStatus meta={{ label: 'Synthetic demo patient', tone: 'warn', icon: 'info', hint: 'Created in demo mode. Not a real person.' }} />}
+          {e.dataStatus === 'SYNTHETIC_DEMO' && <JivaStatus meta={{ label: 'Synthetic demo patient', tone: 'info', icon: 'info', hint: 'Created in demo mode. Not a real person.' }} />}
         </div>
       </div>
     </JivaCard>

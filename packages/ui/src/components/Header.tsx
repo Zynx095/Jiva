@@ -14,7 +14,7 @@ export function JivaLogo({ size = 30, withWordmark = true, className }: { size?:
         <rect width="32" height="32" rx="9" fill="var(--color-brand-700)" />
         <path d="M6.5 17h4.2l2.6-6.2 4.6 11.4 2.6-5.2h5" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-      {withWordmark && <span className="text-[17px] font-bold tracking-[0.06em] text-ink-900">JIVA</span>}
+      {withWordmark && <span className="text-[17px] font-bold tracking-[0.08em] text-ink-900">JIVA</span>}
     </span>
   );
 }
@@ -45,7 +45,7 @@ export function AppHeader({ app, context, center, actions, mainId = 'main' }: Ap
           <JivaLogo />
           <span className="hidden h-6 w-px bg-ink-200 sm:block" aria-hidden="true" />
           <div className="min-w-0 leading-tight">
-            <div className="truncate text-[15px] font-semibold text-ink-900">{app}</div>
+            <div className="truncate text-[15px] font-semibold tracking-[-0.01em] text-ink-900">{app}</div>
             {context && <div className="truncate text-xs text-ink-500">{context}</div>}
           </div>
         </div>
@@ -85,7 +85,7 @@ export function DemoBadge({ detail = 'Synthetic hospitals, simulated responses a
   return (
     <span
       title={detail}
-      className={cx('inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-full bg-warn-50 px-2.5 text-xs font-semibold text-warn-800 ring-1 ring-inset ring-warn-200', className)}
+      className={cx('inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-full bg-info-50 px-2.5 text-xs font-semibold text-info-800 ring-1 ring-inset ring-info-200', className)}
     >
       <Icon name="info" size={13} strokeWidth={2} />
       Demo data

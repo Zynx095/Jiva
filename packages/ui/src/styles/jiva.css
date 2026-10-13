@@ -10,76 +10,91 @@
   --font-sans: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
 
-  /* Brand green: confident, slightly cool, never neon. 700 is the text/button shade (6.6:1 on white). */
-  --color-brand-50: #ecf7f1;
-  --color-brand-100: #d3eedf;
-  --color-brand-200: #a9dcc1;
-  --color-brand-300: #74c39c;
-  --color-brand-400: #3fa574;
-  --color-brand-500: #1c8a58;
-  --color-brand-600: #0f7a4a;
-  --color-brand-700: #0b6b41;
-  --color-brand-800: #0a5535;
-  --color-brand-900: #08432a;
-  --color-brand-950: #04261a;
+  /* Healthcare green: calm, deep, never neon. 700 (#236B4B) is the button and link shade (6.4:1 on white),
+     800 the hover shade, 50 the soft surface and 200 the subtle border. */
+  --color-brand-50: #e8f2eb;
+  --color-brand-100: #dcebe1;
+  --color-brand-200: #c9dfd0;
+  --color-brand-300: #a3c9b1;
+  --color-brand-400: #6fa88a;
+  --color-brand-500: #3f8d68;
+  --color-brand-600: #2c7a57;
+  --color-brand-700: #236b4b;
+  --color-brand-800: #1b573c;
+  --color-brand-900: #15452f;
+  --color-brand-950: #0c2a1d;
 
-  /* Ink: the only gray family, faintly tinted toward the brand. 500 is the lightest text shade (5.6:1). */
-  --color-ink-25: #fbfcfb;
-  --color-ink-50: #f5f7f6;
-  --color-ink-100: #ecefed;
-  --color-ink-200: #dee3e0;
-  --color-ink-300: #c6cec9;
-  --color-ink-400: #96a19b;
-  --color-ink-500: #5f6b65;
-  --color-ink-600: #4a5550;
-  --color-ink-700: #36403c;
-  --color-ink-800: #232b28;
-  --color-ink-900: #151b19;
-  --color-ink-950: #0b100e;
+  /* Ink: the only neutral family, warm (cream to deep green-black). 100 is the cream secondary surface,
+     200 the warm border; 500 is the lightest TEXT shade (5.5:1 on white, 4.8:1 on cream); 400 is decorative. */
+  --color-ink-25: #fcfbf8;
+  --color-ink-50: #f7f5f0;
+  --color-ink-100: #f3f0e7;
+  --color-ink-200: #e8e5dc;
+  --color-ink-300: #d9d1c1;
+  --color-ink-400: #9a9f96;
+  --color-ink-500: #636b62;
+  --color-ink-600: #545c53;
+  --color-ink-700: #404840;
+  --color-ink-800: #2d352d;
+  --color-ink-900: #202820;
+  --color-ink-950: #151b16;
 
-  /* Amber: pending, limited, stale, needs attention. Text uses 700. */
-  --color-warn-50: #fff8eb;
-  --color-warn-100: #feefc7;
-  --color-warn-200: #fcdc8e;
-  --color-warn-300: #f8c55a;
-  --color-warn-400: #f0a92e;
-  --color-warn-500: #db8b12;
-  --color-warn-600: #b4690e;
-  --color-warn-700: #9a5b0b;
-  --color-warn-800: #7a460c;
-  --color-warn-900: #5e360c;
+  /* The page: warm white. Panels are pure white on it. */
+  --color-canvas: #faf9f6;
 
-  /* Red: critical, rejected, unavailable, error. Never decorative. */
-  --color-danger-50: #fef3f2;
-  --color-danger-100: #fee4e2;
-  --color-danger-200: #fdcdc9;
-  --color-danger-300: #faa7a0;
-  --color-danger-400: #f27466;
-  --color-danger-500: #e5483b;
-  --color-danger-600: #c9352a;
-  --color-danger-700: #a3281f;
-  --color-danger-800: #85211b;
-  --color-danger-900: #6b1c18;
+  /* Amber: waiting, pending response, limited, stale — needs attention, not alarm. Text uses 700/800. */
+  --color-warn-50: #fbf5e8;
+  --color-warn-100: #f6e9cc;
+  --color-warn-200: #edd7a6;
+  --color-warn-300: #e1bd73;
+  --color-warn-400: #d2a04a;
+  --color-warn-500: #bb8633;
+  --color-warn-600: #9c6b1f;
+  --color-warn-700: #7f5616;
+  --color-warn-800: #664512;
+  --color-warn-900: #4f3610;
+
+  /* Clinical red: critical emergencies, destructive actions and errors only. Never decorative. */
+  --color-danger-50: #fbecec;
+  --color-danger-100: #f7dede;
+  --color-danger-200: #eecaca;
+  --color-danger-300: #e2a5a5;
+  --color-danger-400: #d67676;
+  --color-danger-500: #cc5555;
+  --color-danger-600: #c43d3d;
+  --color-danger-700: #a82f32;
+  --color-danger-800: #8b272a;
+  --color-danger-900: #6f2023;
+
+  /* Muted blue-grey: informational notices (demo data, synthetic labels). Quiet by design. */
+  --color-info-50: #eef2f5;
+  --color-info-100: #e1e8ee;
+  --color-info-200: #cbd6df;
+  --color-info-300: #a9b9c6;
+  --color-info-500: #6a7f8f;
+  --color-info-600: #546a7a;
+  --color-info-700: #435766;
+  --color-info-800: #364855;
 
   /* Shadows are tinted with ink, from a single top light source. */
-  --shadow-xs: 0 1px 2px rgb(21 27 25 / 0.06);
-  --shadow-sm: 0 1px 3px rgb(21 27 25 / 0.08), 0 1px 2px rgb(21 27 25 / 0.04);
-  --shadow-md: 0 6px 16px -4px rgb(21 27 25 / 0.12), 0 2px 4px -2px rgb(21 27 25 / 0.06);
-  --shadow-lg: 0 16px 40px -12px rgb(21 27 25 / 0.22), 0 4px 10px -4px rgb(21 27 25 / 0.08);
+  --shadow-xs: 0 1px 2px rgb(32 40 32 / 0.06);
+  --shadow-sm: 0 1px 3px rgb(32 40 32 / 0.08), 0 1px 2px rgb(32 40 32 / 0.04);
+  --shadow-md: 0 6px 16px -4px rgb(32 40 32 / 0.12), 0 2px 4px -2px rgb(32 40 32 / 0.06);
+  --shadow-lg: 0 16px 40px -12px rgb(32 40 32 / 0.22), 0 4px 10px -4px rgb(32 40 32 / 0.08);
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
-  --animate-enter: jiva-enter 380ms var(--ease-out) both;
-  --animate-fade: jiva-fade 240ms ease-out both;
-  --animate-toast: jiva-toast 320ms var(--ease-out) both;
-  --animate-drawer: jiva-drawer 320ms var(--ease-out) both;
+  --animate-enter: jiva-enter 240ms var(--ease-out) both;
+  --animate-fade: jiva-fade 180ms ease-out both;
+  --animate-toast: jiva-toast 260ms var(--ease-out) both;
+  --animate-drawer: jiva-drawer 260ms var(--ease-out) both;
   --animate-shimmer: jiva-shimmer 1.6s linear infinite;
   --animate-breathe: jiva-breathe 1.8s ease-in-out infinite;
   --animate-ring: jiva-ring 2.2s var(--ease-out) infinite;
 
   @keyframes jiva-enter {
-    from { opacity: 0; transform: translateY(6px); }
+    from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: none; }
   }
   @keyframes jiva-fade {
@@ -268,7 +283,7 @@
     border-radius: 8px;
     color: white;
     border: 2px solid white;
-    box-shadow: 0 2px 6px rgb(21 27 25 / 0.28);
+    box-shadow: 0 2px 6px rgb(32 40 32 / 0.28);
   }
   .jiva-mk--hospital[data-tone="ok"] .jiva-mk__body { background: var(--color-brand-600); }
   .jiva-mk--hospital[data-tone="warn"] .jiva-mk__body { background: var(--color-warn-600); }
@@ -303,7 +318,7 @@
   .jiva-mk[data-tone="warn"] .jiva-mk__badge { color: var(--color-warn-700); }
   .jiva-mk[data-tone="danger"] .jiva-mk__badge { color: var(--color-danger-700); }
   .jiva-mk[data-selected="true"] .jiva-mk__body {
-    box-shadow: 0 0 0 4px var(--color-brand-200), 0 4px 10px rgb(21 27 25 / 0.3);
+    box-shadow: 0 0 0 4px var(--color-brand-200), 0 4px 10px rgb(32 40 32 / 0.3);
   }
 
   /* Ambulance: dark pill when on a job; compact chip when idle. */
@@ -318,7 +333,7 @@
     font-weight: 600;
     letter-spacing: 0.01em;
     border: 2px solid white;
-    box-shadow: 0 3px 10px rgb(21 27 25 / 0.32);
+    box-shadow: 0 3px 10px rgb(32 40 32 / 0.32);
     white-space: nowrap;
   }
   .jiva-mk--ambulance .jiva-mk__dot {
@@ -355,7 +370,7 @@
     background: var(--color-danger-600);
     color: white;
     border: 2px solid white;
-    box-shadow: 0 2px 8px rgb(201 53 42 / 0.45);
+    box-shadow: 0 2px 8px rgb(196 61 61 / 0.4);
   }
   .jiva-mk--emergency .jiva-mk__ring {
     position: absolute;

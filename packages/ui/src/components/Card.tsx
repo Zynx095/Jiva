@@ -3,11 +3,13 @@ import { cx } from '../lib/cx';
 import type { Tone } from '../lib/status';
 import { Icon, type IconName } from './Icon';
 
+/** A hairline lift on the warm page; with an accent, a 3px stripe on the left carries the card's state. */
 const ACCENT: Record<Tone, string> = {
-  ok: 'shadow-[inset_3px_0_0_var(--color-brand-500)]',
-  warn: 'shadow-[inset_3px_0_0_var(--color-warn-500)]',
-  danger: 'shadow-[inset_3px_0_0_var(--color-danger-500)]',
-  neutral: 'shadow-[inset_3px_0_0_var(--color-ink-300)]',
+  ok: 'shadow-[inset_3px_0_0_var(--color-brand-600),0_1px_2px_rgb(32_40_32/0.04)]',
+  warn: 'shadow-[inset_3px_0_0_var(--color-warn-500),0_1px_2px_rgb(32_40_32/0.04)]',
+  danger: 'shadow-[inset_3px_0_0_var(--color-danger-600),0_1px_2px_rgb(32_40_32/0.04)]',
+  neutral: 'shadow-[inset_3px_0_0_var(--color-ink-300),0_1px_2px_rgb(32_40_32/0.04)]',
+  info: 'shadow-[inset_3px_0_0_var(--color-info-300),0_1px_2px_rgb(32_40_32/0.04)]',
 };
 
 export interface JivaCardProps extends React.HTMLAttributes<HTMLElement> {
@@ -18,15 +20,15 @@ export interface JivaCardProps extends React.HTMLAttributes<HTMLElement> {
   selected?: boolean;
 }
 
-/** White surface on the gray page. Elevation is reserved for things that float (popovers, toasts). */
+/** White surface on the warm page. Real elevation is reserved for things that float (popovers, toasts, dialogs). */
 export function JivaCard({ as = 'section', padded = true, accent, selected, className, children, ...rest }: JivaCardProps) {
   const Comp = as;
   return (
     <Comp
       className={cx(
         'rounded-xl bg-white ring-1 ring-ink-200',
-        padded && 'p-4',
-        accent && ACCENT[accent],
+        padded && 'p-4 sm:p-5',
+        accent ? ACCENT[accent] : 'shadow-[0_1px_2px_rgb(32_40_32/0.04)]',
         selected && 'ring-2 ring-brand-500',
         className,
       )}
@@ -54,7 +56,7 @@ export function CardHeader({ title, subtitle, icon, actions, level = 2, classNam
     <div className={cx('flex items-start justify-between gap-3', className)}>
       <div className="flex min-w-0 items-start gap-2.5">
         {icon && (
-          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-ink-50 text-ink-600 ring-1 ring-inset ring-ink-200">
+          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-ink-100 text-ink-700">
             <Icon name={icon} size={15} />
           </span>
         )}

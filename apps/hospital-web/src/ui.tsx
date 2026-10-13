@@ -9,7 +9,7 @@ import { commandError, postCommand } from './api';
  */
 
 export const inputClass =
-  'w-full rounded-lg bg-white px-3 text-sm text-ink-900 ring-1 ring-inset ring-ink-300 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:bg-ink-50 disabled:text-ink-500';
+  'w-full rounded-lg bg-white px-3 text-sm text-ink-900 ring-1 ring-inset ring-ink-300 transition-shadow duration-150 placeholder:text-ink-400 hover:ring-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-600 disabled:bg-ink-50 disabled:text-ink-500';
 
 export function Field({ label, htmlFor, hint, required, children, className }: { label: string; htmlFor: string; hint?: string; required?: boolean; children: ReactNode; className?: string }) {
   return (

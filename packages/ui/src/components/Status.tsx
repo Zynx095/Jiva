@@ -19,7 +19,7 @@ export function JivaBadge({ tone = 'neutral', icon, size = 'sm', title, classNam
       title={title}
       className={cx(
         'inline-flex shrink-0 items-center gap-1 whitespace-nowrap font-semibold ring-1 ring-inset',
-        size === 'sm' ? 'h-6 rounded-md px-1.5 text-xs' : 'h-7 rounded-lg px-2 text-[13px]',
+        size === 'sm' ? 'h-6 rounded-full px-2 text-xs' : 'h-7 rounded-full px-2.5 text-[13px]',
         TONE_STYLES[tone].badge,
         className,
       )}

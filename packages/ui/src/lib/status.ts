@@ -7,9 +7,10 @@ import { AMBULANCE_STATUS_TEXT, SEVERITY_TEXT } from './labels';
  *   warn    amber  — pending, limited, stale, needs attention
  *   danger  red    — rejected, unavailable, critical, error
  *   neutral gray   — unknown, expired, historical, inactive
+ *   info    blue-grey — informational notices (demo data, synthetic labels); never a case state
  * A status is always rendered as icon + label + colour, never colour alone.
  */
-export type Tone = 'ok' | 'warn' | 'danger' | 'neutral';
+export type Tone = 'ok' | 'warn' | 'danger' | 'neutral' | 'info';
 
 export interface StatusMeta {
   label: string;
@@ -48,9 +49,17 @@ export const TONE_STYLES: Record<Tone, { badge: string; text: string; solid: str
     badge: 'bg-ink-50 text-ink-700 ring-ink-200',
     text: 'text-ink-600',
     solid: 'bg-ink-700 text-white',
-    soft: 'bg-ink-50',
+    soft: 'bg-ink-100',
     dot: 'bg-ink-400',
     border: 'border-ink-200',
+  },
+  info: {
+    badge: 'bg-info-50 text-info-800 ring-info-200',
+    text: 'text-info-700',
+    solid: 'bg-info-700 text-white',
+    soft: 'bg-info-50',
+    dot: 'bg-info-500',
+    border: 'border-info-200',
   },
 };
 
@@ -150,7 +159,7 @@ export function severityStatus(severity?: string): StatusMeta {
 export function dataStatus(status?: string): StatusMeta {
   switch (status) {
     case 'SYNTHETIC_DEMO':
-      return { label: 'Demo data', tone: 'warn', icon: 'info', hint: 'Synthetic record for the demo. Not real hospital capacity.' };
+      return { label: 'Demo data', tone: 'info', icon: 'info', hint: 'Synthetic record for the demo. Not real hospital capacity.' };
     case 'PUBLIC_LISTED':
       return { label: 'Public listing', tone: 'neutral', icon: 'file', hint: 'From a public directory. Says what a hospital offers, not what is free now.' };
     case 'HOSPITAL_CONFIRMED':
