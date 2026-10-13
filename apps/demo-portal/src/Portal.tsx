@@ -11,7 +11,7 @@ import { useLiveState } from './useLiveState';
 type View = 'home' | 'scenarios' | 'controls' | 'timeline' | 'assets' | 'system';
 
 const NAV: Array<{ id: View; label: string; icon: IconName; hint: string }> = [
-  { id: 'home', label: 'Home', icon: 'gauge', hint: 'What JIVA is, and every role interface' },
+  { id: 'home', label: 'Home', icon: 'home', hint: 'What JIVA is, and every role interface' },
   { id: 'scenarios', label: 'Scenarios', icon: 'activity', hint: 'Run scripted journeys step by step' },
   { id: 'controls', label: 'Controls', icon: 'panel', hint: 'Drive the demo case by hand' },
   { id: 'timeline', label: 'Timeline', icon: 'clock', hint: 'What was actually recorded' },
@@ -36,12 +36,22 @@ export default function Portal() {
   useEffect(() => {
     document.title = 'JIVA · Demo portal';
   }, []);
+  // Each view has its own URL (?view=…) and history entry, so the browser's Back button returns to the last view.
+  useEffect(() => {
+    const onPop = () => setView(readView());
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
   const go = (v: View) => {
+    if (v === view) return;
     setView(v);
     const url = new URL(window.location.href);
     url.searchParams.set('view', v);
-    window.history.replaceState(null, '', url.toString());
+    url.hash = '';
+    window.history.pushState(null, '', url.toString());
+    window.scrollTo({ top: 0 });
   };
+  const current = NAV.find((n) => n.id === view) ?? NAV[0];
 
   return (
     <div className="min-h-dvh bg-canvas text-ink-900">
@@ -85,6 +95,30 @@ export default function Portal() {
       </header>
 
       <main id="main" className="mx-auto max-w-[1400px] px-4 py-6 lg:px-6">
+        {view !== 'home' && (
+          <nav aria-label="Breadcrumb" className="mb-4">
+            <ol className="flex flex-wrap items-center gap-1.5 text-[13px]">
+              <li>
+                <a
+                  href="?view=home"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    go('home');
+                  }}
+                  className="font-semibold text-brand-700 underline-offset-2 hover:underline"
+                >
+                  Demo portal
+                </a>
+              </li>
+              <li aria-hidden="true" className="text-ink-400">
+                <Icon name="chevronRight" size={13} />
+              </li>
+              <li aria-current="page" className="font-semibold text-ink-800">
+                {current.label}
+              </li>
+            </ol>
+          </nav>
+        )}
         {live.apiReachable === null ? (
           <div className="space-y-3">
             <JivaSkeleton className="h-6 w-1/3" />
