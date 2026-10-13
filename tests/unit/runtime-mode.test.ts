@@ -103,5 +103,6 @@ run('Phase 11 — operational vs demo mode', async () => {
     const op = withEnv(OPERATIONAL, () => provenanceReport({ ...inputs, hospitals: 0, syntheticHospitals: 0, ambulances: 0, syntheticAmbulances: 0, clinicians: 0 }));
     eq([op.mode, op.providers.auth, op.providers.telemetry.simulator, op.datasets.clinicians.dataStatus], ['OPERATIONAL', 'COGNITO_JWT', false, 'NONE'], 'operational');
     ok(Object.values(demo.liveIntegrations).every(v => v === false) && Object.values(op.liveIntegrations).every(v => v === false), 'no live integration is claimed in either mode');
+    eq([demo.liveIntegrations.ambulanceGps, demo.providers.positions, op.providers.positions], [false, { manual: true, simulator: true, deviceGps: false }, { manual: true, simulator: false, deviceGps: false }], 'positions: manual everywhere, simulated only in demo, never device GPS');
   });
 });

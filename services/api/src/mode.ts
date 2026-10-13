@@ -48,9 +48,11 @@ export function provenanceReport(i: ProvenanceInputs) {
       mapping: { active: i.mappingProvider, synthetic: i.mappingSynthetic },
       ai: { provider: i.aiProvider, synthetic: i.aiProvider !== 'BedrockAIProvider' },
       telemetry: { simulator: mode === 'DEMO', medicalDevices: false },
+      // Ambulance positions: set by the crew by hand, or by the labelled simulator in demo mode. No GPS feed.
+      positions: { manual: true, simulator: mode === 'DEMO', deviceGps: false },
     },
     // No live external integration exists in this codebase; this is stated, not assumed.
-    liveIntegrations: { hospitalCapacityFeeds: false, hospitalStaffDirectory: false, medicalDevices: false, documentObjectStorage: false },
+    liveIntegrations: { hospitalCapacityFeeds: false, hospitalStaffDirectory: false, medicalDevices: false, ambulanceGps: false, documentObjectStorage: false },
   };
 }
 
