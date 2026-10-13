@@ -178,22 +178,22 @@ async function main() {
     await row(p1.caseId).click();
     await page.getByRole('tab', { name: /Vital signs/ }).click();
     await panel(page).getByRole('button', { name: 'Record vital signs' }).click();
-    await panel(page).getByLabel(/Heart rate/).fill('55');
+    await panel(page).getByRole('textbox', { name: /Heart rate/ }).fill('55');
     await row(p2.caseId).click();
     const dialog = page.getByRole('dialog', { name: 'Discard unsaved changes?' });
     const asked = await dialog.waitFor({ timeout: 5000 }).then(() => true, () => false);
     const dialogText = asked ? (await dialog.innerText()).replace(/\s+/g, ' ') : '';
     check('doctor: switching with unsaved vital signs asks first and names both patients', asked && dialogText.includes(p1.caseId) && dialogText.includes(p2.caseId) && dialogText.includes('vital signs'), dialogText.slice(0, 200));
     await dialog.getByRole('button', { name: `Keep editing ${p1.caseId}` }).click();
-    check('doctor: "Keep editing" stays on patient 1 with the typed value', (await header()) === p1.caseId && (await panel(page).getByLabel(/Heart rate/).inputValue()) === '55');
+    check('doctor: "Keep editing" stays on patient 1 with the typed value', (await header()) === p1.caseId && (await panel(page).getByRole('textbox', { name: /Heart rate/ }).inputValue()) === '55');
     await row(p2.caseId).click();
     await dialog.getByRole('button', { name: `Discard and open ${p2.caseId}` }).click();
     await page.waitForTimeout(500);
-    check('doctor: after "Discard", patient 2 opens without patient 1\'s half-filled form', (await header()) === p2.caseId && (await panel(page).getByLabel(/Heart rate/).count()) === 0);
+    check('doctor: after "Discard", patient 2 opens without patient 1\'s half-filled form', (await header()) === p2.caseId && (await panel(page).getByRole('textbox', { name: /Heart rate/ }).count()) === 0);
 
     // Update patient 2 only, through the screen.
     await panel(page).getByRole('button', { name: 'Record vital signs' }).click();
-    await panel(page).getByLabel(/Heart rate/).fill('87');
+    await panel(page).getByRole('textbox', { name: /Heart rate/ }).fill('87');
     await panel(page).getByRole('button', { name: 'Save vital signs' }).click();
     check('doctor: the recorded value appears for patient 2', await visible(page, 'Entered by clinician'));
     const counts = async () => Promise.all(patients.map(async p => ((await api.get(DOCTOR.persona, `/api/encounters/${p.encounterId}/vitals`)).json?.measurements ?? []).filter((m: any) => m.source !== 'AMBULANCE_CREW').length));

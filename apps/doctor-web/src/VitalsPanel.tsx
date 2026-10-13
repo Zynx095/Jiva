@@ -21,6 +21,7 @@ import {
   timeAgo,
   toDateTimeLocal,
   type MeasurementTypeCode,
+  type MeasurementView,
   type VitalsResponse,
 } from '@jiva/ui/src';
 import { CommandError, Field, inputClass, sendCommand, useIdempotencyKey } from './ui';
@@ -110,6 +111,7 @@ export function VitalsPanel({ encounterId, vitals, onChanged, now }: { encounter
                     <JivaStatus meta={measurementSource(m.source)} />
                     <JivaStatus meta={measurementFreshness(m.freshness)} />
                     {measurementQuality(m.quality) && <JivaStatus meta={measurementQuality(m.quality)!} />}
+                    {m.corrects && <JivaStatus meta={{ label: 'Corrected value', tone: 'neutral', icon: 'refresh', hint: 'Replaces a value that was entered in error; the original is kept in the history.' }} />}
                   </div>
                   <p className="mt-1 text-xs text-ink-500">
                     {formatDateTime(m.observedAt)} ({timeAgo(m.observedAt, now)})
@@ -119,20 +121,133 @@ export function VitalsPanel({ encounterId, vitals, onChanged, now }: { encounter
               );
             })}
           </ul>
-          <details className="mt-2 text-xs text-ink-600">
-            <summary className="cursor-pointer select-none font-semibold text-ink-500 hover:text-ink-700">All entries ({vitals.measurements.length})</summary>
-            <ul className="mt-1.5 space-y-0.5">
-              {vitals.measurements.map((m) => (
-                <li key={m.measurementId}>
-                  {formatDateTime(m.observedAt)} · {MEASUREMENT_TEXT[m.type].label} {formatMeasurementValue(m)} {MEASUREMENT_TEXT[m.type].unit} · {measurementSource(m.source).label}
-                  {m.quality === 'QUESTIONABLE' ? ' · questionable' : ''}
-                </li>
-              ))}
-            </ul>
-          </details>
+          <ObservationHistory encounterId={encounterId} list={vitals.measurements} onChanged={onChanged} />
         </>
       )}
     </JivaCard>
+  );
+}
+
+/**
+ * Every observation of the encounter, newest first, with its source. A value the care team typed in can be
+ * corrected (replaced) or withdrawn as entered in error, with a reason; the original stays visible here,
+ * struck through, with who withdrew it and why. Simulated readings are never edited.
+ */
+function ObservationHistory({ encounterId, list, onChanged }: { encounterId: string; list: MeasurementView[]; onChanged: () => void }) {
+  const [correcting, setCorrecting] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const byId = new Map(list.map((m) => [m.measurementId, m]));
+  return (
+    <details className="mt-3 rounded-lg ring-1 ring-inset ring-ink-200" open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
+      <summary className="flex cursor-pointer select-none items-center justify-between gap-2 px-3 py-2 text-[13px] font-semibold text-ink-700 hover:text-ink-900">
+        Observation history ({list.length})
+        <span className="text-xs font-normal text-ink-500">Correct a value entered in error here</span>
+      </summary>
+      <ul className="divide-y divide-ink-100 border-t border-ink-200">
+        {list.map((m) => {
+          const withdrawn = !!m.withdrawn;
+          const replacement = m.withdrawn?.replacedBy ? byId.get(m.withdrawn.replacedBy) : undefined;
+          return (
+            <li key={m.measurementId} className="px-3 py-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-[13px]">
+                <p className={cx('min-w-0 text-ink-800', withdrawn && 'text-ink-500 line-through decoration-ink-400')}>
+                  <span className="font-semibold">{MEASUREMENT_TEXT[m.type].label}</span> {formatMeasurementValue(m)} {MEASUREMENT_TEXT[m.type].unit}
+                  <span className="text-ink-500">
+                    {' '}
+                    · {formatDateTime(m.observedAt)} · {measurementSource(m.source).label}
+                    {m.recordedByName ? ` · ${m.recordedByName}` : ''}
+                    {m.quality === 'QUESTIONABLE' ? ' · questionable' : ''}
+                  </span>
+                </p>
+                {!withdrawn && m.source === 'MANUAL_CLINICIAN' && correcting !== m.measurementId && (
+                  <JivaButton size="sm" variant="tertiary" icon="refresh" onClick={() => setCorrecting(m.measurementId)} aria-label={`Correct ${MEASUREMENT_TEXT[m.type].label} ${formatMeasurementValue(m)} measured ${formatDateTime(m.observedAt)}`}>
+                    Correct
+                  </JivaButton>
+                )}
+              </div>
+              {m.withdrawn && (
+                <p className="mt-0.5 text-xs text-ink-600">
+                  {replacement ? `Corrected to ${formatMeasurementValue(replacement)} ${MEASUREMENT_TEXT[m.type].unit}` : 'Withdrawn as entered in error'} · {formatDateTime(m.withdrawn.at)} · “{m.withdrawn.reason}”
+                </p>
+              )}
+              {m.corrects && !withdrawn && <p className="mt-0.5 text-xs text-ink-500">Corrected value (replaces an entry made in error)</p>}
+              {correcting === m.measurementId && (
+                <CorrectionForm
+                  encounterId={encounterId}
+                  m={m}
+                  onDone={() => {
+                    setCorrecting(null);
+                    onChanged();
+                  }}
+                  onCancel={() => setCorrecting(null)}
+                />
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </details>
+  );
+}
+
+/** Replace one entered value, or withdraw it as entered in error — always with a reason. */
+function CorrectionForm({ encounterId, m, onDone, onCancel }: { encounterId: string; m: MeasurementView; onDone: () => void; onCancel: () => void }) {
+  const [value, setValue] = useState(String(m.value));
+  const [secondary, setSecondary] = useState(m.secondaryValue !== undefined ? String(m.secondaryValue) : '');
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const keyFor = useIdempotencyKey();
+  const changed = value !== String(m.value) || (m.type === 'BLOOD_PRESSURE' && secondary !== String(m.secondaryValue ?? ''));
+  useUnsaved(changed || reason.trim() !== '', 'a vital-sign correction');
+  const problem = enteredValueProblem(m.type, value, secondary) ?? (value.trim() === '' ? 'Enter the corrected value, or withdraw the entry instead.' : null);
+  const id = (k: string) => `corr-${m.measurementId}-${k}`;
+  const text = MEASUREMENT_TEXT[m.type];
+  const send = async (withReplacement: boolean) => {
+    const body = {
+      reason: reason.trim(),
+      ...(withReplacement ? { replacement: { value: parseEntered(value), ...(m.type === 'BLOOD_PRESSURE' ? { secondaryValue: parseEntered(secondary) } : {}) } } : {}),
+    };
+    const r = await sendCommand(`${path(encounterId)}/${encodeURIComponent(m.measurementId)}/correct`, { clientRequestId: keyFor(body), ...body });
+    setError(r.error);
+    if (!r.error || r.status === 409) onDone();
+    return r.error;
+  };
+  return (
+    <div className="mt-2 animate-fade space-y-2 rounded-lg bg-ink-25 p-3 ring-1 ring-inset ring-ink-200">
+      <p className="text-[13px] font-semibold text-ink-900">
+        Correct {text.label.toLowerCase()} measured {formatDateTime(m.observedAt)}
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Field label={`Corrected value (${text.unit})`} htmlFor={id('value')}>
+          {m.type === 'BLOOD_PRESSURE' ? (
+            <div className="flex items-center gap-1.5">
+              <input id={id('value')} aria-label="Corrected systolic" inputMode="numeric" className={cx(inputClass, 'h-9 tabular-nums')} value={value} onChange={(e) => setValue(e.target.value)} />
+              <span className="text-ink-500" aria-hidden="true">/</span>
+              <input aria-label="Corrected diastolic" inputMode="numeric" className={cx(inputClass, 'h-9 tabular-nums')} value={secondary} onChange={(e) => setSecondary(e.target.value)} />
+            </div>
+          ) : (
+            <input id={id('value')} inputMode={INPUT_MODE[m.type]} className={cx(inputClass, 'h-9 tabular-nums')} value={value} onChange={(e) => setValue(e.target.value)} />
+          )}
+          {problem && changed && <p className="text-xs text-danger-700">{problem}</p>}
+        </Field>
+        <Field label="Reason" htmlFor={id('why')} required hint="Kept in the history with your name.">
+          <input id={id('why')} className={cx(inputClass, 'h-9')} value={reason} maxLength={300} placeholder="e.g. Typed 140 instead of 104" onChange={(e) => setReason(e.target.value)} />
+        </Field>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <AsyncButton size="sm" variant="primary" icon="check" disabled={!reason.trim() || !changed || !!problem} pendingText="Saving…" onAction={() => send(true)}>
+          Save correction
+        </AsyncButton>
+        <AsyncButton size="sm" variant="danger-soft" icon="ban" disabled={!reason.trim()} pendingText="Withdrawing…" onAction={() => send(false)}>
+          Withdraw as entered in error
+        </AsyncButton>
+        <JivaButton size="sm" variant="ghost" onClick={onCancel}>
+          Cancel
+        </JivaButton>
+      </div>
+      <p className="text-xs text-ink-500">The original value is kept in the history, marked as corrected or withdrawn.</p>
+      {error && <CommandError message={error} />}
+    </div>
   );
 }
 

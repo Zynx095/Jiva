@@ -24,6 +24,10 @@ export interface MeasurementView {
   /** Flagged by whoever measured it. */
   quality?: 'RELIABLE' | 'QUESTIONABLE';
   dataStatus: string;
+  /** This value replaces an earlier one entered in error. */
+  corrects?: string;
+  /** The value was withdrawn (corrected, or entered in error); it stays in the care team's history. */
+  withdrawn?: { at: string; reason: string; replacedBy?: string };
 }
 
 export interface VitalsResponse {
