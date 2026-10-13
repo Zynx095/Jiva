@@ -160,6 +160,10 @@ export const ClinicalTelemetryRecordedSchema = BaseEventSchema.extend({
     observedTo: timestamp,
     deviceId: RecordIdSchema.optional(),
     patientVisible: z.boolean(),
+    /** RECORDED (default): new values. CORRECTED: a value replacing one entered in error. WITHDRAWN: a value withdrawn as entered in error. */
+    action: z.enum(['RECORDED', 'CORRECTED', 'WITHDRAWN']).optional(),
+    /** For CORRECTED / WITHDRAWN: the measurement concerned. */
+    corrects: RecordIdSchema.optional(),
   }).strict(),
 });
 

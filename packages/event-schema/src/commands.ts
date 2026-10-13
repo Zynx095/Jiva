@@ -260,6 +260,21 @@ export const RecordTelemetryCommandSchema = z.object({
   measurements: z.array(MeasurementInputSchema).min(1).max(20),
 }).strict();
 
+/**
+ * Correct a value the care team entered: either replace it (a corrected value of the same measurement, same
+ * time) or withdraw it as entered in error. The original is kept in the history with who, when and why;
+ * it is never edited in place.
+ */
+export const CorrectMeasurementCommandSchema = z.object({
+  clientRequestId: ClientRequestIdSchema,
+  reason: boundedText(300),
+  /** The corrected value (checked against the measurement type's rules); omit to withdraw the value. */
+  replacement: z.object({
+    value: z.number().finite(),
+    secondaryValue: z.number().finite().optional(),
+  }).strict().optional(),
+}).strict();
+
 /** Demo only: ask the simulated bedside monitor for one labelled, synthetic reading. */
 export const SimulateTelemetryCommandSchema = z.object({
   clientRequestId: ClientRequestIdSchema,
@@ -341,6 +356,7 @@ export const DeviceObservationBatchSchema = z.object({
 export type EmergencyIntakeCommand = z.infer<typeof EmergencyIntakeCommandSchema>;
 export type RecordArrivalCommand = z.infer<typeof RecordArrivalCommandSchema>;
 export type RecordHandoverCommand = z.infer<typeof RecordHandoverCommandSchema>;
+export type CorrectMeasurementCommand = z.infer<typeof CorrectMeasurementCommandSchema>;
 export type AssignDoctorCommand = z.infer<typeof AssignDoctorCommandSchema>;
 export type CreatePrescriptionCommand = z.infer<typeof CreatePrescriptionCommandSchema>;
 export type AmendPrescriptionCommand = z.infer<typeof AmendPrescriptionCommandSchema>;

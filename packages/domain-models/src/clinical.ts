@@ -313,6 +313,10 @@ export interface TelemetryMeasurement {
   /** As flagged by whoever measured it; absent = not flagged. */
   quality?: ObservationQuality;
   dataStatus: DataStatus;
+  /** This value replaces an earlier one entered in error (that measurement's id). */
+  corrects?: string;
+  /** Set when the value was withdrawn (replaced by a correction, or entered in error). It stays in the history. */
+  withdrawn?: { at: string; by: ActorRef; reason: string; replacedBy?: string };
 }
 
 // ------------------------------------------------------------------ pre-hospital record (ambulance)
