@@ -76,6 +76,12 @@ export const RecordArrivalCommandSchema = z.object({
 export const RecordHandoverCommandSchema = z.object({
   clientRequestId: ClientRequestIdSchema,
   handedOverAt: timestamp.optional(),
+  /**
+   * What was handed over besides the patient (belongings, who was informed, crew remarks). Stored with the
+   * encounter for the hospital team and the assigned clinician — never put on the event stream, never shown
+   * to the patient.
+   */
+  notes: boundedText(1000).optional(),
 }).strict();
 
 export const AssignDoctorCommandSchema = z.object({

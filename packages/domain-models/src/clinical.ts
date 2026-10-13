@@ -84,6 +84,8 @@ export interface HospitalEncounter {
     recordedBy: ActorRef;
     eventId: string;
     fromAmbulanceId?: string;
+    /** Handover notes typed by the person recording it (hospital team and assigned clinician only). */
+    notes?: string;
   };
   assignedDoctor?: DoctorAssignment;
   /** Every assignment, oldest first (current one included). */
