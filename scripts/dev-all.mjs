@@ -8,6 +8,7 @@
  * Ports:  API 4000 | management 5173/4173 | ambulance 5174/4174 | hospital 5175/4175 | patient 5176/4176
  */
 import { spawn, execSync } from 'node:child_process';
+import net from 'node:net';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -21,6 +22,22 @@ const apps = [
   ['hospital', 'hospital-web', 5175, 4175],
   ['patient', 'patient-web', 5176, 4176],
 ];
+
+// A port still held by an earlier run is the most common demo failure: say so before starting anything.
+const portFree = (port) => new Promise((resolve) => {
+  const srv = net.createServer();
+  srv.once('error', () => resolve(false));
+  srv.once('listening', () => srv.close(() => resolve(true)));
+  srv.listen(port, '127.0.0.1');
+});
+const ports = [4000, ...apps.map(([, , d, p]) => (prod ? p : d))];
+const busy = [];
+for (const port of ports) if (!(await portFree(port))) busy.push(port);
+if (busy.length) {
+  console.error(`[dev-all] Port${busy.length > 1 ? 's' : ''} ${busy.join(', ')} already in use — probably an earlier JIVA run is still open.`);
+  console.error('[dev-all] Close it (or the process using the port) and start again. Nothing was started.');
+  process.exit(1);
+}
 
 if (prod) {
   console.log('[dev-all] Building all workspaces for production…');
@@ -50,6 +67,31 @@ ${apps.map(([n, , d, p]) => `  ${n.padEnd(12)} http://localhost:${prod ? p : d}`
   Flagship scenario:  npm run simulate:full:blr     Reset:  npm run demo:reset
   Auth: DEMO personas only (x-jiva-demo-user). Not production authentication.
 `);
+
+// Readiness: report when the API (health) and every app actually answer, or which one did not.
+const answers = async (url) => {
+  try {
+    return (await fetch(url, { signal: AbortSignal.timeout(1500) })).status < 500;
+  } catch {
+    return false;
+  }
+};
+void (async () => {
+  const deadline = Date.now() + (prod ? 120_000 : 90_000);
+  const targets = [['API', 'http://localhost:4000/api/health'], ...apps.map(([n, , d, p]) => [n, `http://localhost:${prod ? p : d}/`])];
+  const pending = new Set(targets.map(([n]) => n));
+  while (pending.size && Date.now() < deadline) {
+    for (const [n, url] of targets) if (pending.has(n) && (await answers(url))) pending.delete(n);
+    if (pending.size) await new Promise((r) => setTimeout(r, 1000));
+  }
+  if (pending.size) {
+    console.error(`\n[dev-all] NOT READY: ${[...pending].join(', ')} did not answer in time. Check its log lines above.`);
+  } else {
+    let mode = 'unknown';
+    try { mode = (await (await fetch('http://localhost:4000/api/health')).json()).mode ?? 'unknown'; } catch { /* reported above */ }
+    console.log(`\n[dev-all] READY — API healthy (${mode} mode) and all four apps answering. Run \`npm run demo:check\` for a full readiness report.`);
+  }
+})();
 
 let stopping = false;
 function stop() {
