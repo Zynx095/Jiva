@@ -48,7 +48,16 @@ export function Home({ live, onOpenScenarios }: { live: LiveState; onOpenScenari
     { icon: 'info', label: 'Demo mode — synthetic patients, hospitals and clinicians', tone: 'info' },
     { icon: 'activity', label: 'No hardware connected — vital signs are entered manually or simulated (labelled)', tone: 'warn' },
     { icon: 'navigation', label: 'No GPS — ambulance positions are set by the crew or simulated', tone: 'warn' },
-    { icon: 'route', label: routing?.synthetic || routing?.provider === 'mock' ? 'Routes are synthetic (mock provider, no live traffic)' : `Routing: ${routing?.provider ?? 'unknown'}`, tone: 'info' },
+    {
+      icon: 'route',
+      label:
+        routing?.synthetic || routing?.provider === 'mock'
+          ? 'Routes are synthetic (mock provider, no live traffic)'
+          : routing?.provider === 'none-yet' || !routing?.provider
+            ? 'No route computed yet — without a routing server, routes are synthetic'
+            : `Routing: ${routing.provider}`,
+      tone: 'info',
+    },
     { icon: 'brief', label: ai?.generator === 'LLM' ? 'Summaries by an AI service (advisory)' : 'Summaries are template text — no AI service connected', tone: 'info' },
     { icon: 'database', label: 'Kept in memory — an API restart clears the demo', tone: 'info' },
   ];

@@ -4,11 +4,23 @@ import type { ConnectionState, EncounterRecord, ReferralOverview } from '@jiva/u
 import { API_URL, call, socket } from './api';
 import { DEMO } from './workflows';
 
+/** The routing provider in plain words. Before the first route the API has not chosen one yet. */
+export function routingText(m: { provider?: string; synthetic?: boolean; chain?: string[] } | undefined): string {
+  if (!m?.provider) return 'unknown';
+  if (m.synthetic || m.provider === 'mock') return 'mock (synthetic routes, labelled; no live traffic)';
+  if (m.provider === 'none-yet') return `no route computed yet — tries ${(m.chain ?? []).join(' → ') || 'the configured providers'}; without a routing server it uses synthetic routes`;
+  return m.provider;
+}
+
 export interface Health {
   status?: string;
   mode?: 'DEMO' | 'OPERATIONAL';
-  provenance?: { statement?: string; liveIntegrations?: Record<string, boolean> };
-  components?: { mapping?: { provider?: string; synthetic?: boolean }; realtime?: { activeConnections?: number }; ai?: { provider?: string; generator?: string } };
+  provenance?: {
+    statement?: string;
+    liveIntegrations?: Record<string, boolean>;
+    providers?: { telemetry?: { simulator?: boolean; medicalDevices?: boolean }; positions?: { manual?: boolean; simulator?: boolean; deviceGps?: boolean } };
+  };
+  components?: { mapping?: { provider?: string; synthetic?: boolean; chain?: string[] }; realtime?: { activeConnections?: number }; ai?: { provider?: string; generator?: string } };
 }
 
 export interface LiveState {
