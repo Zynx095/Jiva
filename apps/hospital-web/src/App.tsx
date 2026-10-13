@@ -31,6 +31,8 @@ import {
   formatKm,
   hospitalShortName,
   minutesFromSeconds,
+  positionSource,
+  positionUpdateText,
   msUntil,
   timeAgo,
   timeUntil,
@@ -91,7 +93,7 @@ export default function App() {
       } else if (e.eventType === 'route.recalculated' && p.oldHospitalId === me && p.newHospitalId !== me) {
         toast.show({ title: `${String(p.ambulanceId)} rerouted elsewhere`, description: 'It is no longer heading to your hospital.', tone: 'warn', icon: 'route', groupKey: `dest:${String(p.ambulanceId)}` });
       } else if (e.eventType === 'ambulance.arrived' && p.hospitalId === me && p.basis !== 'HOSPITAL_CONFIRMED') {
-        toast.show({ title: `${String(p.ambulanceId)} is at your hospital`, description: `GPS places ${String(p.caseId ?? 'the patient')} at your hospital. Record the arrival when the patient is with your team.`, tone: 'ok', icon: 'pin', groupKey: `arr:${String(p.caseId ?? p.ambulanceId)}` });
+        toast.show({ title: `${String(p.ambulanceId)} is at your hospital`, description: `The ambulance's position places ${String(p.caseId ?? 'the patient')} at your hospital. Record the arrival when the patient is with your team.`, tone: 'ok', icon: 'pin', groupKey: `arr:${String(p.caseId ?? p.ambulanceId)}` });
       } else if (e.eventType === 'encounter.arrival.recorded' && p.hospitalId === me) {
         toast.show({ title: `Arrival recorded · ${String(p.caseId)}`, description: 'Record the handover when the crew hands the patient over.', tone: 'ok', icon: 'hospital', groupKey: `arr:${String(p.caseId)}` });
       } else if (e.eventType === 'encounter.handover.recorded' && p.hospitalId === me) {
@@ -587,13 +589,13 @@ function IncomingCard({ a, patient, now, hasBrief, action }: { a: AmbulanceState
       </div>
       <div className="mt-3 flex items-end justify-between gap-3">
         <div>
-          <p className="text-xs text-ink-500">{arrived ? 'At your hospital (GPS)' : 'Arrives in'}</p>
+          <p className="text-xs text-ink-500">{arrived ? 'At your hospital (by position)' : 'Arrives in'}</p>
           <p className="text-2xl font-semibold tabular-nums tracking-[-0.02em] text-ink-900">{arrived ? 'Now' : route ? `${minutesFromSeconds(route.durationSeconds)} min` : '—'}</p>
         </div>
         <div className="text-right text-xs text-ink-500">
           <p className="font-semibold text-ink-700">{a.ambulanceId}</p>
           <p>{route ? `${formatKm(route.distanceMeters)}${route.synthetic ? ' · synthetic route' : ''}` : 'Route pending'}</p>
-          <p>{a.locationAsOf ? `GPS ${timeAgo(a.locationAsOf, now)}` : 'No GPS fix yet'}</p>
+          <p title={positionSource(a.locationSource).hint}>{positionUpdateText(a, now, 'No position update yet')}</p>
         </div>
       </div>
       {patient && patient.careRequirements.length > 0 && <p className="mt-2 text-xs text-ink-600">Needs: {patient.careRequirements.map((c) => capabilityLabel(c)).join(', ')}</p>}
@@ -604,7 +606,7 @@ function IncomingCard({ a, patient, now, hasBrief, action }: { a: AmbulanceState
       )}
       {action ? (
         <div className="mt-3 flex items-center justify-between gap-2 border-t border-ink-100 pt-3">
-          <span className="text-xs text-ink-500">{arrived ? 'GPS is evidence only — confirm the arrival.' : 'When the patient reaches your department:'}</span>
+          <span className="text-xs text-ink-500">{arrived ? 'A position is evidence only — confirm the arrival.' : 'When the patient reaches your department:'}</span>
           {action}
         </div>
       ) : null}

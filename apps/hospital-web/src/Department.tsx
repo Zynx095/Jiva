@@ -87,7 +87,7 @@ export function RecordArrivalButton({ hospitalId, caseId, ambulanceId, gpsArrive
           </>
         }
       >
-        {gpsArrived && <p className="text-xs text-ink-500">The ambulance's GPS already placed it at your hospital. GPS is evidence only; your record is the confirmation.</p>}
+        {gpsArrived && <p className="text-xs text-ink-500">The ambulance's position already places it at your hospital. A position is evidence only; your record is the confirmation.</p>}
         {error && <CommandError message={error} />}
       </JivaModal>
     </>
@@ -217,7 +217,7 @@ function EncounterCard({ encounter: e, patient, roster, now, onChanged }: { enco
         <Fact label="Brought by">{e.ambulanceId ?? 'No ambulance on record'}</Fact>
         <Fact label="Referral">{e.referral ? `${e.referral.requestId}${e.referral.responseStatus ? ` · ${e.referral.responseStatus.toLowerCase()}` : ''}` : 'None on record'}</Fact>
         <Fact label="Arrival recorded by">{e.arrival ? ROLE_TEXT[e.arrival.recordedBy.role] ?? e.arrival.recordedBy.role : '—'}</Fact>
-        {e.arrival?.gpsArrivalAt && <Fact label="GPS geofence (evidence)">{formatClock(e.arrival.gpsArrivalAt)}</Fact>}
+        {e.arrival?.gpsArrivalAt && <Fact label="Position at hospital (evidence)">{formatClock(e.arrival.gpsArrivalAt)}</Fact>}
         {handedOverAt && <Fact label="Handed over">{`${formatClock(handedOverAt)}${e.handover ? ` · ${ROLE_TEXT[e.handover.recordedBy.role] ?? e.handover.recordedBy.role}` : ''}`}</Fact>}
       </dl>
 
