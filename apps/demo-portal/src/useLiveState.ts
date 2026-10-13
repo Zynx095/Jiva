@@ -8,7 +8,7 @@ export interface Health {
   status?: string;
   mode?: 'DEMO' | 'OPERATIONAL';
   provenance?: { statement?: string; liveIntegrations?: Record<string, boolean> };
-  components?: { mapping?: { provider?: string; synthetic?: boolean }; realtime?: { activeConnections?: number } };
+  components?: { mapping?: { provider?: string; synthetic?: boolean }; realtime?: { activeConnections?: number }; ai?: { provider?: string; generator?: string } };
 }
 
 export interface LiveState {

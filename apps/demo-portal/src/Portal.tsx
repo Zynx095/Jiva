@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import { ConnectionPill, EmptyState, Icon, JivaCard, JivaLogo, JivaSkeleton, cx, type IconName } from '@jiva/ui/src';
 import { AssetLibrary } from './AssetLibrary';
+import { Home } from './Home';
 import { Controls } from './Controls';
 import { ScenarioRunner } from './ScenarioRunner';
 import { SystemView } from './SystemView';
 import { TimelineView } from './TimelineView';
 import { useLiveState } from './useLiveState';
 
-type View = 'scenarios' | 'controls' | 'timeline' | 'assets' | 'system';
+type View = 'home' | 'scenarios' | 'controls' | 'timeline' | 'assets' | 'system';
 
 const NAV: Array<{ id: View; label: string; icon: IconName; hint: string }> = [
+  { id: 'home', label: 'Home', icon: 'gauge', hint: 'What JIVA is, and every role interface' },
   { id: 'scenarios', label: 'Scenarios', icon: 'activity', hint: 'Run scripted journeys step by step' },
   { id: 'controls', label: 'Controls', icon: 'panel', hint: 'Drive the demo case by hand' },
   { id: 'timeline', label: 'Timeline', icon: 'clock', hint: 'What was actually recorded' },
@@ -19,7 +21,7 @@ const NAV: Array<{ id: View; label: string; icon: IconName; hint: string }> = [
 
 const readView = (): View => {
   const v = new URLSearchParams(window.location.search).get('view');
-  return NAV.some((n) => n.id === v) ? (v as View) : 'scenarios';
+  return NAV.some((n) => n.id === v) ? (v as View) : 'home';
 };
 
 /**
@@ -108,6 +110,7 @@ export default function Portal() {
                 The JIVA API stopped answering. The portal keeps the last known state and retries automatically.
               </div>
             )}
+            {view === 'home' && <Home live={live} onOpenScenarios={() => go('scenarios')} />}
             {view === 'scenarios' && <ScenarioRunner live={live} />}
             {view === 'controls' && <Controls live={live} />}
             {view === 'timeline' && <TimelineView live={live} />}
