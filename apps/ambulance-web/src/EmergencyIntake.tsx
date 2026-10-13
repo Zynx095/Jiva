@@ -1,7 +1,9 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AmbulanceState, HospitalState } from '@jiva/domain-models';
-import { CardHeader, Icon, JivaButton, JivaCard, Spinner, capabilityLabel, cx, timeAgo } from '@jiva/ui/src';
+import { CardHeader, Icon, JivaButton, JivaCard, Spinner, capabilityLabel, cx, formatDateTime, fromDateTimeLocal, timeAgo, toDateTimeLocal, useNow } from '@jiva/ui/src';
 import { postCommand } from './api';
+import { VitalsFields } from './Vitals';
+import { emptyVitals, vitalsPayload, vitalsProblems, vitalsSummary, type VitalsDraft } from './vitalsDraft';
 
 /**
  * Crew emergency intake (Journey A, step 1). The crew records what it observes: where, how serious,
@@ -41,7 +43,7 @@ const CARE_OPTIONS = ['TRAUMA', 'ICU', 'VENTILATOR', 'CARDIOLOGY', 'NEUROLOGY', 
 const CASE_REF = /^CASE-[A-Z0-9][A-Z0-9-]{2,40}$/;
 const FIELD_LABEL: Record<string, string> = {
   location: 'Location', severity: 'Severity', reportedSymptoms: 'Symptoms', suspectedCause: 'Suspected cause',
-  requiredCapabilities: 'Care needed', notes: 'Notes', caseRef: 'Patient reference',
+  requiredCapabilities: 'Care needed', notes: 'Notes', caseRef: 'Patient reference', clinical: 'Vital signs or symptom details',
 };
 
 /** Capability code → facility capability key, as the eligibility engine reads it (ICU → icu, BLOOD_BANK → bloodBank). */
@@ -71,6 +73,12 @@ export function EmergencyIntake({ ambulance, hospitals, location, onLocation, on
   const [caseRef, setCaseRef] = useState('');
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
+  const [vitals, setVitals] = useState<VitalsDraft>(emptyVitals);
+  const [description, setDescription] = useState('');
+  const [onset, setOnset] = useState('');
+  const now = useNow(30_000);
+  // The time pickers' upper bound, fixed when the form opens (the server checks every time again).
+  const [latest] = useState(() => toDateTimeLocal(Date.now() + 60_000));
   const [manual, setManual] = useState<{ lat: string; lng: string } | null>(null);
   const [geo, setGeo] = useState<{ busy: boolean; error?: string }>({ busy: false });
   const [submit, setSubmit] = useState<SubmitState>({ state: 'idle' });
@@ -90,7 +98,15 @@ export function EmergencyIntake({ ambulance, hospitals, location, onLocation, on
   if (!severity) problems.push('Choose how serious it is.');
   if (symptoms.length === 0) problems.push('Add at least one reported symptom.');
   if (ref && !CASE_REF.test(ref)) problems.push('The patient reference looks like CASE-XXXX.');
+  problems.push(...vitalsProblems(vitals));
+  const onsetAt = onset ? fromDateTimeLocal(onset) : undefined;
+  if (onset && (!onsetAt || Date.parse(onsetAt) > now + 60_000)) problems.push('The symptom onset cannot be in the future.');
   const ready = problems.length === 0;
+  const clinicalPart = () => {
+    const v = vitalsPayload(vitals);
+    const c = { ...v, ...(description.trim() ? { symptomDescription: description.trim() } : {}), ...(onsetAt ? { symptomOnsetAt: onsetAt } : {}) };
+    return c.measurements.length || c.unavailable.length || c.symptomDescription || c.symptomOnsetAt ? c : undefined;
+  };
 
   const toggle = (list: string[], set: (v: string[]) => void, v: string) => set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
   const addOther = () => {
@@ -142,6 +158,7 @@ export function EmergencyIntake({ ambulance, hospitals, location, onLocation, on
       requiredCapabilities: care,
       ...(notes.trim() ? { notes: notes.trim() } : {}),
       ...(ref ? { caseRef: ref } : {}),
+      ...(clinicalPart() ? { clinical: clinicalPart() } : {}),
     };
     const fingerprint = JSON.stringify(payload);
     if (!sent.current || sent.current.fingerprint !== fingerprint) sent.current = { key: crypto.randomUUID(), fingerprint };
@@ -207,6 +224,9 @@ export function EmergencyIntake({ ambulance, hospitals, location, onLocation, on
           </Row>
           <Row label="Patient reference">{ref || <span className="text-ink-500">New — JIVA creates one</span>}</Row>
           {notes.trim() && <Row label="Notes">{notes.trim()}</Row>}
+          <Row label="Vital signs">{vitalsSummary(vitals) || <span className="text-ink-500">None recorded</span>}</Row>
+          {description.trim() && <Row label="Symptom description">{description.trim()}</Row>}
+          {onsetAt && <Row label="Symptoms started">{formatDateTime(onsetAt)}</Row>}
         </dl>
         {submit.state === 'error' && <ErrorBox>{submit.message}</ErrorBox>}
         <div className="mt-4 flex flex-wrap gap-2">
@@ -217,7 +237,7 @@ export function EmergencyIntake({ ambulance, hospitals, location, onLocation, on
             Edit
           </JivaButton>
         </div>
-        <p className="mt-2 text-xs text-ink-500">On submit, JIVA opens the case, assigns your ambulance to it and asks the hospitals that list the needed care to accept.</p>
+        <p className="mt-2 text-xs text-ink-500">On submit, JIVA opens the case, assigns your ambulance to it and asks the hospitals that list the needed care to accept. Vital signs and the symptom description go only to the case's clinical record (the receiving doctor reads them), not to dispatch.</p>
       </JivaCard>
     );
   }
@@ -353,6 +373,18 @@ export function EmergencyIntake({ ambulance, hospitals, location, onLocation, on
               No connected hospital lists {care.filter((c) => !listedBy.get(c)).map((c) => capabilityLabel(c)).join(', ')}. JIVA cannot send a referral that requires it — call ahead if the patient needs it.
             </p>
           )}
+        </fieldset>
+
+        <fieldset className={cx('space-y-2', fieldError('clinical') && 'rounded-lg ring-2 ring-danger-300 ring-offset-4')}>
+          <legend className="text-sm font-semibold text-ink-900">Vital signs and symptom details (optional)</legend>
+          <p className="text-xs text-ink-500">For the receiving doctor. Typed in by you — no monitor is connected to JIVA. They are not used to choose the hospital.</p>
+          <VitalsFields value={vitals} onChange={setVitals} idPrefix="intake" />
+          <Field label="Describe the symptoms (optional)">
+            <textarea value={description} maxLength={1000} onChange={(e) => setDescription(e.target.value)} rows={3} className={cx(inputCls, 'h-auto w-full py-2')} placeholder="What the patient or bystanders report, and what you see" />
+          </Field>
+          <Field label="When did the symptoms start? (optional)">
+            <input type="datetime-local" value={onset} max={latest} onChange={(e) => setOnset(e.target.value)} className={cx(inputCls, 'w-full')} />
+          </Field>
         </fieldset>
 
         <Field label="Patient reference (optional)" hint="Only if the patient shows you their JIVA case reference. Leave empty and JIVA creates one. No names or ID numbers.">

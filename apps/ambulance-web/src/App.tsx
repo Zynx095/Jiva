@@ -57,6 +57,7 @@ import {
 import { API_URL, PERSONA, apiGet } from './api';
 import { useCrew } from './useCrew';
 import { EmergencyIntake, type DraftLocation } from './EmergencyIntake';
+import { PrehospitalCard } from './Vitals';
 
 const PERSONAS = [
   { value: 'demo-amb-1', label: 'AMB-BLR-001 (demo-amb-1)' },
@@ -87,6 +88,8 @@ export default function App() {
   const [lost, setLost] = useState<{ at: string; reason?: string } | null>(null);
   // The last job this unit handed over (from the hospital's handover record), shown while the unit is free.
   const [handedOver, setHandedOver] = useState<{ caseId: string; hospitalId: string; at: string } | null>(null);
+  // Bumped when the crew's pre-hospital record changes (the observations card reloads).
+  const [observationsVersion, setObservationsVersion] = useState(0);
   const latest = useRef<{ ambulance: AmbulanceState | null; name: (id: string) => string | undefined }>({ ambulance: null, name: () => undefined });
 
   const onLive = useCallback(
@@ -132,6 +135,8 @@ export default function App() {
         setLost(null);
         setHandedOver({ caseId: String(p.caseId), hospitalId: String(p.hospitalId), at: typeof p.handedOverAt === 'string' ? p.handedOverAt : e.timestamp });
         toast.show({ title: 'Handover recorded', description: `${String(p.caseId)} is in the care of ${name(String(p.hospitalId)) ?? p.hospitalId}. Your unit is available.`, tone: 'ok', icon: 'checkCircle', groupKey: 'arrived', durationMs: 8000 });
+      } else if (e.eventType === 'clinical.prehospital.recorded') {
+        setObservationsVersion((v) => v + 1);
       } else if (e.eventType === 'ambulance.dispatched' && p.assignmentBasis !== 'REPORTED_BY_CREW') {
         // A crew-reported case is confirmed by the intake itself; only dispatch assignments need a toast.
         toast.show({ title: `Dispatched to ${String(p.caseId ?? 'a case')}`, tone: 'ok', icon: 'ambulance', groupKey: 'dispatch' });
@@ -518,6 +523,8 @@ export default function App() {
                   </dl>
                 </JivaCard>
               )}
+
+              {patient && caseId && <PrehospitalCard caseId={caseId} version={observationsVersion} />}
 
               {caseId && (
                 <JivaCard>
