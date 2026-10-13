@@ -23,6 +23,17 @@ export const EXTERNAL_EVENT_TYPES = new Set([
  */
 export const PRIVILEGED_ONLY_EVENT_TYPES = new Set(['feasibility.trace.recorded']);
 
+/**
+ * Intake channel each principal may claim when it reports an emergency (provenance must match the
+ * reporter: a crew cannot label its report as coming from dispatch, and vice versa).
+ */
+function intakeChannelFor(auth: AuthContext): 'AMBULANCE_CREW' | 'DISPATCH' | 'PATIENT_APP' | undefined {
+  if (auth.role === 'AMBULANCE') return 'AMBULANCE_CREW';
+  if (auth.role === 'PATIENT') return 'PATIENT_APP';
+  if (isPrivileged(auth)) return 'DISPATCH';
+  return undefined;
+}
+
 /** Returns null if allowed, otherwise a reason string. */
 export function authorizeEventSubmission(auth: AuthContext, event: AnyEvent): string | null {
   if (!EXTERNAL_EVENT_TYPES.has(event.eventType)) {
@@ -30,11 +41,20 @@ export function authorizeEventSubmission(auth: AuthContext, event: AnyEvent): st
   }
   const src = event.source;
   switch (event.eventType) {
-    case 'patient.emergency.created':
+    case 'patient.emergency.created': {
+      const channel = event.payload.intake?.channel;
+      if (channel && channel !== intakeChannelFor(auth)) return `Intake channel ${channel} does not match the reporting principal`;
       if (isPrivileged(auth)) return null;
       if (auth.role === 'PATIENT' && event.patientId && event.patientId === auth.caseId && src.type === 'patient') return null;
-      return 'Only management or the patient themself may report this emergency';
+      // The crew attending a patient may report the emergency — only as its own unit (source bound to it).
+      // It gains no other permission: it still cannot dispatch, answer for hospitals or touch clinical records.
+      if (auth.role === 'AMBULANCE' && auth.ambulanceId && src.type === 'ambulance' && src.id === auth.ambulanceId) return null;
+      if (auth.role === 'AMBULANCE') return 'An ambulance crew may only report an emergency as its own unit';
+      return 'Only dispatch (MANAGEMENT/ADMIN), the attending ambulance crew or the patient themself may report this emergency';
+    }
     case 'ambulance.dispatched':
+      // A crew-reported assignment is derived by the intake engine from the crew's own emergency report.
+      if (event.payload.assignmentBasis === 'REPORTED_BY_CREW') return 'Crew-reported assignments are system-generated';
       return isPrivileged(auth) ? null : 'Only dispatch (MANAGEMENT/ADMIN) may dispatch ambulances';
     case 'ambulance.location.updated': {
       const id = event.payload.ambulanceId;

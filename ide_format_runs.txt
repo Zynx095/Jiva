@@ -1,0 +1,94 @@
+=== SLIDE 1 ===
+  Shape Rectangle 24 (L=1.67, T=0.00, W=10.00, H=7.50):
+    P0 (space_before=None, space_after=None, line_spacing=None, level=0, align=CENTER (2)):
+  Shape Freeform: Shape 26 (L=6.19, T=0.93, W=5.07, H=5.64):
+    P0 (space_before=None, space_after=None, line_spacing=None, level=0, align=CENTER (2)):
+  Shape Subtitle 3 (L=1.36, T=0.71, W=9.33, H=1.92):
+    P0 (space_before=None, space_after=None, line_spacing=None, level=0, align=None):
+    P1 (space_before=None, space_after=None, line_spacing=None, level=0, align=None):
+      run: 'TITLE PAGE' | font=Times New Roman, size=None, bold=True, color=theme/none
+  Shape Title 7 (L=0.36, T=-0.58, W=11.33, H=2.27):
+    P0 (space_before=None, space_after=None, line_spacing=None, level=0, align=None):
+      run: 'IDE BOOTCAMP 2026' | font=Garamond, size=40.0, bold=True, color=theme/none
+  Shape TextBox 9 (L=0.36, T=2.27, W=6.48, H=3.51):
+    P0 (space_before=None, space_after=None, line_spacing=None, level=0, align=None):
+    P1 (space_before=None, space_after=None, line_spacing=2.0, level=0, align=JUSTIFY (4)):
+      run: 'Problem Statement Title-' | font=Arial, size=24.0, bold=True, color=theme/none
+    P2 (space_before=None, space_after=None, line_spacing=2.0, level=0, align=JUSTIFY (4)):
+      run: 'Theme-' | font=Arial, size=24.0, bold=True, color=theme/none
+    P3 (space_before=None, space_after=None, line_spacing=2.0, level=0, align=JUSTIFY (4)):
+      run: 'PS Category- Software/Hardware' | font=Arial, size=24.0, bold=True, color=theme/none
+    P4 (space_before=None, space_after=None, line_spacing=2.0, level=0, align=JUSTIFY (4)):
+      run: 'Team Name - ' | font=Arial, size=24.0, bold=True, color=theme/none
+=== SLIDE 2 ===
+  Shape Rectangle 8 (L=0.00, T=6.95, W=13.33, H=0.55):
+    P0 (space_before=0, space_after=0, line_spacing=None, level=0, align=CENTER (2)):
+  Shape Title 1 (L=0.20, T=0.00, W=12.00, H=1.25):
+    P0 (space_before=None, space_after=None, line_spacing=None, level=0, align=None):
+      run: 'IDEA TITLE' | font=Times New Roman, size=36.0, bold=True, color=theme/none
+  Shape TextBox 8 (L=-0.00, T=2.26, W=13.33, H=2.73):
+    P0 (space_before=None, space_after=None, line_spacing=None, level=0, align=None):
+      run: 'Proposed Solution (Describe your Idea/Solution/Prototype)' | font=Arial, size=32.0, bold=True, color=theme/none
+    P1 (space_before=None, space_after=None, line_spacing=None, level=0, align=None):
+    P2 (space_before=None, space_after=None, line_spacing=None, level=0, align=None):
+    P3 (space_before=None, space_after=None, line_spacing=None, level=0, align=JUSTIFY (4)):
+      run: 'Detailed explanation of the proposed solution' | font=Arial, size=28.0, bold=None, color=theme/none
+    P4 (space_before=None, space_after=None, line_spacing=None, level=0, align=JUSTIFY (4)):
+      run: ' How it addresses the problem' | font=Arial, size=28.0, bold=None, color=theme/none
+    P5 (space_before=None, space_after=None, line_spacing=None, level=0, align=JUSTIFY (4)):
+      run: 'Innovation and uniqueness of the solution ' | font=Arial, size=28.0, bold=None, color=theme/none
+  Shape Slide Number Placeholder 5 (L=9.56, T=6.95, W=3.11, H=0.40):
+    P0 (space_before=None, space_after=None, line_spacing=None, level=0, align=None):
+=== SLIDE 3 ===
+  Shape Rectangle 9 (L=0.00, T=6.95, W=13.33, H=0.55):
+    P0 (space_before=0, space_after=0, line_spacing=None, level=0, align=CENTER (2)):
+  Shape Title 1 (L=0.67, T=-0.05, W=12.00, H=1.25):
+    P0 (space_before=None, space_after=None, line_spacing=None, level=0, align=None):
+      run: 'TECHNICAL APPROACH' | font=Times New Roman, size=36.0, bold=True, color=theme/none
+  Shape TextBox 8 (L=0.67, T=2.77, W=10.26, H=1.99):
+    P0 (space_before=None, space_after=None, line_spacing=None, level=0, align=JUSTIFY (4)):
+      run: 'Technologies to be used (e.g. programming languages, frameworks, hardware)' | font=Arial, size=28.0, bold=None, color=theme/none
+    P1 (space_before=None, space_after=None, line_spacing=None, level=0, align=JUSTIFY (4)):
+      run: 'Methodology and process for implementation (Flow Charts/Images/ working prototype)' | font=Arial, size=28.0, bold=None, color=theme/none
+  Shape Slide Number Placeholder 5 (L=9.56, T=6.95, W=3.11, H=0.40):
+    P0 (space_before=None, space_after=None, line_spacing=None, level=0, align=None):
+=== SLIDE 4 ===
+  Shape Rectangle 9 (L=0.00, T=6.95, W=13.33, H=0.55):
+    P0 (space_before=0, space_after=0, line_spacing=1.0, level=0, align=CENTER (2)):
+  Shape Title 1 (L=0.67, T=-0.05, W=12.00, H=1.25):
+    P0 (space_before=None, space_after=None, line_spacing=None, level=0, align=None):
+      run: 'FEASIBILITY AND VIABILITY' | font=Times New Roman, size=36.0, bold=True, color=theme/none
+  Shape TextBox 8 (L=0.67, T=2.77, W=10.26, H=1.51):
+    P0 (space_before=None, space_after=None, line_spacing=1.0, level=0, align=JUSTIFY (4)):
+      run: 'Analysis of the feasibility of the idea' | font=Arial, size=28.0, bold=None, color=theme/none
+    P1 (space_before=None, space_after=None, line_spacing=1.0, level=0, align=JUSTIFY (4)):
+      run: 'Potential challenges and risks' | font=Arial, size=28.0, bold=None, color=theme/none
+    P2 (space_before=None, space_after=None, line_spacing=1.0, level=0, align=JUSTIFY (4)):
+      run: 'Strategies' | font=Arial, size=28.0, bold=False, color=theme/none
+      run: ' for overcoming these challenges' | font=Arial, size=28.0, bold=False, color=theme/none
+  Shape Slide Number Placeholder 5 (L=9.56, T=6.95, W=3.11, H=0.40):
+    P0 (space_before=None, space_after=None, line_spacing=1.0, level=0, align=RIGHT (3)):
+=== SLIDE 5 ===
+  Shape Rectangle 9 (L=0.00, T=6.95, W=13.33, H=0.55):
+    P0 (space_before=0, space_after=0, line_spacing=1.0, level=0, align=CENTER (2)):
+  Shape Title 1 (L=0.67, T=-0.05, W=12.00, H=1.25):
+    P0 (space_before=None, space_after=None, line_spacing=None, level=0, align=None):
+      run: 'IMPACT AND BENEFITS' | font=Times New Roman, size=36.0, bold=True, color=theme/none
+  Shape TextBox 8 (L=0.67, T=2.77, W=10.26, H=1.51):
+    P0 (space_before=None, space_after=None, line_spacing=1.0, level=0, align=JUSTIFY (4)):
+      run: 'Potential impact on the target audience' | font=Arial, size=28.0, bold=False, color=theme/none
+    P1 (space_before=None, space_after=None, line_spacing=1.0, level=0, align=JUSTIFY (4)):
+      run: 'Benefits of the solution (social, economic, environmental, etc.)' | font=Arial, size=28.0, bold=None, color=theme/none
+  Shape Slide Number Placeholder 5 (L=9.56, T=6.95, W=3.11, H=0.40):
+    P0 (space_before=None, space_after=None, line_spacing=1.0, level=0, align=RIGHT (3)):
+=== SLIDE 6 ===
+  Shape Rectangle 9 (L=0.00, T=6.95, W=13.33, H=0.55):
+    P0 (space_before=0, space_after=0, line_spacing=1.0, level=0, align=CENTER (2)):
+  Shape Title 1 (L=0.67, T=-0.05, W=12.00, H=1.25):
+    P0 (space_before=None, space_after=None, line_spacing=None, level=0, align=None):
+      run: 'RESEARCH  AND REFERENCES' | font=Times New Roman, size=36.0, bold=True, color=theme/none
+  Shape TextBox 8 (L=0.67, T=3.06, W=10.26, H=0.57):
+    P0 (space_before=None, space_after=None, line_spacing=1.0, level=0, align=JUSTIFY (4)):
+      run: 'Details / Links of the reference and research work' | font=Arial, size=28.0, bold=None, color=theme/none
+  Shape Slide Number Placeholder 5 (L=9.56, T=6.95, W=3.11, H=0.40):
+    P0 (space_before=None, space_after=None, line_spacing=1.0, level=0, align=RIGHT (3)):

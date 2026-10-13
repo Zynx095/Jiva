@@ -1,0 +1,381 @@
+/*
+ * JIVA design tokens and base styles (Tailwind v4).
+ * Imported by every app after `@import "tailwindcss";`. See DESIGN.md for the rules behind them.
+ *
+ * Identity: white-first clinical surfaces, one green brand colour, one green-tinted gray family,
+ * amber for "needs attention", red only for critical / error / unavailable.
+ */
+
+@theme {
+  --font-sans: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
+
+  /* Brand green: confident, slightly cool, never neon. 700 is the text/button shade (6.6:1 on white). */
+  --color-brand-50: #ecf7f1;
+  --color-brand-100: #d3eedf;
+  --color-brand-200: #a9dcc1;
+  --color-brand-300: #74c39c;
+  --color-brand-400: #3fa574;
+  --color-brand-500: #1c8a58;
+  --color-brand-600: #0f7a4a;
+  --color-brand-700: #0b6b41;
+  --color-brand-800: #0a5535;
+  --color-brand-900: #08432a;
+  --color-brand-950: #04261a;
+
+  /* Ink: the only gray family, faintly tinted toward the brand. 500 is the lightest text shade (5.6:1). */
+  --color-ink-25: #fbfcfb;
+  --color-ink-50: #f5f7f6;
+  --color-ink-100: #ecefed;
+  --color-ink-200: #dee3e0;
+  --color-ink-300: #c6cec9;
+  --color-ink-400: #96a19b;
+  --color-ink-500: #5f6b65;
+  --color-ink-600: #4a5550;
+  --color-ink-700: #36403c;
+  --color-ink-800: #232b28;
+  --color-ink-900: #151b19;
+  --color-ink-950: #0b100e;
+
+  /* Amber: pending, limited, stale, needs attention. Text uses 700. */
+  --color-warn-50: #fff8eb;
+  --color-warn-100: #feefc7;
+  --color-warn-200: #fcdc8e;
+  --color-warn-300: #f8c55a;
+  --color-warn-400: #f0a92e;
+  --color-warn-500: #db8b12;
+  --color-warn-600: #b4690e;
+  --color-warn-700: #9a5b0b;
+  --color-warn-800: #7a460c;
+  --color-warn-900: #5e360c;
+
+  /* Red: critical, rejected, unavailable, error. Never decorative. */
+  --color-danger-50: #fef3f2;
+  --color-danger-100: #fee4e2;
+  --color-danger-200: #fdcdc9;
+  --color-danger-300: #faa7a0;
+  --color-danger-400: #f27466;
+  --color-danger-500: #e5483b;
+  --color-danger-600: #c9352a;
+  --color-danger-700: #a3281f;
+  --color-danger-800: #85211b;
+  --color-danger-900: #6b1c18;
+
+  /* Shadows are tinted with ink, from a single top light source. */
+  --shadow-xs: 0 1px 2px rgb(21 27 25 / 0.06);
+  --shadow-sm: 0 1px 3px rgb(21 27 25 / 0.08), 0 1px 2px rgb(21 27 25 / 0.04);
+  --shadow-md: 0 6px 16px -4px rgb(21 27 25 / 0.12), 0 2px 4px -2px rgb(21 27 25 / 0.06);
+  --shadow-lg: 0 16px 40px -12px rgb(21 27 25 / 0.22), 0 4px 10px -4px rgb(21 27 25 / 0.08);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --animate-enter: jiva-enter 380ms var(--ease-out) both;
+  --animate-fade: jiva-fade 240ms ease-out both;
+  --animate-toast: jiva-toast 320ms var(--ease-out) both;
+  --animate-drawer: jiva-drawer 320ms var(--ease-out) both;
+  --animate-shimmer: jiva-shimmer 1.6s linear infinite;
+  --animate-breathe: jiva-breathe 1.8s ease-in-out infinite;
+  --animate-ring: jiva-ring 2.2s var(--ease-out) infinite;
+
+  @keyframes jiva-enter {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes jiva-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes jiva-toast {
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes jiva-drawer {
+    from { opacity: 0.4; transform: translateX(24px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes jiva-shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+  @keyframes jiva-breathe {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+  @keyframes jiva-ring {
+    0% { transform: scale(0.6); opacity: 0.55; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+  body {
+    margin: 0;
+    background-color: var(--color-ink-50);
+    color: var(--color-ink-900);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+  }
+  h1, h2, h3, h4 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  ::selection {
+    background: var(--color-brand-100);
+    color: var(--color-brand-900);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 2px;
+  }
+  button, [role="button"], summary {
+    -webkit-tap-highlight-color: transparent;
+  }
+  summary {
+    cursor: pointer;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+}
+
+@layer components {
+  /* Thin, quiet scrollbars for dense panels. */
+  .jiva-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-ink-300) transparent;
+  }
+
+  .jiva-skeleton {
+    background: linear-gradient(90deg, var(--color-ink-100) 0%, var(--color-ink-200) 40%, var(--color-ink-100) 80%);
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+  }
+
+  /* ---------------------------------------------------------------- map chrome */
+  .jiva-map .maplibregl-ctrl-group {
+    border-radius: 10px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-ink-200);
+    overflow: hidden;
+  }
+  .jiva-map .maplibregl-ctrl-group button {
+    width: 34px;
+    height: 34px;
+  }
+  .jiva-map .maplibregl-ctrl-attrib {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    background: rgb(255 255 255 / 0.85);
+    border-radius: 6px 0 0 0;
+    color: var(--color-ink-600);
+  }
+  .jiva-map .maplibregl-ctrl-attrib a {
+    color: var(--color-ink-700);
+  }
+  .jiva-map .maplibregl-popup {
+    z-index: 10; /* above every marker (markers use z-index 1–4) */
+  }
+  .jiva-map .maplibregl-popup-content {
+    padding: 0;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--color-ink-200);
+    font-family: var(--font-sans);
+  }
+  .jiva-map .maplibregl-popup-tip {
+    border-top-color: white;
+    border-bottom-color: white;
+  }
+  .jiva-map .maplibregl-popup-close-button {
+    display: none;
+  }
+
+  /* ---------------------------------------------------------------- map markers
+   * MapLibre owns the marker root's transform (positioning), so motion is applied to inner nodes only. */
+  .jiva-mk {
+    position: relative;
+    display: block;
+    cursor: pointer;
+    background: none;
+    border: 0;
+    padding: 0;
+    font-family: var(--font-sans);
+  }
+  .jiva-mk:focus-visible {
+    outline: none;
+  }
+  .jiva-mk:focus-visible .jiva-mk__body {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 3px;
+  }
+  .jiva-mk__body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 180ms var(--ease-out), box-shadow 180ms ease-out;
+  }
+  .jiva-mk:hover .jiva-mk__body {
+    transform: scale(1.08);
+  }
+  .jiva-mk[data-selected="true"] .jiva-mk__body {
+    transform: scale(1.14);
+  }
+  .jiva-mk__label {
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 6px);
+    transform: translateX(-50%) translateY(-2px);
+    white-space: nowrap;
+    pointer-events: none;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--color-ink-900);
+    background: white;
+    border: 1px solid var(--color-ink-200);
+    border-radius: 6px;
+    padding: 5px 7px;
+    box-shadow: var(--shadow-sm);
+    opacity: 0;
+    transition: opacity 150ms ease-out, transform 150ms var(--ease-out);
+  }
+  .jiva-mk__label small {
+    font-weight: 500;
+    color: var(--color-ink-500);
+    margin-left: 4px;
+  }
+  .jiva-mk:hover .jiva-mk__label,
+  .jiva-mk:focus-visible .jiva-mk__label,
+  .jiva-mk[data-selected="true"] .jiva-mk__label,
+  .jiva-mk[data-label="always"] .jiva-mk__label {
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+
+  /* Hospital: rounded square with a cross; tone = acceptance state; corner glyph repeats the state. */
+  .jiva-mk--hospital .jiva-mk__body {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    color: white;
+    border: 2px solid white;
+    box-shadow: 0 2px 6px rgb(21 27 25 / 0.28);
+  }
+  .jiva-mk--hospital[data-tone="ok"] .jiva-mk__body { background: var(--color-brand-600); }
+  .jiva-mk--hospital[data-tone="warn"] .jiva-mk__body { background: var(--color-warn-600); }
+  .jiva-mk--hospital[data-tone="danger"] .jiva-mk__body { background: var(--color-danger-600); }
+  .jiva-mk--hospital[data-tone="neutral"] .jiva-mk__body {
+    background: white;
+    color: var(--color-ink-600);
+    border-color: var(--color-ink-400);
+  }
+  .jiva-mk--hospital[data-dimmed="true"] .jiva-mk__body { opacity: 0.55; }
+  .jiva-mk__h {
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+  .jiva-mk__badge {
+    position: absolute;
+    right: -5px;
+    top: -5px;
+    width: 15px;
+    height: 15px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 1px solid var(--color-ink-200);
+    color: var(--color-ink-700);
+  }
+  .jiva-mk[data-tone="ok"] .jiva-mk__badge { color: var(--color-brand-700); }
+  .jiva-mk[data-tone="warn"] .jiva-mk__badge { color: var(--color-warn-700); }
+  .jiva-mk[data-tone="danger"] .jiva-mk__badge { color: var(--color-danger-700); }
+  .jiva-mk[data-selected="true"] .jiva-mk__body {
+    box-shadow: 0 0 0 4px var(--color-brand-200), 0 4px 10px rgb(21 27 25 / 0.3);
+  }
+
+  /* Ambulance: dark pill when on a job; compact chip when idle. */
+  .jiva-mk--ambulance .jiva-mk__body {
+    gap: 6px;
+    height: 26px;
+    padding: 0 9px 0 7px;
+    border-radius: 999px;
+    background: var(--color-ink-900);
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    border: 2px solid white;
+    box-shadow: 0 3px 10px rgb(21 27 25 / 0.32);
+    white-space: nowrap;
+  }
+  .jiva-mk--ambulance .jiva-mk__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--color-brand-300);
+  }
+  .jiva-mk--ambulance[data-idle="true"] .jiva-mk__body {
+    height: 24px;
+    width: 24px;
+    padding: 0;
+    background: white;
+    color: var(--color-ink-700);
+    border: 1px solid var(--color-ink-300);
+    box-shadow: var(--shadow-sm);
+  }
+  /* Parked units sit up-right of their station: put their label above so it never covers the hospital. */
+  .jiva-mk--ambulance[data-idle="true"] .jiva-mk__label {
+    top: auto;
+    bottom: calc(100% + 6px);
+  }
+  .jiva-mk--ambulance[data-idle="true"][data-arrived="true"] .jiva-mk__body {
+    background: var(--color-brand-700);
+    color: white;
+    border: 2px solid white;
+  }
+
+  /* Emergency: red dot with a soft expanding ring (removed for reduced motion). */
+  .jiva-mk--emergency .jiva-mk__body {
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--color-danger-600);
+    color: white;
+    border: 2px solid white;
+    box-shadow: 0 2px 8px rgb(201 53 42 / 0.45);
+  }
+  .jiva-mk--emergency .jiva-mk__ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: var(--color-danger-500);
+    animation: var(--animate-ring);
+    pointer-events: none;
+  }
+}
+
+/* Motion must explain change; people who ask for less motion get none. */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .jiva-mk--emergency .jiva-mk__ring {
+    display: none;
+  }
+}

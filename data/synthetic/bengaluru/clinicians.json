@@ -1,0 +1,9 @@
+[
+  { "practitionerId": "PRAC-BLR-004-01", "hospitalId": "HOSP-BLR-004", "displayName": "Dr. Kavya Rao", "specialty": "Emergency medicine", "active": true },
+  { "practitionerId": "PRAC-BLR-004-02", "hospitalId": "HOSP-BLR-004", "displayName": "Dr. Arjun Menon", "specialty": "Trauma surgery", "active": true },
+  { "practitionerId": "PRAC-BLR-004-03", "hospitalId": "HOSP-BLR-004", "displayName": "Dr. Fatima Sheikh", "specialty": "Critical care", "active": false },
+  { "practitionerId": "PRAC-BLR-001-01", "hospitalId": "HOSP-BLR-001", "displayName": "Dr. Ravi Kumar", "specialty": "Emergency medicine", "active": true },
+  { "practitionerId": "PRAC-BLR-001-02", "hospitalId": "HOSP-BLR-001", "displayName": "Dr. Meera Iyer", "specialty": "Orthopaedics", "active": true },
+  { "practitionerId": "PRAC-BLR-002-01", "hospitalId": "HOSP-BLR-002", "displayName": "Dr. Sanjay Patil", "specialty": "Emergency medicine", "active": true },
+  { "practitionerId": "PRAC-BLR-003-01", "hospitalId": "HOSP-BLR-003", "displayName": "Dr. Ananya Das", "specialty": "General medicine", "active": true }
+]

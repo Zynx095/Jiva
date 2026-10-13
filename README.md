@@ -28,7 +28,7 @@ JIVA's rule is simple: **never assume a bed is open.** Public data tells us what
 - **Care Feasibility Engine.** Checks clinical capability, evidence quality, and acceptance. It runs in **shadow mode only**.
 - **Provider-agnostic routing.** Valhalla, OSRM, or a labelled synthetic fallback, chosen through a fallback chain.
 - **AI sidecar.** Produces handoff briefs and timeline summaries. It emits only `ai.*` events and has no routing authority.
-- **Four role-scoped apps.** Management, Ambulance, Hospital, and Patient, all updated live over Socket.IO.
+- **Four role-scoped apps.** Management, Ambulance, Hospital, and Patient, all updated live over Socket.IO and built on one shared design system ([`DESIGN.md`](DESIGN.md)).
 - **Local-first, AWS-ready.** The same design runs in memory locally and is modeled in CDK for AWS.
 
 ## Architecture
@@ -67,7 +67,7 @@ Requires Node.js 20+.
 
 ```bash
 npm install
-npm run dev                # API :4000 + all four apps
+npm run dev                # API :4000 + all six apps
 npm run simulate:full:blr  # flagship scenario: request → accept → reroute → arrival
 ```
 
@@ -76,10 +76,18 @@ npm run simulate:full:blr  # flagship scenario: request → accept → reroute �
 | API | `:4000` | `:4000` |
 | Management | `:5173` | `:4173` |
 | Ambulance | `:5174` | `:4174` |
-| Hospital | `:5175` | `:4175` |
+| Hospital (coordination) | `:5175` | `:4175` |
 | Patient | `:5176` | `:4176` |
+| Doctor workspace | `:5177` | `:4177` |
+| Demo portal (separate, not operational) | `:5178` | `:4178` |
 
-`npm run start:prod` serves the production builds.
+`npm run start:prod` serves the production builds. Both refuse to start if a port is still in use and print `READY` once the API and all six apps answer. The demo portal runs scripted scenarios through the real workflows and shows the recorded timeline; see [`docs/clinical-workspace.md`](docs/clinical-workspace.md).
+
+The demo API accepts requests only from the machine it runs on (demo personas are not authentication). To demo across a network on purpose, set `JIVA_DEMO_ALLOW_REMOTE=true` — then anyone on that network can act as any persona.
+
+Personas are chosen with `?as=` (e.g. `http://localhost:5177/?as=demo-doc-3` opens the doctor workspace as Dr. Ravi Kumar):
+crews `demo-amb-1…3`, hospital coordinators `demo-hosp-1…4`, clinicians `demo-doc-1…5`, patients
+`demo-patient-1/2` (cases `CASE-BLR-876/877`), `demo-mgmt-1`, `demo-admin`.
 
 ### Common commands
 
@@ -88,7 +96,8 @@ npm run simulate:full:blr  # flagship scenario: request → accept → reroute �
 | `npm test` | Unit and integration suites |
 | `npm run typecheck` | Build all workspaces and typecheck the tests |
 | `npm run demo:reset` | Reset demo state |
-| `npm run demo:check` | Verify demo readiness, including Lambda bundle loading |
+| `npm run demo:check` | Verify demo readiness, including Lambda bundle loading and the clinical catalogue |
+| `npm run catalogue:validate` | Validate the bundled clinical catalogue (schemas, sample files' size, hash and type) |
 | `npm run simulate:emergency` | Emit a Bengaluru emergency event sequence |
 | `npm run canary:soak` | Run the authority canary soak |
 | `npm run data:build` | Fetch, normalize, and validate the public dataset |
@@ -101,10 +110,10 @@ npm run simulate:full:blr  # flagship scenario: request → accept → reroute �
 ```text
 jiva/
 ├── apps/
-│   ├── management-web/    Command center: map, incidents, decision trace
-│   ├── ambulance-web/     EMS view: route, destination, alternatives
-│   ├── hospital-web/      ED clinician accept / limited / reject
-│   └── patient-web/       Own-case journey, server ETA, uncertainty shown
+│   ├── management-web/    Command center: network map, incidents, search, decision trace
+│   ├── ambulance-web/     Crew view: next action, route, reroute explainer, hospital answers
+│   ├── hospital-web/      ED console: timed requests, accept / limits / decline, arrivals
+│   └── patient-web/       Own-case journey, what happens next, activity, SOS
 ├── packages/
 │   ├── event-schema/      Zod definitions of canonical events
 │   ├── domain-models/     Patient, Hospital, Ambulance, protocol types
@@ -114,7 +123,7 @@ jiva/
 │   ├── realtime/          Socket.IO and AWS WebSocket adapters
 │   ├── auth/              Demo personas, RBAC, Cognito JWT verification
 │   ├── config/            Shared runtime configuration
-│   └── ui/                Shared components (MapLibre map)
+│   └── ui/                JIVA design system: tokens, components, map (see DESIGN.md)
 ├── services/api/          Express + Socket.IO + event bus + state engines
 ├── infrastructure/aws/    CDK stack and bundled Lambda assets
 ├── scripts/               Simulators, data pipeline, AWS management
@@ -138,7 +147,23 @@ jiva/
 | Dynamic re-routing | ✅ | On reject, unavailable, or expiry; flagship scenario is deterministic |
 | RBAC and realtime filtering | ✅ | Per-role event filtering, verified reconnect resync |
 | Demo reset | ✅ | Admin-only, with an epoch guard for in-flight work |
-| Four role apps | ✅ | Verified in browser, dev and prod |
+| Role apps | ✅ | Ambulance, hospital, doctor, patient, management + a separate demo portal; verified in browser |
+| Crew emergency intake | ✅ | `POST /api/emergencies`; symptoms and suspected cause kept apart; idempotent |
+| Public facility directory | ✅ | 466 Bengaluru facilities, OSM-verified locations where possible; never a destination |
+| Referral-bound answers | ✅ | An answer must name its referral; case-scoped expiry; referral evidence per hospital |
+| Arrival, handover, encounters | ✅ | Recorded by the hospital; GPS never establishes care; the crew is released at handover |
+| Doctor assignment | ✅ | Active clinician of the same hospital, with history; **demo roster only** (no staff directory integration) |
+| Prescriptions and diagnostic reports | ✅ | Versioned; written by the assigned clinician; the patient sees what is released |
+| Diagnostic documents | ✅ | Ticket-bound streamed upload, sha256 and file-signature checks, authorized download; **local storage only** |
+| Vital signs | ✅ | Clinician-entered; simulator demo-only and labelled; **no medical device integration** |
+| Patient in-hospital dashboard | ✅ | Switches on the hospital's handover record, never on GPS or timers |
+| Operational vs demo mode | ✅ | One switch (`JIVA_ENVIRONMENT`); nothing synthetic in operational mode; provenance in `/api/health` |
+| Audit trail | ✅ | Content-free, administrators only; in memory locally |
+| Doctor workspace | ✅ | Assigned encounters only: crew record, handover, history, vital signs, prescriptions, reports, notes, documents |
+| Prescription drafts and authorisation | ✅ | Drafts never reach the patient; explicit, attested authorisation; catalogue agreement checked; no dosing advice |
+| Ambulance vital signs and symptom details | ✅ | Time, source, quality flag, reasons for missing values; to the receiving doctor only; **no device integration** |
+| Clinical catalogue | ✅ | Versioned JSON with CSV/JSON import preview/apply and export; synthetic sample documents (demo only); **illustrative, not a formulary** |
+| Demo portal | ✅ | Ten scenarios through real workflows, manual controls, recorded timeline, asset library; disabled in operational mode |
 
 ### Intelligence and data
 
@@ -184,7 +209,8 @@ timeline
          : Phase 3 · Live command center
          : Mapping, AI sidecar, hardening
          : Phase 6 · Decision authority (frozen)
-    Next : Phase 7 · Patient and clinical data
+         : Emergency-to-care journey (local)
+    Next : Production identity and storage
     Later : Phase 8 · Real-world integration
           : Phase 9 · Cloud deployment
           : Phase 10 · Clinical validation
@@ -200,14 +226,29 @@ timeline
 | **4–5** | Intelligence and hardening | Mapping providers, AI sidecar, RBAC, canonical data pipeline, AWS CDK, 103-check runtime suite |
 | **6.1–6.7** | Decision authority | Feasibility engine (shadow), authority gate, canary soak, failure recovery, JWT verification, **foundation freeze** |
 
-### 🔜 Next: Phase 7 — Patient & Clinical Data Foundation
+### ✅ Emergency-to-care journey (branch `feat/emergency-to-care-journey`)
 
-Not started. It waits on explicit go-ahead.
+Crew intake → referrals with explicit, case-bound answers → hospital-recorded arrival and handover →
+doctor assignment → versioned prescriptions and reports → verified diagnostic documents → vital signs with
+provenance → the patient's in-hospital view, with an operational/demo switch, an audit trail and a security
+review. Implemented and tested in the **local API**; see [`docs/emergency-to-care.md`](docs/emergency-to-care.md)
+and [`IMPLEMENTATION_PROGRESS.md`](IMPLEMENTATION_PROGRESS.md).
 
-- Patient registration and identity
-- FHIR-aligned clinical data models
-- EHR integration boundaries that keep hospital databases private
-- Consent and privacy controls for clinical data
+### ✅ Doctor workspace, ambulance intake, catalogue and demo portal (branch `feat/jiva-doctor-clinical-workspace`)
+
+A dedicated doctor workspace; prescription drafts with explicit authorisation; internal clinical notes; typed and
+versioned documents with labelled synthetic samples; ambulance vital signs and symptom details that follow the
+patient to the assigned doctor; a validated, versioned clinical catalogue; and a separate demo portal. Local API
+only, in memory; see [`docs/clinical-workspace.md`](docs/clinical-workspace.md).
+
+### 🔜 Next: production prerequisites
+
+Not started; each needs an explicit go-ahead.
+
+- Production identity (Cognito provisioning incl. clinicians, MFA, a verified patient-linking flow)
+- Durable, encrypted storage for clinical records, documents (S3 + KMS) and the audit trail
+- The clinical domain on AWS (routes, functions, tables) and a Cognito-token WebSocket authorizer
+- FHIR/EHR boundaries, staff-directory and device integrations, consent and data-subject workflows
 
 ### 🧭 Proposed later phases
 
@@ -222,6 +263,9 @@ These are directional, not committed.
 ### Known limitations
 
 - No clinical validation or physician sign-off yet.
+- Clinical records, documents, vital signs and the audit trail live in memory (local API) and are lost on restart.
+- The clinical workflows exist only in the local API; the AWS stack has none of them.
+- No hospital, staff-directory, EHR or medical-device integration exists; demo data is synthetic and labelled.
 - All operational data in the demo is synthetic; public data is facility master data only.
 - AWS is synthesized but not deployed; DynamoDB behavior is unverified.
 - Care-window transit constraint `HC-TMP-01` is deferred.
@@ -238,13 +282,20 @@ These are directional, not committed.
 
 | Read | For |
 |---|---|
-| [`docs/opus-final-system-status.md`](docs/opus-final-system-status.md) | Component-by-component status |
+| [`docs/emergency-to-care.md`](docs/emergency-to-care.md) | The emergency-to-care journey: contracts, APIs, authorization, provenance, limits |
+| [`docs/clinical-workspace.md`](docs/clinical-workspace.md) | Doctor workspace, ambulance intake, clinical catalogue and the demo portal |
+| [`IMPLEMENTATION_PROGRESS.md`](IMPLEMENTATION_PROGRESS.md) | Phase-by-phase record with audits, decisions, tests and commits |
+| [`docs/security-review.md`](docs/security-review.md) | Enforced protections, audit trail, release-readiness findings and remaining gaps |
+| [`docs/production-readiness.md`](docs/production-readiness.md) | What is verified, unvalidated, missing, externally dependent or untested in deployment |
+| [`docs/persistence-plan.md`](docs/persistence-plan.md) | How runtime and clinical state would become durable (local and AWS) |
+| [`docs/opus-final-system-status.md`](docs/opus-final-system-status.md) | Component-by-component status (before the emergency-to-care work) |
 | [`docs/architecture-diagram.md`](docs/architecture-diagram.md) | Full diagrams |
 | [`docs/security.md`](docs/security.md) | Security model |
 | [`docs/aws-architecture.md`](docs/aws-architecture.md) | AWS design |
 | [`docs/demo-runbook.md`](docs/demo-runbook.md) | Running the demo |
 | [`docs/feasibility-promotion-readiness.md`](docs/feasibility-promotion-readiness.md) | Path to authoritative mode |
-| [`docs/handoffs/`](docs/handoffs) | Phase 6.1–6.7 handoffs |
+| [`DESIGN.md`](DESIGN.md) | Design system: tokens, status language, components, map and interaction rules |
+| [`docs/handoffs/`](docs/handoffs) | Phase 6.1–6.7 handoffs and the UI/UX upgrade handoff |
 | [`docs/pitch-60-seconds.md`](docs/pitch-60-seconds.md) | The pitch |
 
 ---

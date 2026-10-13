@@ -4,6 +4,11 @@ import { MockAIProvider, BedrockAIProvider, CachedAIProvider } from '@jiva/intel
 import { v4 as uuidv4 } from 'uuid';
 import { AnyEvent } from '@jiva/event-schema';
 import { UNASSIGNED, getEpoch } from './stateEngines';
+import type { AuthContext } from '@jiva/auth';
+import { eventForRecipient } from './authorization';
+
+/** The AI sidecar sees encounter events as network coordination would: the role, never a staff identity. */
+const AI_RECIPIENT: AuthContext = { userId: 'intelligence-engine', role: 'MANAGEMENT' };
 
 /**
  * AI SIDECAR. Consumes events and publishes ONLY `ai.*` informational events.
@@ -61,7 +66,9 @@ export function initializeIntelligenceEngine() {
     if (event.eventType === 'ambulance.location.updated') return; // high-frequency, not useful context
     // Engine audit telemetry is not AI context (keeps advisory input independent of the engine's own trace).
     if (event.eventType === 'feasibility.trace.recorded') return;
-    history.push(event);
+    // Data minimisation: clinical-record events are never AI context (an external model may be enabled).
+    if (event.eventType.startsWith('clinical.')) return;
+    history.push(eventForRecipient(AI_RECIPIENT, event));
     if (history.length > MAX_HISTORY) history.shift();
   });
 

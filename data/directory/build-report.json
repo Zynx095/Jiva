@@ -1,0 +1,2808 @@
+{
+ "buildId": "9d2be68fbe1259bf",
+ "rulesVersion": "directory-rules-1",
+ "matchRules": {
+  "strongScore": 0.75,
+  "corroboratedScore": 0.5,
+  "tieMargin": 0.05,
+  "sameSiteMeters": 300,
+  "commonTokenDf": 6
+ },
+ "listingsRead": 481,
+ "bySource": {
+  "rohini-network-list": 306,
+  "bbmp-health-facilities": 55,
+  "bbmp-referral-hospitals": 6,
+  "bbmp-maternity-homes": 24,
+  "hospitals-in-india": 83,
+  "manual-extract": 7
+ },
+ "counts": {
+  "total": 466,
+  "byCategory": {
+   "UNKNOWN": 28,
+   "SPECIALTY_HOSPITAL": 110,
+   "HEALTH_CENTRE": 55,
+   "HOSPITAL": 224,
+   "MATERNITY_HOME": 37,
+   "NURSING_HOME": 10,
+   "DIAGNOSTIC_CENTRE": 1,
+   "CLINIC": 1
+  },
+  "byCoordinateStatus": {
+   "UNRESOLVED": 314,
+   "OSM_FACILITY_MATCH": 148,
+   "MANUAL_UNVERIFIED": 4
+  },
+  "mergedDuplicates": 15
+ },
+ "unresolvedReasons": {
+  "NO_CANDIDATE": 88,
+  "NO_IDENTIFYING_NAME": 26,
+  "NAME_MISMATCH": 95,
+  "NEEDS_CORROBORATION": 23,
+  "POSTCODE_CONFLICT": 12,
+  "AMBIGUOUS": 70,
+  "LOW_SCORE": 4
+ },
+ "mergedGroups": [
+  [
+   "hospitals-in-india#1024: Citi Hospital",
+   "rohini-network-list#6: Citi Hospital"
+  ],
+  [
+   "hospitals-in-india#1101: D.G. Hospital (Devambika Nursing Home)",
+   "rohini-network-list#8: D G Hospital"
+  ],
+  [
+   "hospitals-in-india#1143: Deepa Hospital",
+   "rohini-network-list#52: Deepa Hospital"
+  ],
+  [
+   "hospitals-in-india#1194: Devi Super Speciality Eye Hospital Private Limited",
+   "rohini-network-list#7: Devi Super Speciality Eye Hospital Private Limited"
+  ],
+  [
+   "hospitals-in-india#1243: Divine Speciality Hospital",
+   "rohini-network-list#79: Divine Speciality Hospital"
+  ],
+  [
+   "hospitals-in-india#1345: Dr. Malathi Manipal Hospital",
+   "rohini-network-list#76: Dr Malathi Manipal Hospital"
+  ],
+  [
+   "hospitals-in-india#187: Akshaya Nethralaya",
+   "rohini-network-list#73: Akshaya Nethralaya"
+  ],
+  [
+   "hospitals-in-india#462: Arunodaya Hospitals",
+   "rohini-network-list#101: Arunodaya Hospitals"
+  ],
+  [
+   "hospitals-in-india#657: Bangalore Baptist Hospital",
+   "manual-extract#1: Bangalore Baptist Hospital"
+  ],
+  [
+   "hospitals-in-india#66: Abhaya Hospital (Neuropsychiatry & Critical Care Hospital Pvt Ltd)",
+   "rohini-network-list#1: Abhaya Hospital"
+  ],
+  [
+   "hospitals-in-india#686: Basavangudi Medical Centre",
+   "rohini-network-list#67: Basavangudi Medical Centre"
+  ],
+  [
+   "hospitals-in-india#725: Bgs Global Hospital",
+   "rohini-network-list#68: Bgs Global Hospital"
+  ],
+  [
+   "hospitals-in-india#737: Bhagwan Mahaveer Jain Hospital",
+   "rohini-network-list#236: Bhagwan Mahaveer Jain Hospital"
+  ],
+  [
+   "hospitals-in-india#920: Chaitanya Hospital",
+   "rohini-network-list#4: Chaitanya Hospital"
+  ],
+  [
+   "manual-extract#2: Manipal Hospital",
+   "rohini-network-list#16: Manipal Hospital"
+  ]
+ ],
+ "unresolved": [
+  {
+   "facilityId": "FAC-BLR-0826FB8AAE",
+   "name": "314352",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-6D3E281726",
+   "name": "360775",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-580F658A0D",
+   "name": "379008",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-206DB442B5",
+   "name": "A V Eye Hospital & Diagnostics",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-760F9C4314",
+   "name": "A. D. Halli Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "PHC, Halanayakana Halli",
+    "score": 0.25
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-C1B0CA62B2",
+   "name": "A.M. Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-FC8A48787F",
+   "name": "Aaxis Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-3D141185D0",
+   "name": "Aayug Multi Specialty Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Aayug Multi Speciality Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-B6F139F186",
+   "name": "Abhayahasta Multispeciality Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-8E4D9AC3E9",
+   "name": "Abhishek Nethradham",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Abhishek Nethradhama",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-7F546CD237",
+   "name": "Adithi Maternity And General Nursing Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-C293E612DB",
+   "name": "Aditi Hosptial",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Aditi Hospital, Anekal",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-9A15C015CF",
+   "name": "Aeinullah Eye Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-1EDBE7FBA0",
+   "name": "Agadi Hospital & Research Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "POSTCODE_CONFLICT"
+  },
+  {
+   "facilityId": "FAC-BLR-AB012C031A",
+   "name": "Akshaya Nethralaya",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Akshaya Nethralaya, Nagarabhavi Circle",
+    "score": 0.667
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-066ACD5943",
+   "name": "Altius sripada hospital, hbr lyt",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Altius Hospital",
+    "score": 0.25
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-3C0CE14619",
+   "name": "Anjanappa Garden Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Garden City Polyclinic",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-95A86BCCBA",
+   "name": "Apollo Cradle",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Apollo Cradle",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-BE58E1BBF2",
+   "name": "Apollo Cradle Brookefield",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Apollo Cradle",
+    "score": 0.667
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-3625649B88",
+   "name": "Apollo cradle rajajinagar",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Apollo Cradle",
+    "score": 0.667
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-8953F06326",
+   "name": "Apollo Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Apollo Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-38FAEE717E",
+   "name": "Apollo Koramangala Cradle Limited",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Apollo Cradle",
+    "score": 0.667
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-E89D14D5AA",
+   "name": "Apoorva Hospitals & Diagnostics Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-97FB515D5F",
+   "name": "Apple Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "POSTCODE_CONFLICT"
+  },
+  {
+   "facilityId": "FAC-BLR-A5513383FA",
+   "name": "Apple Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Apple Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-45758F73A3",
+   "name": "Ashraya Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Ashraya Clinic",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-ED6D128DBA",
+   "name": "Ashwini Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Ashwini Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-2ED1237B60",
+   "name": "Ashwini Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Ashwini Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-7509F4BC4B",
+   "name": "Ashwini Nursing Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Ashwini Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-4F695543F1",
+   "name": "Ashwini Nursing Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Ashwini Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-35DC3C7BD3",
+   "name": "Aster Hospital ( A Unit Of Aster Dm Healthcare Limited)",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Aster Clinic",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-512C61229F",
+   "name": "Astra Super Speciality Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-0126E71F4D",
+   "name": "Atreum Hospitals Private Limited",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-80DE25244E",
+   "name": "Audugodi Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-84BA846ED7",
+   "name": "Avadhani Nethralaya",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-48FCB12C20",
+   "name": "Avalahalli Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "CHC Avalahalli",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-520143076B",
+   "name": "Avhieta Hospital & Health Care",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-58CF247550",
+   "name": "Azadnagar Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Azad Nagar Maternity Home",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-48F4F84671",
+   "name": "Azadnagar Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Azad Nagar Maternity Home",
+    "score": 0
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-19D07542F8",
+   "name": "B W Lions Superspeciality Eye Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Lions Eye Hospital",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-7C717137B1",
+   "name": "B.G. Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-C365409942",
+   "name": "Bacc Health Care Private Limited",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Dr Kamini Rao Hospital(A Unit Of Bacc Health Care Pvt Ltd)",
+    "score": 0
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-A1A633FEA4",
+   "name": "Bagalur Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-53C6F02CE5",
+   "name": "Balaji Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Sri Balaji",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-EFBF0AA6F4",
+   "name": "Bangalore Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-B288B2527A",
+   "name": "Bangalore Institute Of Gastroenterology",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Balaji Hospital and Gastroenterology Center",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-CCC80C1F99",
+   "name": "Bangalore Nethralaya Super Speciality Eye Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-6B09163F21",
+   "name": "Bangalore Orthopaedic And Surgical Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-75F1D3339F",
+   "name": "Bapujinagar Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Bapuji Nagar",
+    "score": 0
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-72EDF9804E",
+   "name": "Basavanagudi E.N.T. Care Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-CC256721E2",
+   "name": "Basavangudi Medical Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-0A44E6A956",
+   "name": "Belenus Champion Hosp",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-8335DE8A95",
+   "name": "Belle Vue'S Cambridge Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-EC72B03B1E",
+   "name": "Bgs Gims Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "BGS Medical College Hospital",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-9DD26EF485",
+   "name": "Bgs Global Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "BGS Medical College Hospital",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-D8D982708E",
+   "name": "Bhagwan Mahaveer Jain Heart Centre( A Unit Of Srinivasa Cardiology Centre Pvt Ltd)",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Bhagwan Mahaveer Jain Hospital",
+    "score": 0.75
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-C0916ABEB0",
+   "name": "Bhagwan Mahaveer Jain Netralaya",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Bhagwan Mahaveer Jain Hospital",
+    "score": 0.75
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-6148F1E8D6",
+   "name": "Bhanu Nursing Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Dr Bhanus Skin Clinic",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-B4EF31C52F",
+   "name": "Bhuvaneshwari Nagar Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-C03D2E5A3D",
+   "name": "Bibi Ayesha Mili Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Ayesha Speciality Clinic",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-43A728FDCD",
+   "name": "Blue Bliss Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-5D2DACE770",
+   "name": "Bms Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "BMS Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-E87410AFF3",
+   "name": "Brains Superspeciality Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Brains Super Speciality Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-DB2D0B28E8",
+   "name": "Brindhavan Areion Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-F49A0D8DD1",
+   "name": "BW lions eye",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Lions Eye Hospital",
+    "score": 0.667
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-BC2DE23152",
+   "name": "C. T. Bed Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-E2ACD3C076",
+   "name": "Cans multispeciality hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-9CC20B3F91",
+   "name": "Cdr Medical Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-29E712C62A",
+   "name": "Chaitanya Medical Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Chaitanya Nursing Home",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-4E341F3722",
+   "name": "Chanre Rheumatology And Immunology Centre And Research",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "ChanRe Rheumatology And Immunology Center And Research",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-F0041CF12F",
+   "name": "Chaya Hospital ( A Unit Of Chaya Healthcare Pvt Ltd)",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-BD71D198F4",
+   "name": "Chellaram Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-DAB882BCEF",
+   "name": "Chinmaya Narayana Hrudayalaya",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "POSTCODE_CONFLICT",
+   "nearest": {
+    "name": "Chinmaya Narayana Super Specialty Centre",
+    "score": 0.667
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-3C0EEAD21B",
+   "name": "Chinmayi Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-462123F8D7",
+   "name": "Chiraayu Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-A3FA6A9624",
+   "name": "City Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-79EB6615DD",
+   "name": "Cloudnine (A Venture Of Kids Clinic Pvt Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Cloudnine Hospital Pvt. Ltd.",
+    "score": 0.25
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-B38A0869B0",
+   "name": "Cloudnine (Kids Clinic India Pvt. Ltd.)",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Cloudnine",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-A766DAA691",
+   "name": "Cloudnine Hospital,Kids Clinic",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Cloudnine Hospital Pvt. Ltd.",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-9091D2833C",
+   "name": "Cloudnine Jayanagar",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Cloudnine",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-CE9807907E",
+   "name": "Cloudnine kids electronic city",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Cloudnine",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-A0B394834B",
+   "name": "Cloudnine kids hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Cloudnine Hospital Pvt. Ltd.",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-E1445A73CF",
+   "name": "Cloudnine kids sahakaranagar",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Cloudnine",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-5B43B64231",
+   "name": "Cloudnine Malleshwaram",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Cloudnine",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-5F8CECCD88",
+   "name": "Cloudnine Whitefield",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Cloudnine Hospital Pvt. Ltd.",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-9B26F11F16",
+   "name": "Columbia Asia Referral Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "POSTCODE_CONFLICT",
+   "nearest": {
+    "name": "Manipal Hospitals",
+    "score": 0
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-B8571779A9",
+   "name": "Cosmo Multispeciality Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Cosmo Clinic and Diagnostic Centre",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-80FD1CBAC4",
+   "name": "Cottonpet Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-A31785B002",
+   "name": "Cox Town Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Austin Town Maternity Home",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-0C335F411E",
+   "name": "Cox Town Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Town Hospital",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-2007E6D591",
+   "name": "Csi-Church Of South India Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "CSI Hospital",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-42A021E400",
+   "name": "Cytecare Cancer Hospitals Pvt Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "CyteCare",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-76A2073542",
+   "name": "D. J. Halli Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "PHC, Halanayakana Halli",
+    "score": 0.2
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-3D0B35B0A3",
+   "name": "D. J. Halli Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "PHC, Halanayakana Halli",
+    "score": 0.25
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-658689C117",
+   "name": "D.G. Hospital (Devambika Nursing Home)",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-02C1634377",
+   "name": "Dasappa Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Dasappa Maternity Hospital",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-70A291E659",
+   "name": "Deepa Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Deepa Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-8571ED729D",
+   "name": "Devi Eye Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Devi Eye Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-7F35F3FE66",
+   "name": "Devi Super Specialty Eye Hospital Pvt. Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Devi Eye Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-BF1BEB70E0",
+   "name": "Dharma Kidney Care",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-5FD1BDB379",
+   "name": "Diagram Health Care",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-66E0AAAD5E",
+   "name": "Digvijaya Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-129F7BF2D2",
+   "name": "Divine Speciality Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "POSTCODE_CONFLICT",
+   "nearest": {
+    "name": "Sai Divine ENT",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-8D9E70E0CD",
+   "name": "Divyadrishti Eye Hosptial",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Divya Drishti Eye Hospital, Vijayanagar",
+    "score": 0.167
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-D61187C31C",
+   "name": "Dr Agarwal'S Healthcare Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Agarwal Eye Hospital",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-045A7D3AE2",
+   "name": "Dr Agarwals Eye Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Dr. Agarwal's Eye Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-4D605EC4E1",
+   "name": "Dr Agarwals Eye Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Dr. Agarwal's Eye Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-49510E2C77",
+   "name": "Dr Agarwals Eye Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Dr. Agarwal's Eye Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-A3B6FCF1AC",
+   "name": "Dr Agarwals Eye Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Dr. Agarwal's Eye Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-635FE46CEE",
+   "name": "Dr Solanki Eye Hospital Pvt Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "POSTCODE_CONFLICT"
+  },
+  {
+   "facilityId": "FAC-BLR-C20657C5B1",
+   "name": "Dr Tulip S Obesity And Diabetes Surgery Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Bangalore Diabetes Hospital",
+    "score": 0.2
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-F8B060A5E0",
+   "name": "Dr. Agarwals Eye Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Dr. Agarwal's Eye Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-C11991F247",
+   "name": "Dr. Agarwals Eye Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Dr. Agarwal's Eye Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-CA74A5864E",
+   "name": "Dr. Malathi Manipal Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Malathi Polyclinic",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-D2238594F2",
+   "name": "Drishti Nethralaya",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-FDB5D5F4CC",
+   "name": "Eesha Multispeciality Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-1339CEE941",
+   "name": "Eskay Healthcare",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Eskay Health Care",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-51F9D6184B",
+   "name": "Excelcare Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Excel Care Hospital",
+    "score": 0
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-DBEE051EF7",
+   "name": "Eye Foundation Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-BD1053C29A",
+   "name": "Femiint Health(A Unit Of Chaithanya Integrated Healthcare Ltd)",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-3E4CA5B438",
+   "name": "Fortis Hospitals Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Fortis Hospitals Limited, Bengaluru Urban",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-4F92D12790",
+   "name": "Fortis Hospitals Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Fortis Hospitals Limited, Bengaluru Urban",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-0F029815B9",
+   "name": "Fortis Hospitals Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Fortis Hospitals Limited, Bengaluru Urban",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-A932BC191E",
+   "name": "Fortis La Femme",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Fortis Hospital",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-4076F7F824",
+   "name": "Ganganagara Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-5EFC5CB926",
+   "name": "Ganganagara Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-6B7112D01E",
+   "name": "Gangondanahalli Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-70E51F2155",
+   "name": "Gavipuram Guttahalli Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Place Guttahalli Maternity Home",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-9E8AA9E1FE",
+   "name": "GM hospitals basaweshwarngr (earlier Panacea basaweshwarngr) (347220",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "GM Hospital",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-671C596B8D",
+   "name": "GM hospitals nagarbhavi (earlier Panacea nagarbhavi) (275392",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "GM Hospital",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-0D21E2D101",
+   "name": "Goripalya Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-63C8728B9F",
+   "name": "Govindrajnagar Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-05B5361D42",
+   "name": "Gurushree Hi-Tec Multi Speciality Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Gurushree Hitech Multispeciality Hospital",
+    "score": 0.25
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-CDDA79237D",
+   "name": "H K Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-C930969968",
+   "name": "H. Siddaiah Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-5433492F8B",
+   "name": "H. Siddaiah Road Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-5359DF6F61",
+   "name": "Hbs Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-C8FED8BF29",
+   "name": "Hcg Msr Cancer Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "HCG Cancer Hospital",
+    "score": 0.667
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-24BD2C654A",
+   "name": "Healthcare Global Enterprises (HCG)",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-190193E861",
+   "name": "Healthcare Global Enterprises (HCG)",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-3DAF8AC4D3",
+   "name": "Ibbani Nethralaya",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-E4BA51A7DC",
+   "name": "International Hospital Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-2EDAE89C9D",
+   "name": "J. J. R. Nagar Referral Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-CA3BBBF8EC",
+   "name": "J. J. R. Nagar Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-74DE4AE959",
+   "name": "J. P. Nagar Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-62B59BCFFC",
+   "name": "Janapriya Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-A8CD9B90E7",
+   "name": "Jayanagar General Hospital",
+   "coordinateStatus": "MANUAL_UNVERIFIED",
+   "reason": "POSTCODE_CONFLICT",
+   "nearest": {
+    "name": "Jayanagar heart Centre",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-F410AC96DD",
+   "name": "Jayanagar Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Jayanagar General Hospital",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-1C693010F5",
+   "name": "Jayanagar Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "POSTCODE_CONFLICT",
+   "nearest": {
+    "name": "Jayanagar heart Centre",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-462BAFA7C1",
+   "name": "Jayashree Multispeciality Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Jayashree Nursing Home, Bengaluru Urban",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-98623B300E",
+   "name": "K I M S Hospital And Research Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-7A0DDC81B6",
+   "name": "K. G. Halli Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "PHC, Halanayakana Halli",
+    "score": 0.25
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-11C5D60FF5",
+   "name": "Kangaroo Care U/O Surabhi Health Care And Research",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-D4D4DB9230",
+   "name": "Kanva Sri Sai Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Sai Clinic",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-859ECCB867",
+   "name": "Karthik Netralaya Institute Of Ophthalmology Pvt Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "LOW_SCORE",
+   "nearest": {
+    "name": "Karthik Nethralaya",
+    "score": 0.25
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-8985F35C6C",
+   "name": "KC General Hospital",
+   "coordinateStatus": "MANUAL_UNVERIFIED",
+   "reason": "LOW_SCORE",
+   "nearest": {
+    "name": "K C General Hospital",
+    "score": 0
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-88295FF876",
+   "name": "Kids Clinic India Pvt Ltd (Cloudnine)",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-D3D670ECEF",
+   "name": "Kodihalli Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-56CF7D6050",
+   "name": "Koramangala Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "UPHC, Koramangala",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-C6157A6CD7",
+   "name": "Kumaraswami Layout Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-498278C505",
+   "name": "Lakshmi Eye Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Lakshmi Eye Clinic",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-5679477979",
+   "name": "Lakshmi Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Sri Lakshmi Clinic",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-7B0C94BFCE",
+   "name": "Leelavatti Multispeciality Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-A80BFA5D80",
+   "name": "Lifecare Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Life Care Hospital",
+    "score": 0
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-5F290F06C6",
+   "name": "M.R. Palya Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "POSTCODE_CONFLICT"
+  },
+  {
+   "facilityId": "FAC-BLR-ED824E55E8",
+   "name": "Magadi Road Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Magadi Road Maternity Home",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-83C2B7A883",
+   "name": "Mallige Medical Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Mallige Medical Centre",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-AC45770787",
+   "name": "Manipal Hospitals (originally incorporated with the name of Columbia Asia Hospital group)",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Manipal Speciality Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-B6515F3958",
+   "name": "Manipal Hospitals (originally incorporated with the name of Columbia Asia Hospital group)",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Manipal Speciality Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-97A631A054",
+   "name": "Manipal North Side Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Manipal Polyclinic and Nursing Home",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-22D5835D04",
+   "name": "Manjunatha Nethralaya",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Sri Manjunatha Clinic",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-49FCCF78EB",
+   "name": "Manvarthpet Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-9A9E14F27E",
+   "name": "Manvarthpet Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-1BC09D222B",
+   "name": "Maruthi Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Maruthi Clinic",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-9D429C7D6B",
+   "name": "Maruthi Multispeciality Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Maruthi Clinic",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-CD9534B7B7",
+   "name": "Maternity Home, Ulsoor",
+   "coordinateStatus": "MANUAL_UNVERIFIED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-B27A8BAD38",
+   "name": "Mathikere Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-0765602A04",
+   "name": "Moodalapalya Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-1654C2E9F1",
+   "name": "Motherhood",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Motherhood",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-0CF633A299",
+   "name": "Motherhood",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Motherhood",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-0E6F71BE79",
+   "name": "Motherhood - Banagirinagar",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Motherhood Hospital(Unit Of Rhea Healthcare Pvt Ltd)",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-FCE4E5F4CC",
+   "name": "Motherhood Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Motherhood",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-8D8D505FE9",
+   "name": "MOTHERHOOD HOSPITAL",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Motherhood",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-E7D34AEF8C",
+   "name": "Mtb Orthopaedic And Trauma Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-404889A793",
+   "name": "Munireddy Palya Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "M S Palya Urban Primary Health Centre",
+    "score": 0.2
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-011CBB8A77",
+   "name": "Murphy Town Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Town Hospital",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-9D55D937F4",
+   "name": "N. R. Colony Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Balaji Hospital, K.H. Ranganath Colony",
+    "score": 0.125
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-0CE4FF4ABD",
+   "name": "N. R. Colony Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Balaji Hospital, K.H. Ranganath Colony",
+    "score": 0.143
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-2FAC914B38",
+   "name": "N. S. Palya Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "POSTCODE_CONFLICT"
+  },
+  {
+   "facilityId": "FAC-BLR-DF50E1B396",
+   "name": "Nandana Health Care Servicespvt Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-A7E2C95626",
+   "name": "Nandini Layout Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Nandini Children Clinic",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-E73CF5740E",
+   "name": "Nandini Layout Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Nandini Children Clinic",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-812FAC0B3C",
+   "name": "Nano hospital uttarahalli",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Uttarahalli Primary Health Centre",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-E54EB3D52F",
+   "name": "Narayana Health",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Narayana Multispeciality Clinic",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-A34EA8D808",
+   "name": "Narayana Multispeciality Hospital HSR layout",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Narayana Clinic",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-D212677D34",
+   "name": "Narayana Nethralaya 2",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Narayana Nethralaya",
+    "score": 0.667
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-85BCC64816",
+   "name": "Narayana Nethralaya Unit 4",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Narayana Nethralaya",
+    "score": 0.667
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-F0B30DCA89",
+   "name": "Narayana Netralaya Unit 3",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Narayana Netralaya",
+    "score": 0.667
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-E1CC9521FD",
+   "name": "Narayana Super Speciality Hospitals",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Narayana Multispeciality Clinic",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-A586A516DF",
+   "name": "Navashakti Nethralaya",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-B6D1F67127",
+   "name": "Nayak Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Nayak Hospital, Gayathri Nagar",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-4E479789E4",
+   "name": "Nephrocare Health Services Private Limited",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-B88A7A8196",
+   "name": "Nethra Eye Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-DA2C24834F",
+   "name": "Nethradhama Hospital Pvt Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-8D5B020970",
+   "name": "Nethradhama Hospitals Pvt Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-CE3DA203B7",
+   "name": "New varalakshmi hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Varalakshmi Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-AED88BB680",
+   "name": "Nu Hospital Pvt Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "NU Hospitals",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-16324CFA2A",
+   "name": "Nuo Garden City Eye Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Garden City Polyclinic",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-1B8310FC99",
+   "name": "Old Byappanahalli Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-90BBF4CD2F",
+   "name": "Ovum Woman And Child Speciality Hospital (Cahless only for PVT insurers)",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Ovum Women & Child Speciality Hospital",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-93DAB9AA0E",
+   "name": "P M Santhosha Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-151B6ED9C8",
+   "name": "Padmashree Nuring And Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Padmashree Nursing Home and Maternity Home",
+    "score": 0.667
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-98FB8E0A74",
+   "name": "Palace Guttahalli Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Place Guttahalli Maternity Home",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-37B73F8D41",
+   "name": "Palace Guttahalli Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Place Guttahalli Maternity Home",
+    "score": 0.25
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-4EFCF7AA60",
+   "name": "Pantharpalya Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-74594E5CF7",
+   "name": "Pathway hospital, blore",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-27C2CDC90F",
+   "name": "People Tree Hospitals at Meenakshi",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "People Tree Hospitals",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-A6B9541B1D",
+   "name": "Pobbathi Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-1EB53A5216",
+   "name": "Pooja 3d Hospital & Diabetes Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Bangalore Diabetes Hospital",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-FED547B38C",
+   "name": "Prashanth hospital, sbm colony",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Prashanth Hospitals",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-F385812096",
+   "name": "Prashantha Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-A999AD63EB",
+   "name": "Premier Health Care",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Premier Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-15157397E9",
+   "name": "Premier Sanjeevini Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Sanjeevini Clinic",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-70AF9B6AC9",
+   "name": "Punya Hospital India Pvt Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Punya Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-7855B50A07",
+   "name": "R. C. Pura Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-965856669B",
+   "name": "Raghavendra People Tree Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "People Tree Hospitals",
+    "score": 0.667
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-61E4CEC45D",
+   "name": "Rainbow Childrens Hospital & Birthright - Bg Road",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Rainbow Children's Hospital",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-9262FF61A9",
+   "name": "Rainbow Childrens Medicare Private Limited(Hebbal)",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Rainbow Children's Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-BCC2274C8F",
+   "name": "Rainbow Childrens Medicare Pvt Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Rainbow Children's Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-27DD59C730",
+   "name": "Rajajinagar Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Nethradhama Superspeciality Eye Hospital, Rajajinagar",
+    "score": 0.25
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-CE7168650E",
+   "name": "Rajajinagar Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Healing Hands Clinic - Rajajinagar, Bengaluru",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-5D00B0B4FE",
+   "name": "Raksha Multi Speciality Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Raksha Multispeciality Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-D2C2831202",
+   "name": "Rangalakshmii Netralaya",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-A75330A158",
+   "name": "Referral Hospital, Srirampura",
+   "coordinateStatus": "MANUAL_UNVERIFIED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-8E24E0A2F7",
+   "name": "Retina Institute Of Karnataka",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Retina Clinic",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-4979578C71",
+   "name": "Robbertson Road Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-6A397E4CF5",
+   "name": "Sachethana Eye Clinic",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-C532E67B60",
+   "name": "Sagar Hospitals",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Sagar Hospitals",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-214562DE3A",
+   "name": "Sahasra Gastro Enterology And Obesity Clinic(Sahasra Hospitals)",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Sahasra Hospital",
+    "score": 0.25
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-9E547EC86F",
+   "name": "Sai jyothi netra seva, halasuru",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Sai Jyothi Netra Seva",
+    "score": 0.8
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-25B249EA18",
+   "name": "Samruddhi Eye Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Samruddhi Health Care Centre",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-F823C58CA9",
+   "name": "Sanjeevini Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Sanjeevini Clinic",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-1C46A8AD99",
+   "name": "Sankalp Nethralaya And Polyclinic",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "LOW_SCORE",
+   "nearest": {
+    "name": "Sankalp Netralaya and Polyclinic",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-BCCB9534D2",
+   "name": "Saptagiri Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Sri Saptagiri Clinic",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-142C9CB30E",
+   "name": "Sathya Sai Orthopaedic And Multispeciality Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Sri Satya Sai Orthopaedic Clinic",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-3ACB644169",
+   "name": "Shankar Nagar Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Dr. Shankar Desai Clinic",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-4449BB64DF",
+   "name": "Shankar Super Speciality Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Dr. Shankar Desai Clinic",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-839E6B7230",
+   "name": "Shanthinagar Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-16273BAA7C",
+   "name": "Shanthinagar Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-EE06E439B9",
+   "name": "Shekhar Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Shekar Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-C32229F878",
+   "name": "Shivashakti Multispeciacity Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-991F26E98D",
+   "name": "Shreyas Maternity home, hoskote",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Shreyas Maternity Home",
+    "score": 0.667
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-74E122D50C",
+   "name": "Siddhi Eye Care",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-7624318216",
+   "name": "Sirsi Road Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-9F7E42DE86",
+   "name": "Sirsi Road Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-AA39700CB2",
+   "name": "SMILES Institute of Gastroenterology (Previously incorporated as Family Hospital)",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Just Smiles",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-DE1C5BCB24",
+   "name": "Sonnenahalli Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "POSTCODE_CONFLICT"
+  },
+  {
+   "facilityId": "FAC-BLR-D9BE9D0D95",
+   "name": "South City Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-2693209091",
+   "name": "Spandana Heart & Super Speciality Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Spandana Heart Centre",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-C18AFB9812",
+   "name": "Sparsh Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Sparsh Hospital, Bengaluru Urban",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-BD7A0AC3F0",
+   "name": "Sparsh Hospital Yelahanka",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Sparsh Hospital",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-E6F91ABE17",
+   "name": "Specialist Health System Pvt Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Chiranjeevi Specialist Center",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-9488041694",
+   "name": "Sree Lakshmi Multi Speciality Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Sree Lakshmi Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-CFA6092196",
+   "name": "Sreenagar Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Sreenagar Nursing Home",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-DFDD55714E",
+   "name": "Sreenivasa Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Sreenivasa Poly Clinic",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-49758C2574",
+   "name": "Sri Eye Care",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-F251E89D50",
+   "name": "Sri Jayadeva Institute Of Cardiovascular Sciences And Research",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Sri Jayadeva Institute Of Cardiology",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-A5CC80B0A9",
+   "name": "Sri Lakshmi Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Sri Lakshmi Clinic",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-DE73E0B33D",
+   "name": "Sri Maruthi Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Maruthi Clinic",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-4109538CAE",
+   "name": "Sri Ram Nethralaya",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "LOW_SCORE",
+   "nearest": {
+    "name": "Sri Ram Netralaya and Surgical Centre",
+    "score": 0.25
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-A3298F9B73",
+   "name": "Sri Sai Eye Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Sri Sai Eye Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-39F3DBD73D",
+   "name": "Sri Sai Ram Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Sri Sai Ram Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-DFB796F601",
+   "name": "SRI VENKATESHWARA EYE HOSPITAL",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Sri Venkateshwara Eye Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-B404D01E18",
+   "name": "Sri Venkateshwara Nethralaya",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Sri Venkateshwara Eye Hospital",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-BAB6F95D00",
+   "name": "Sri Vinayaka General And Maternity Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Vinayaka Health Care and Maternity Home",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-29B60EEDCA",
+   "name": "Srirampura Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-73010A1E39",
+   "name": "Srirampuram Lions Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Bengaluru West Lions Hospital",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-6A6D84CB2B",
+   "name": "Srirampuram Referral Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-B80087118D",
+   "name": "Srusthi Hostpital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-DEE4F2959D",
+   "name": "St Marthas Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "St Marthas Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-46C0469993",
+   "name": "Sulthan Palya Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "M S Palya Urban Primary Health Centre",
+    "score": 0.25
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-960D962DCC",
+   "name": "Sun Orthopaedic",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Sun Orthopaedic center",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-AFDBDBAEEF",
+   "name": "Sunetra Eye Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Sunetra Eye Hospital, Bengaluru Urban",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-3ADBC61D7A",
+   "name": "SWASTIK HOSPITAL",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Swastik Eye Hospital",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-4A78B57E2A",
+   "name": "T R Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-5D1C356518",
+   "name": "T. R. Mill Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-0E62F815B8",
+   "name": "Taskar Town Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Town Hospital",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-A8762EBF5F",
+   "name": "Tathagat Heart Care Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-3B012DA3F7",
+   "name": "Telerad RXDX Healthcare, grnd floor , opp graphite india, whitefield",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Telerad RXDX Kadugodi",
+    "score": 0.25
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-17E594404C",
+   "name": "Thavarekere Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-AFFF6089A2",
+   "name": "THE LIFE PLUS HOSPITAL ( A UNIT OF ASHRITHA HEALTHCARE)",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Life Care Hospital",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-EA19EB3864",
+   "name": "Thimmaiah Road Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-8D0018ECC4",
+   "name": "Ulsoor Referral Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-EF69960175",
+   "name": "Ulsoor Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-EC445A1222",
+   "name": "Unity Lifeline Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Unity Hospital, Bengaluru Urban",
+    "score": 0.5
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-6419558764",
+   "name": "V Care Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_IDENTIFYING_NAME"
+  },
+  {
+   "facilityId": "FAC-BLR-4876F9E87D",
+   "name": "Vasan Eye Care Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Vasan Eye Care",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-57DAD22879",
+   "name": "Vasan Eye Care Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Vasan Eye Care",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-7410198046",
+   "name": "Vasan Eye Care Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Vasan Eye Care",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-471E109E40",
+   "name": "Vasan Eye Care Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Vasan Eye Care",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-A588345843",
+   "name": "Vasan Eye Care Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Vasan Eye Care",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-29CD0BF2C6",
+   "name": "Vasan Eye Care Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Vasan Eye Care",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-8A77395C66",
+   "name": "Vasan Eye Care Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Vasan Eye Care",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-2FFFD687C9",
+   "name": "Vasan Eye Care Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Vasan Eye Care",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-A5A4661024",
+   "name": "Vasan Eye Care Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Vasan Eye Care",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-21F13ABCE5",
+   "name": "Vidyapeeta Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-5F9268C3F1",
+   "name": "Vijaya Nethralaya",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Vijaya Nethralaya",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-07C4934ADC",
+   "name": "Vijayanagar Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Vijayanagar Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-782C24CB94",
+   "name": "Vinay multisplty hosp, HBR lyt",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Vinay Nursing Home, Lingarajpuram",
+    "score": 0.167
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-8443C7ACED",
+   "name": "Vinayaka Hospital",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "AMBIGUOUS",
+   "nearest": {
+    "name": "Vinayaka Specialty Hospital",
+    "score": 1
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-CC1CA08E74",
+   "name": "Vittala International Institute Of Ophthalmology",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Vittala International Institute Of Ophthalmology, Hosakerehalli",
+    "score": 0.75
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-CA184D6744",
+   "name": "W. Chord Road Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "POSTCODE_CONFLICT"
+  },
+  {
+   "facilityId": "FAC-BLR-3879069F7D",
+   "name": "Wilson Garden Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NAME_MISMATCH",
+   "nearest": {
+    "name": "Garden City Polyclinic",
+    "score": 0.333
+   }
+  },
+  {
+   "facilityId": "FAC-BLR-C8010322F1",
+   "name": "Yarabnagar Health Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-B40B639150",
+   "name": "Yediyur Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-5AA9EC0504",
+   "name": "Yeshwanthpura Maternity Home",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-669317F0B0",
+   "name": "Yeshwanthpura Urban Family Welfare Centre",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NO_CANDIDATE"
+  },
+  {
+   "facilityId": "FAC-BLR-AD42304F7D",
+   "name": "Zion Hospital And Research Center Pvt Ltd",
+   "coordinateStatus": "UNRESOLVED",
+   "reason": "NEEDS_CORROBORATION",
+   "nearest": {
+    "name": "Zion Hospital And Research Centre Pvt.Ltd.",
+    "score": 1
+   }
+  }
+ ]
+}

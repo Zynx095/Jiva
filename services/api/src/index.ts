@@ -1,5 +1,23 @@
 import { hashPolicy } from '@jiva/feasibility';
-import { stampTrustedEvidence, evidenceEnvironment } from './evidenceTrust';
+import { evidenceEnvironment } from './evidenceTrust';
+import { recordAndPublish } from './ingest';
+import { checkReferralAnswer } from './acceptanceCorrelation';
+import { emergencyRouter } from './routes/emergencies';
+import { directoryRouter } from './routes/directory';
+import { referralRouter } from './routes/referrals';
+import { encounterRouter } from './routes/encounters';
+import { clinicalRecordsRouter } from './routes/clinicalRecords';
+import { documentRouter, resetDocuments } from './routes/documents';
+import { vitalsRouter } from './routes/vitals';
+import { catalogueRouter } from './routes/catalogue';
+import { prehospitalRouter } from './routes/prehospital';
+import { demoRouter, realtimeInterrupted, registerRealtimeConnections, resetDemoFaults } from './routes/demo';
+import { initialiseCatalogues } from './catalogue';
+import { demoClientAllowed, provenanceReport, runtimeMode } from './mode';
+import { auditRouter } from './routes/audit';
+import { resetAccessAudit } from './commands/support';
+import { initializeEncounterEngine, resetEncounterEngine } from './clinical/encounters';
+import { loadRoster } from './clinical/roster';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -8,7 +26,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { eventBus } from './eventBus';
 import {
   initializeStateEngines, mappingProvider, resetEngines, getEpoch,
-  hasOutstandingRequest, outstandingRequestsForHospital,
+  outstandingRequest, outstandingRequestsForHospital,
 } from './stateEngines';
 import { initializeIntelligenceEngine, resetIntelligence, getAiStatus } from './intelligenceEngine';
 import { feasibilityShadow, feasibilityMode, decisionAuthority } from './feasibility';
@@ -19,9 +37,10 @@ import { authenticateRequest } from './authVerification';
 import { LocalSocketIoAdapter } from '@jiva/realtime';
 import { AnyEvent, AnyEventSchema } from '@jiva/event-schema';
 import {
-  authorizeEventSubmission, canReadCase, canReceiveEvent,
+  authorizeEventSubmission, canReadCase, canReceiveEvent, eventForRecipient,
   filterAmbulances, filterPatients, sanitizeHospitals,
 } from './authorization';
+import { clinicalStore } from './clinical';
 
 // Last-resort guard: a bug in any async path must be logged, never kill the API.
 process.on('unhandledRejection', (reason) => {
@@ -31,11 +50,19 @@ process.on('uncaughtException', (err) => {
   console.error('[API] Uncaught exception (contained):', err.message);
 });
 
+// Fail closed on an insecure configuration: a process told it is production (ENVIRONMENT/NODE_ENV) but not
+// switched to operational mode (JIVA_ENVIRONMENT) would accept demo personas. Refuse to start instead.
+if (config.environment === 'production' && runtimeMode() === 'DEMO') {
+  console.error('[API] Refusing to start: ENVIRONMENT/NODE_ENV says production, but JIVA_ENVIRONMENT is not "production", so demo personas would be accepted. Set JIVA_ENVIRONMENT=production for real authentication, or unset NODE_ENV/ENVIRONMENT for a local demo.');
+  process.exit(1);
+}
+
 const ready = preloadData().catch(err => console.error('[StateStore] Preload error:', err.message));
 
+// The six apps: management, ambulance, hospital, patient, doctor workspace and the demo portal (dev and preview ports).
 const allowedOrigins = (process.env.CORS_ORIGINS ||
-  'http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,' +
-  'http://localhost:4173,http://localhost:4174,http://localhost:4175,http://localhost:4176')
+  'http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,' +
+  'http://localhost:4173,http://localhost:4174,http://localhost:4175,http://localhost:4176,http://localhost:4177,http://localhost:4178')
   .split(',').map(s => s.trim()).filter(Boolean);
 
 const app = express();
@@ -44,11 +71,22 @@ app.use(cors({ origin: allowedOrigins }));
 app.use(express.json({ limit: '100kb' }));
 
 const httpServer = createServer(app);
-const io = new Server(httpServer, { cors: { origin: allowedOrigins } });
+const io = new Server(httpServer, {
+  cors: { origin: allowedOrigins },
+  // Demo fault injection: while realtime is interrupted, transport handshakes are refused, which clients treat
+  // like an unreachable server and keep retrying with backoff (a refusal from a Socket.IO middleware would
+  // stop their automatic reconnection instead).
+  allowRequest: (_req, callback) => callback(realtimeInterrupted() ? 'realtime_interrupted' : null, !realtimeInterrupted()),
+});
 const realtimeAdapter = new LocalSocketIoAdapter(io);
 
 initializeStateEngines();
 initializeIntelligenceEngine();
+initializeEncounterEngine();
+clinicalStore.setRoster(loadRoster());
+initialiseCatalogues();
+// Local documents are as ephemeral as the in-memory records that reference them.
+void resetDocuments();
 
 // Every event on the bus (external and system-generated) goes into the audit ledger.
 eventBus.on('*', (event: AnyEvent) => {
@@ -100,10 +138,23 @@ app.get('/api/health', async (_req, res) => {
     : { mode: mappingProvider.name, activeProvider: mappingProvider.name };
   const isAllHealthy = eventBusHealthy && dbHealthy && realtimeHealthy;
 
+  const [hospitals, ambulances] = await Promise.all([stateStore.listHospitals(), stateStore.listAmbulances()]);
+  const ai = getAiStatus();
   res.status(isAllHealthy ? 200 : 503).json({
     status: isAllHealthy ? 'HEALTHY' : 'DEGRADED',
     environment: config.environment,
-    demoAuth: true,
+    mode: runtimeMode(),
+    demoAuth: runtimeMode() === 'DEMO',
+    provenance: provenanceReport({
+      hospitals: hospitals.length,
+      syntheticHospitals: hospitals.filter(h => h.dataStatus === 'SYNTHETIC_DEMO').length,
+      ambulances: ambulances.length,
+      syntheticAmbulances: ambulances.filter(a => a.dataStatus === 'SYNTHETIC_DEMO').length,
+      clinicians: clinicalStore.countPractitioners(),
+      mappingProvider: String(mappingStatus.activeProvider ?? mappingProvider.name),
+      mappingSynthetic: mappingStatus.activeProvider === 'mock',
+      aiProvider: String(ai.provider),
+    }),
     timestamp: new Date().toISOString(),
     components: {
       api: { status: 'HEALTHY', port: config.port },
@@ -116,11 +167,25 @@ app.get('/api/health', async (_req, res) => {
         synthetic: mappingStatus.activeProvider === 'mock',
         ...mappingStatus,
       },
-      ai: { status: 'AVAILABLE', ...getAiStatus() },
+      ai: { status: 'AVAILABLE', ...ai },
     },
   });
 });
 
+// Personal and clinical data must not be kept by browsers or shared caches (one browser may serve several
+// demo personas; a cached response must never be shown to the next one).
+app.use('/api', (_req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  res.set('X-Content-Type-Options', 'nosniff');
+  next();
+});
+// Demo mode serves this machine only (demo personas are not authentication); see mode.ts.
+app.use('/api', (req, res, next) => {
+  if (!demoClientAllowed(req.socket.remoteAddress)) {
+    return res.status(403).json({ error: 'demo_local_only', message: 'This JIVA demo only accepts requests from the machine it runs on. Set JIVA_DEMO_ALLOW_REMOTE=true to demo across a network.' });
+  }
+  next();
+});
 app.use('/api', requireAuth);
 
 app.get('/api/whoami', (req: AuthenticatedRequest, res) => res.json(req.auth));
@@ -146,10 +211,11 @@ app.get('/api/hospitals/:id/requests', (req: AuthenticatedRequest, res) => {
   res.json(outstandingRequestsForHospital(String(req.params.id)));
 });
 
-app.get('/api/events/history', requireRole('MANAGEMENT', 'ADMIN'), async (req, res) => {
+app.get('/api/events/history', requireRole('MANAGEMENT', 'ADMIN'), async (req: AuthenticatedRequest, res) => {
   const raw = parseInt(String(req.query.limit ?? '100'), 10);
   const limit = Number.isFinite(raw) ? Math.min(Math.max(raw, 1), 1000) : 100;
-  res.json(await stateStore.listRecentEvents(limit));
+  // Same delivery rules as realtime: clinical-record events are never listed for management/admin.
+  res.json((await stateStore.listRecentEvents(limit)).filter(e => canReceiveEvent(req.auth!, e)).map(e => eventForRecipient(req.auth!, e)));
 });
 
 // Care Feasibility Engine (SHADOW MODE): read-only traces and legacy/engine disagreements.
@@ -183,7 +249,7 @@ app.get('/api/cases/:id/timeline', async (req: AuthenticatedRequest, res) => {
   const auth = req.auth!;
   if (!canReadCase(auth, String(req.params.id))) return res.status(403).json({ error: 'forbidden' });
   const events = await stateStore.queryEventsByCase(String(req.params.id));
-  res.json(events.filter(e => canReceiveEvent(auth, e)));
+  res.json(events.filter(e => canReceiveEvent(auth, e)).map(e => eventForRecipient(auth, e)));
 });
 
 // ------------------------------------------------------------------ writes
@@ -214,26 +280,57 @@ app.post('/api/events', async (req: AuthenticatedRequest, res) => {
   const denial = authorizeEventSubmission(req.auth!, event);
   if (denial) return res.status(403).json({ error: 'forbidden', message: denial });
 
-  // Acceptance protocol: a hospital may only answer a request it actually received.
-  if (event.eventType === 'hospital.acceptance.received' &&
-      !hasOutstandingRequest(event.payload.caseId, event.payload.hospitalId)) {
-    return res.status(409).json({ error: 'no_outstanding_request', message: 'No open acceptance request for this case and hospital.' });
+  // Acceptance protocol: a hospital may only answer the open referral it actually received, by its id,
+  // with a possible validity window (shared rule with the AWS ingestion lambda).
+  if (event.eventType === 'hospital.acceptance.received') {
+    const p = event.payload;
+    const verdict = checkReferralAnswer(outstandingRequest(p.caseId, p.hospitalId), p, Date.now());
+    if (!verdict.ok) return res.status(verdict.status).json({ error: verdict.error, message: verdict.message });
   }
 
-  // Trust boundary: provenance is derived here from the authenticated principal, never from the payload.
-  const stamped = stampTrustedEvidence(event, req.auth!);
-  const recordResult = await stateStore.recordEvent(stamped);
-  if (recordResult.isDuplicate) {
+  // Trust boundary: provenance is derived from the authenticated principal, never from the payload.
+  const { duplicate } = await recordAndPublish(req.auth!, event);
+  if (duplicate) {
     return res.status(200).json({ status: 'duplicate_ignored', eventId: event.eventId });
   }
-
-  await eventBus.publish(stamped);
   res.status(202).json({ status: 'accepted', eventId: event.eventId });
 });
 
+// Command endpoints (validated, authorized, state-checked; they emit canonical events).
+app.use('/api', emergencyRouter());
+// Public facility directory (read-only, listing data only; never part of routing).
+app.use('/api', directoryRouter());
+// Case referral overview (listed vs assessed vs answered vs reported capacity).
+app.use('/api', referralRouter());
+// Hospital arrival, handover, doctor assignment and encounter reads (Journey B).
+app.use('/api', encounterRouter());
+// Prescriptions and diagnostic reports (assigned clinician writes; patient reads own, released records).
+app.use('/api', clinicalRecordsRouter());
+// Diagnostic documents: upload intent, ticket-bound binary upload with integrity checks, authorized download.
+app.use('/api', documentRouter());
+// Vital signs: clinician-entered; a labelled simulated monitor in demo mode only; no device integration.
+app.use('/api', vitalsRouter());
+// Audit log (administrators only; content-free entries).
+app.use('/api', auditRouter());
+// Clinical catalogue: sample documents (demo only) and medication metadata; administrators import/export.
+app.use('/api', catalogueRouter());
+// Pre-hospital record: the attending crew's vital signs and symptom narrative, read by the assigned clinician.
+app.use('/api', prehospitalRouter());
+// Demo tooling (DEMO mode only): realtime fault injection for the outage-and-recovery demonstration.
+app.use('/api', demoRouter());
+
 app.post('/api/demo/reset', requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
+  // Demo reset wipes state: it does not exist in operational mode.
+  if (runtimeMode() !== 'DEMO') return res.status(404).json({ error: 'not_found' });
   resetEngines();
   resetIntelligence();
+  clinicalStore.reset();
+  clinicalStore.setRoster(loadRoster());
+  initialiseCatalogues();
+  resetEncounterEngine();
+  resetAccessAudit();
+  resetDemoFaults();
+  await resetDocuments();
   await localStoreInstance.reset();
   await eventBus.publish({
     eventId: uuidv4(),
@@ -259,6 +356,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 // ------------------------------------------------------------------ realtime
 
 io.use(async (socket, next) => {
+  if (!demoClientAllowed(socket.handshake.address)) return next(new Error('demo_local_only'));
   const handshake = socket.handshake.auth || {};
   // Same production boundary as authenticateRequest() above: a demo handshake must never authenticate
   // this process when it is (mis)configured as PRODUCTION.
@@ -270,11 +368,21 @@ io.use(async (socket, next) => {
   next();
 });
 
+// Closing the transport (not a server-side "disconnect") lets clients reconnect by themselves afterwards.
+registerRealtimeConnections(() => {
+  let n = 0;
+  for (const s of io.sockets.sockets.values()) {
+    s.conn.close();
+    n++;
+  }
+  return n;
+});
+
 io.on('connection', (socket) => {
   const auth: AuthContext = socket.data.auth;
   console.log(`[Socket] ${auth.role} ${auth.userId} connected (${socket.id})`);
   const onEvent = (event: AnyEvent) => {
-    if (canReceiveEvent(auth, event)) socket.emit('event', event);
+    if (canReceiveEvent(auth, event)) socket.emit('event', eventForRecipient(auth, event));
   };
   eventBus.on('*', onEvent);
   socket.on('disconnect', () => eventBus.off('*', onEvent));
@@ -282,6 +390,7 @@ io.on('connection', (socket) => {
 
 ready.then(() => {
   httpServer.listen(config.port, () => {
-    console.log(`[API] Server running on http://localhost:${config.port} in ${config.environment.toUpperCase()} mode (DEMO AUTH)`);
+    console.log(`[API] Server running on http://localhost:${config.port} in ${config.environment.toUpperCase()} config, ${runtimeMode()} mode${runtimeMode() === 'DEMO' ? ' (DEMO personas — not authentication)' : ''}`);
+    if (runtimeMode() === 'DEMO' && process.env.JIVA_DEMO_ALLOW_REMOTE === 'true') console.warn('[API] WARNING: JIVA_DEMO_ALLOW_REMOTE=true — any device on this network can act as any demo persona, including admin.');
   });
 });

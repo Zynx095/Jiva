@@ -10,3 +10,5 @@ export * from './insurance';
 export * from './decisionTrace';
 export * from './canonicalHospital';
 export * from './feasibility';
+export * from './clinical';
+export * from './directory';

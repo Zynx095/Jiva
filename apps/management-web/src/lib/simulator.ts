@@ -1,4 +1,4 @@
-import { apiPost } from '../api';
+import { apiGet, apiPost } from '../api';
 
 /**
  * Demo controls. Each action is performed AS THE REAL ACTOR (demo persona) through the
@@ -20,14 +20,26 @@ async function send(persona: string, event: Record<string, unknown>): Promise<st
   return `${res.status}: ${body.message || body.error || 'rejected'}`;
 }
 
-function respond(hospitalId: string, status: 'ACCEPTED' | 'LIMITED' | 'REJECTED', limitations: string[] = []) {
+/**
+ * An answer must name the referral it answers (the API refuses invented ids): read the latest request this
+ * hospital received for the demo case from the ledger, as the management persona.
+ */
+async function openRequestId(hospitalId: string): Promise<string | null> {
+  const history = await apiGet<Array<{ eventType: string; payload: Record<string, unknown> }>>('/api/events/history?limit=500');
+  const req = history.find((e) => e.eventType === 'hospital.acceptance.requested' && e.payload.caseId === DEMO_CASE && e.payload.hospitalId === hospitalId);
+  return typeof req?.payload.requestId === 'string' ? req.payload.requestId : null;
+}
+
+async function respond(hospitalId: string, status: 'ACCEPTED' | 'LIMITED' | 'REJECTED', limitations: string[] = []) {
+  const requestId = await openRequestId(hospitalId).catch(() => null);
+  if (!requestId) return `${hospitalId} has no referral for ${DEMO_CASE} — report the emergency first`;
   const now = new Date().toISOString();
   return send(HOSPITAL_PERSONA[hospitalId], {
     eventType: 'hospital.acceptance.received',
     source: { type: 'hospital', id: hospitalId },
     payload: {
       responseId: `RESP-${crypto.randomUUID().substring(0, 8)}`,
-      requestId: 'AR-demo-control',
+      requestId,
       caseId: DEMO_CASE,
       hospitalId,
       status,

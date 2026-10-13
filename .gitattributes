@@ -1,0 +1,2 @@
+# Catalogue sample files are verified byte for byte (size and sha256): never convert their line endings.
+data/catalogue/assets/** binary

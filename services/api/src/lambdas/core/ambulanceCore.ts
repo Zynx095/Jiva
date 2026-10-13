@@ -24,7 +24,8 @@ export function createAmbulanceHandler(d: LambdaDeps) {
         const newJourney = !!caseId && caseId !== existing.assignedPatient;
         await d.store.setAmbulance({
           ...existing,
-          status: 'DISPATCHED',
+          // A crew that reported the emergency itself is already with the patient (mirrors the local engine).
+          status: jivaEvent.payload.assignmentBasis === 'REPORTED_BY_CREW' ? 'ON_SCENE' : 'DISPATCHED',
           assignedPatient: caseId || existing.assignedPatient,
           destinationHospital: newJourney ? undefined : existing.destinationHospital,
           activeRoute: newJourney ? undefined : existing.activeRoute,

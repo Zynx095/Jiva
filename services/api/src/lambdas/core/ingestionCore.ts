@@ -5,6 +5,7 @@ import { AnyEvent, AnyEventSchema } from '@jiva/event-schema';
 import type { IStateStore } from '../../infrastructure/stateStore/types';
 import { authorizeEventSubmission } from '../../authorizationPolicy';
 import { loadLedger } from './deps';
+import { checkReferralAnswer, type OpenReferral } from '../../acceptanceCorrelation';
 
 export interface IngestionDeps {
   /** Puts one event on the bus (AWS: EventBridge PutEvents). */
@@ -37,8 +38,8 @@ export function authenticateFromApiGateway(event: any): AuthContext | undefined 
  *  3. no future timestamps (> 60 s)                   -> 400
  *  4. RBAC: only external event types, source/scope   -> 403 (system-generated events, including
  *     matching the caller                                feasibility.trace.recorded, are never submittable)
- *  5. acceptance correlation: a hospital may only     -> 409 no_outstanding_request
- *     answer a request it actually received
+ *  5. acceptance correlation: a hospital may only     -> 409 no_outstanding_request / request_mismatch,
+ *     answer the open request it received, by its id     400 on an impossible validity window
  */
 export function createIngestionHandler(d: IngestionDeps) {
   return async (event: any) => {
@@ -77,22 +78,19 @@ export function createIngestionHandler(d: IngestionDeps) {
     if (denial) return json(403, { error: 'forbidden', message: denial });
 
     if (parsedEvent.eventType === 'hospital.acceptance.received') {
-      let isOutstanding = false;
-      if (d.store.getAcceptanceRecord) {
-        const rec = await d.store.getAcceptanceRecord(parsedEvent.payload.caseId, parsedEvent.payload.hospitalId);
-        if (rec?.request) {
-          isOutstanding = !rec.request.cancelledAt && Date.parse(rec.request.expiresAt) > now;
-        } else {
-          const ledger = await loadLedger(d.store, parsedEvent.payload.caseId);
-          isOutstanding = ledger.view(parsedEvent.payload.caseId, parsedEvent.payload.hospitalId, now).requestState === 'OUTSTANDING';
-        }
+      // Same correlation contract as the local API (services/api/src/acceptanceCorrelation.ts): an open
+      // referral for this case and hospital, answered by its own requestId, with a possible validity window.
+      const { caseId, hospitalId } = parsedEvent.payload;
+      let open: OpenReferral | undefined;
+      const rec = d.store.getAcceptanceRecord ? await d.store.getAcceptanceRecord(caseId, hospitalId) : undefined;
+      if (rec?.request) {
+        open = rec.request;
       } else {
-        const ledger = await loadLedger(d.store, parsedEvent.payload.caseId);
-        isOutstanding = ledger.view(parsedEvent.payload.caseId, parsedEvent.payload.hospitalId, now).requestState === 'OUTSTANDING';
+        const view = (await loadLedger(d.store, caseId)).view(caseId, hospitalId, now);
+        open = view.request && view.requestState === 'OUTSTANDING' ? view.request : undefined;
       }
-      if (!isOutstanding) {
-        return json(409, { error: 'no_outstanding_request', message: 'No open acceptance request for this case and hospital.' });
-      }
+      const verdict = checkReferralAnswer(open, parsedEvent.payload, now);
+      if (!verdict.ok) return json(verdict.status, { error: verdict.error, message: verdict.message });
     }
 
     // Publish the VALIDATED event (as the local API does), enriched with correlation/causation ids.

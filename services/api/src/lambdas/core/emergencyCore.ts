@@ -4,11 +4,11 @@ import { loadAcceptanceView } from './deps';
 import type { CapabilityType, CareRequirement } from '@jiva/domain-models';
 import { evaluateHospitals } from '../../eligibilityEngine';
 import {
-  assessRequiredCapabilities,
   buildAcceptanceRequest,
   requirementProvenanceOf,
   selectRequestTargets,
 } from '../../stateTransitions';
+import { ambulanceCanAttend, deriveCareRequirement, patientFromEmergency, reportingAmbulanceOf } from '../../intake';
 import { LambdaDeps, newId, nowIso, nowMs, publishSystem, recordThenPublish } from './deps';
 
 const DEFAULT_ORIGIN = { latitude: 12.9716, longitude: 77.5946 };
@@ -37,23 +37,26 @@ export function createEmergencyHandler(d: LambdaDeps) {
         console.warn(`[StateEngine] Emergency for active case ${patientId} ignored (already open).`);
         return { status: 'ignored_active_case' };
       }
-      const { condition, severity, location } = jivaEvent.payload;
-      const required = assessRequiredCapabilities(condition, severity);
-      await d.store.setPatient({
-        patientId,
-        currentStatus: 'ASSESSED',
-        currentLocation: { latitude: location.latitude, longitude: location.longitude },
-        careRequirements: required,
-        activeConditions: [condition],
-        lastUpdated: jivaEvent.timestamp,
-        provenance: [{
-          sourceType: jivaEvent.source.type,
-          sourceId: jivaEvent.source.id,
-          eventId: jivaEvent.eventId,
-          timestamp: jivaEvent.timestamp,
-          confidence: jivaEvent.metadata?.confidence ?? 1.0,
-        }],
-      });
+      const { severity, location } = jivaEvent.payload;
+      // Same intake rules as the local engine (services/api/src/intake.ts).
+      const requirement = deriveCareRequirement(jivaEvent.payload);
+      await d.store.setPatient(patientFromEmergency(jivaEvent, patientId, requirement));
+
+      // A crew that reports an emergency is the crew attending it (system-derived, auditable assignment).
+      const crew = reportingAmbulanceOf(jivaEvent);
+      if (crew) {
+        if (ambulanceCanAttend(await d.store.getAmbulance(crew))) {
+          await publishSystem(d, {
+            eventType: 'ambulance.dispatched',
+            source: { type: 'system', id: 'intake-engine' },
+            patientId,
+            causationId: jivaEvent.eventId,
+            payload: { ambulanceId: crew, caseId: patientId, destination: { latitude: location.latitude, longitude: location.longitude }, estimatedEtaMinutes: 0, assignmentBasis: 'REPORTED_BY_CREW' },
+          });
+        } else {
+          console.warn(`[StateEngine] ${crew} reported ${patientId} but is not free to attend it; the case awaits dispatch.`);
+        }
+      }
 
       await publishSystem(d, {
         eventType: 'care.requirement.created',
@@ -63,10 +66,11 @@ export function createEmergencyHandler(d: LambdaDeps) {
         payload: {
           requirementId: `REQ-${newId(d).substring(0, 8)}`,
           caseId: patientId,
-          requiredCapabilities: required,
+          requiredCapabilities: requirement.required,
           optionalCapabilities: [],
           severity,
           createdAt: nowIso(d),
+          ...(requirement.reporterRequested.length ? { capabilitySources: { ruleDerived: requirement.ruleDerived, reporterRequested: requirement.reporterRequested } } : {}),
         },
       });
     } else if (jivaEvent.eventType === 'care.requirement.created') {

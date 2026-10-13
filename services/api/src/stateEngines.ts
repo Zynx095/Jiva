@@ -14,6 +14,7 @@ import {
 import { AmbulanceState, CapabilityType, CareRequirement } from '@jiva/domain-models';
 import type { AcceptanceResponsePayload } from './stateTransitions';
 import { evaluateHospitals } from './eligibilityEngine';
+import { ambulanceCanAttend, deriveCareRequirement, patientFromEmergency, reportingAmbulanceOf } from './intake';
 import { mappingProvider } from './mapping';
 import { acceptanceLedger, decisionAuthority, feasibilityMode, feasibilityShadow } from './feasibility';
 import { caseAcceptanceStatus } from './feasibility/acceptanceLedger';
@@ -46,6 +47,8 @@ const engine = {
   answered: new Map<string, string>(),
   lastRequestIdByHospital: new Map<string, string>(),
   ambulanceLocks: new Map<string, Promise<void>>(),
+  /** Case-scoped expiries already announced (`${caseId}|${hospitalId}|${responseId}`), so each is published once. */
+  expiryNotified: new Set<string>(),
 };
 
 const ms = (iso?: string) => (iso ? Date.parse(iso) : NaN);
@@ -61,13 +64,15 @@ export function resetEngines(): void {
   engine.answered.clear();
   engine.lastRequestIdByHospital.clear();
   engine.ambulanceLocks.clear();
+  engine.expiryNotified.clear();
   acceptanceLedger.reset();
   feasibilityShadow.reset();
   decisionAuthority.reset();
 }
 
-export function hasOutstandingRequest(caseId: string, hospitalId: string): boolean {
-  return engine.requests.has(`${caseId}|${hospitalId}`);
+/** The open referral (acceptance request) for a case at a hospital, if any. Answered requests stay open for revision. */
+export function outstandingRequest(caseId: string, hospitalId: string): HospitalAcceptanceRequested['payload'] | undefined {
+  return engine.requests.get(`${caseId}|${hospitalId}`);
 }
 
 export function outstandingRequestsForHospital(hospitalId: string) {
@@ -257,23 +262,27 @@ eventBus.on('patient.emergency.created', async (event: PatientEmergencyCreated) 
     console.warn(`[StateEngine] Emergency for active case ${patientId} ignored (already open).`);
     return;
   }
-  const { condition, severity, location } = event.payload;
-  const required = assessRequiredCapabilities(condition, severity);
-  patientsStore.set(patientId, {
-    patientId,
-    currentStatus: 'ASSESSED',
-    currentLocation: { latitude: location.latitude, longitude: location.longitude },
-    careRequirements: required,
-    activeConditions: [condition],
-    lastUpdated: event.timestamp,
-    provenance: [{
-      sourceType: event.source.type,
-      sourceId: event.source.id,
-      eventId: event.eventId,
-      timestamp: event.timestamp,
-      confidence: event.metadata?.confidence ?? 1.0,
-    }],
-  });
+  const { severity, location } = event.payload;
+  // Frozen rule-based assessment, plus any care the reporter asked for (never fewer than the rules).
+  const requirement = deriveCareRequirement(event.payload);
+  patientsStore.set(patientId, patientFromEmergency(event, patientId, requirement));
+
+  // A crew that reports an emergency is the crew attending it. The assignment is published as a
+  // system event so it is auditable; an out-of-service or busy unit is never reassigned this way.
+  const crew = reportingAmbulanceOf(event);
+  if (crew) {
+    if (ambulanceCanAttend(ambulancesStore.get(crew))) {
+      await publish({
+        eventType: 'ambulance.dispatched',
+        source: { type: 'system', id: 'intake-engine' },
+        patientId,
+        causationId: event.eventId,
+        payload: { ambulanceId: crew, caseId: patientId, destination: { latitude: location.latitude, longitude: location.longitude }, estimatedEtaMinutes: 0, assignmentBasis: 'REPORTED_BY_CREW' },
+      });
+    } else {
+      console.warn(`[StateEngine] ${crew} reported ${patientId} but is not free to attend it; the case awaits dispatch.`);
+    }
+  }
 
   await publish({
     eventType: 'care.requirement.created',
@@ -283,10 +292,11 @@ eventBus.on('patient.emergency.created', async (event: PatientEmergencyCreated) 
     payload: {
       requirementId: `REQ-${uuidv4().substring(0, 8)}`,
       caseId: patientId,
-      requiredCapabilities: required,
+      requiredCapabilities: requirement.required,
       optionalCapabilities: [],
       severity,
       createdAt: new Date().toISOString(),
+      ...(requirement.reporterRequested.length ? { capabilitySources: { ruleDerived: requirement.ruleDerived, reporterRequested: requirement.reporterRequested } } : {}),
     },
   });
 });
@@ -505,7 +515,8 @@ eventBus.on('ambulance.dispatched', async (event: AmbulanceDispatched) => {
   if (!existing) return;
   ambulancesStore.set(ambulanceId, {
     ...existing,
-    status: 'DISPATCHED',
+    // A crew that reported the emergency itself is already with the patient.
+    status: event.payload.assignmentBasis === 'REPORTED_BY_CREW' ? 'ON_SCENE' : 'DISPATCHED',
     assignedPatient: caseId || existing.assignedPatient,
     // A new dispatch starts a new journey: never carry over a previous case's destination.
     destinationHospital: caseId && caseId !== existing.assignedPatient ? undefined : existing.destinationHospital,
@@ -549,64 +560,136 @@ eventBus.on('ambulance.location.updated', async (event: AmbulanceLocationUpdated
   const dest = updated.destinationHospital ? hospitalsStore.get(updated.destinationHospital) : undefined;
   if (dest?.location && updated.status !== 'ARRIVED' &&
       distanceMeters(updated.currentLocation!, dest.location) <= ARRIVAL_RADIUS_METERS) {
-    ambulancesStore.set(ambulanceId, { ...updated, status: 'ARRIVED' });
-    const patient = patientsStore.get(updated.assignedPatient || '');
-    if (patient) patientsStore.set(patient.patientId, { ...patient, currentStatus: 'ARRIVED', lastUpdated: event.timestamp });
+    await markAmbulanceArrived(ambulanceId, dest.hospitalId, event.timestamp, 'GPS_GEOFENCE');
+  }
+});
+
+/** Statuses a patient case passes through before reaching a hospital (arrival never moves a case back). */
+export const PRE_ARRIVAL: ReadonlySet<string> = new Set(['EMERGENCY_REPORTED', 'ASSESSED', 'IN_TRANSIT']);
+
+/**
+ * Arrival effects of an ambulance, shared by the GPS geofence (a derived signal) and a hospital-confirmed
+ * arrival (authoritative, see clinical/encounters.ts): the unit is ARRIVED and no longer routed, the case
+ * is ARRIVED (never moved back from a later status), `ambulance.arrived` records the basis, and the case's
+ * open referrals are withdrawn (CASE_CLOSED).
+ *
+ * Runs under the ambulance's routing lock, so it cannot interleave with a destination commit, and
+ * re-validates there: a geofence hit only counts while the unit is still heading to that hospital; a
+ * hospital confirmation counts while the unit still carries that case — and wins over the routed
+ * destination (diversion) or an earlier geofence hit at another hospital. Returns whether it applied.
+ */
+export async function markAmbulanceArrived(
+  ambulanceId: string, hospitalId: string, at: string, basis: 'GPS_GEOFENCE' | 'HOSPITAL_CONFIRMED', expectedCaseId?: string,
+): Promise<boolean> {
+  let applied = false;
+  await withAmbulanceLock(ambulanceId, async () => {
+    const amb = ambulancesStore.get(ambulanceId);
+    if (!amb) return;
+    if (basis === 'GPS_GEOFENCE' && (amb.status === 'ARRIVED' || amb.destinationHospital !== hospitalId)) return;
+    if (basis === 'HOSPITAL_CONFIRMED' && (!expectedCaseId || amb.assignedPatient !== expectedCaseId ||
+        (amb.status === 'ARRIVED' && amb.destinationHospital === hospitalId))) return;
+    applied = true;
+    const diverted = amb.destinationHospital !== hospitalId;
+    ambulancesStore.set(ambulanceId, { ...amb, status: 'ARRIVED', ...(diverted ? { destinationHospital: hospitalId, activeRoute: undefined } : {}) });
+    const caseId = amb.assignedPatient;
+    const patient = patientsStore.get(caseId || '');
+    if (patient && PRE_ARRIVAL.has(patient.currentStatus)) patientsStore.set(patient.patientId, { ...patient, currentStatus: 'ARRIVED', lastUpdated: at });
     await publish({
       eventType: 'ambulance.arrived',
-      source: { type: 'system', id: 'telemetry-engine' },
-      patientId: updated.assignedPatient,
-      payload: { ambulanceId, hospitalId: dest.hospitalId, caseId: updated.assignedPatient },
+      source: { type: 'system', id: basis === 'GPS_GEOFENCE' ? 'telemetry-engine' : 'encounter-engine' },
+      patientId: caseId,
+      payload: { ambulanceId, hospitalId, caseId, basis },
     });
 
     // Close case acceptance holds when patient arrives at destination:
-    if (updated.assignedPatient) {
-      const caseId = updated.assignedPatient;
-      for (const [, r] of Array.from(engine.requests.entries())) {
-        if (r.caseId === caseId) {
-          await publish({
-            eventType: 'hospital.acceptance.cancelled',
-            source: { type: 'system', id: 'acceptance-protocol' },
-            patientId: caseId,
-            causationId: r.requestId,
-            payload: {
-              requestId: r.requestId,
-              caseId,
-              hospitalId: r.hospitalId,
-              cancelledAt: event.timestamp,
-              reason: 'CASE_CLOSED',
-            },
-          });
-        }
-      }
+    if (caseId) await closeCaseReferrals(caseId, at);
+  });
+  return applied;
+}
+
+/** Withdraw every open referral of a case (the patient has reached a hospital). */
+export async function closeCaseReferrals(caseId: string, at: string): Promise<void> {
+  for (const [, r] of Array.from(engine.requests.entries())) {
+    if (r.caseId === caseId) {
+      await publish({
+        eventType: 'hospital.acceptance.cancelled',
+        source: { type: 'system', id: 'acceptance-protocol' },
+        patientId: caseId,
+        causationId: r.requestId,
+        payload: {
+          requestId: r.requestId,
+          caseId,
+          hospitalId: r.hospitalId,
+          cancelledAt: at,
+          reason: 'CASE_CLOSED',
+        },
+      });
     }
   }
-});
+}
 
 // ---------------------------------------------------------------- expiration
 
 let expiryTimer: NodeJS.Timeout | undefined;
 
+/**
+ * Expiry, case by case.
+ *
+ * (1) The hospital's shared acceptance slot (what hospital/management screens show as "current answer")
+ *     becomes UNKNOWN once its answer lapses — never AVAILABLE/UNAVAILABLE; the watermark is kept so an
+ *     older answer cannot resurrect it.
+ * (2) Each case's OWN answer at each hospital (the per-(case, hospital) acceptance ledger that
+ *     evaluateHospitals already uses for eligibility) is checked: when an ACCEPTED/LIMITED answer passes
+ *     its validUntil, a case-scoped `hospital.acceptance.expired` is published once and only the
+ *     ambulance of THAT case is re-evaluated (rerouteAmbulance → the existing selection).
+ *     Previously this ran off the shared slot alone: the lapse of the last-written answer rerouted every
+ *     ambulance heading to the hospital (even with valid answers of their own), and an earlier case's
+ *     lapse rerouted nobody. See IMPLEMENTATION_PROGRESS.md, Phase 4.
+ * (3) A referral that reaches its deadline unanswered is closed and announced once (REQUEST_UNANSWERED).
+ */
 export function checkAcceptanceExpiry(now = Date.now()): void {
   for (const [hospitalId, hospital] of hospitalsStore.entries()) {
     const op = hospital.operationalState;
     if ((op.acceptance === 'ACCEPTED' || op.acceptance === 'LIMITED') && op.expiresAt && ms(op.expiresAt) < now) {
-      console.log(`[Expiration] Hospital ${hospitalId} acceptance expired -> UNKNOWN.`);
-      // Expired evidence becomes UNKNOWN, never AVAILABLE/UNAVAILABLE. Watermark kept so
-      // older responses cannot resurrect the acceptance.
+      console.log(`[Expiration] Hospital ${hospitalId} current answer expired -> UNKNOWN.`);
       hospitalsStore.set(hospitalId, { ...hospital, operationalState: { ...op, acceptance: 'UNKNOWN' } });
+    }
+  }
+
+  for (const hospitalId of hospitalsStore.keys()) {
+    for (const caseId of acceptanceLedger.casesFor(hospitalId)) {
+      const view = acceptanceLedger.view(caseId, hospitalId, now);
+      const r = view.response;
+      if (!r || (r.status !== 'ACCEPTED' && r.status !== 'LIMITED') || ms(r.validUntil) > now) continue;
+      // A withdrawn referral (e.g. CASE_CLOSED on arrival) no longer has a standing answer: its lapse is not news.
+      if (view.requestState === 'REQUEST_CANCELLED') continue;
+      const key = `${caseId}|${hospitalId}|${r.responseId}`;
+      if (engine.expiryNotified.has(key)) continue;
+      engine.expiryNotified.add(key);
+      console.log(`[Expiration] ${caseId}: answer from ${hospitalId} expired -> UNKNOWN for this case.`);
       void publish({
         eventType: 'hospital.acceptance.expired',
         source: { type: 'system', id: 'expiration-engine' },
-        payload: { requestId: engine.lastRequestIdByHospital.get(hospitalId) || 'unknown', hospitalId },
+        patientId: caseId,
+        payload: { requestId: r.requestId, hospitalId, caseId, kind: 'RESPONSE_VALIDITY' },
       });
-      reroutePredicate(() => true, hospitalId, `Acceptance from ${hospitalId} expired`);
+      reroutePredicate(a => a.assignedPatient === caseId, hospitalId, `Acceptance from ${hospitalId} expired`);
     }
   }
+
   for (const [key, req] of engine.requests) {
     if (ms(req.expiresAt) < now) {
+      const unanswered = !engine.answered.has(key);
       engine.requests.delete(key);
       engine.answered.delete(key);
+      if (unanswered) {
+        void publish({
+          eventType: 'hospital.acceptance.expired',
+          source: { type: 'system', id: 'expiration-engine' },
+          patientId: req.caseId,
+          payload: { requestId: req.requestId, hospitalId: req.hospitalId, caseId: req.caseId, kind: 'REQUEST_UNANSWERED' },
+        });
+      }
     }
   }
 }

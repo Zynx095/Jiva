@@ -1,0 +1,1262 @@
+
+=======================================================
+INSPECTING: IDE BOOTCAMP PPT FORMAT (ppt/IDE BOOTCAMP PPT FORMAT.pptx)
+=======================================================
+Slide Dimensions: 13.333 x 7.500 inches
+Slide Count: 6
+
+--- SLIDE 1 [Layout: Title Slide] ---
+  Background: <pptx.slide._Background object at 0x000001EF3218E570>
+  Shape 0 [Rectangle 24 | AUTO_SHAPE (1) | L=1.67, T=0.00, W=10.00, H=7.50]
+  Shape 1 [Freeform: Shape 26 | FREEFORM (5) | L=6.19, T=0.93, W=5.07, H=5.64]
+  Shape 2 [Subtitle 3 | PLACEHOLDER (14) | L=1.36, T=0.71, W=9.33, H=1.92]
+    P1 [level=0, align=None]: TITLE PAGE
+       Runs: ["'TITLE PAGE' (Times New Roman, inherited, BOLD, )"]
+  Shape 3 [Title 7 | PLACEHOLDER (14) | L=0.36, T=-0.58, W=11.33, H=2.27]
+    P0 [level=0, align=None]: IDE BOOTCAMP 2026
+       Runs: ["'IDE BOOTCAMP 2026' (Garamond, 40.0pt, BOLD, )"]
+  Shape 4 [TextBox 9 | TEXT_BOX (17) | L=0.36, T=2.27, W=6.48, H=3.51]
+    P1 [level=0, align=JUSTIFY (4)]: Problem Statement Title-
+       Runs: ["'Problem Statement Title-' (Arial, 24.0pt, BOLD, )"]
+    P2 [level=0, align=JUSTIFY (4)]: Theme-
+       Runs: ["'Theme-' (Arial, 24.0pt, BOLD, )"]
+    P3 [level=0, align=JUSTIFY (4)]: PS Category- Software/Hardware
+       Runs: ["'PS Category- Software/Hardware' (Arial, 24.0pt, BOLD, )"]
+    P4 [level=0, align=JUSTIFY (4)]: Team Name - 
+       Runs: ["'Team Name - ' (Arial, 24.0pt, BOLD, )"]
+
+--- SLIDE 2 [Layout: Title and Content] ---
+  Background: <pptx.slide._Background object at 0x000001EF32147980>
+  Shape 0 [Rectangle 8 | AUTO_SHAPE (1) | L=0.00, T=6.95, W=13.33, H=0.55]
+  Shape 1 [Title 1 | PLACEHOLDER (14) | L=0.20, T=0.00, W=12.00, H=1.25]
+    P0 [level=0, align=None]: IDEA TITLE
+       Runs: ["'IDEA TITLE' (Times New Roman, 36.0pt, BOLD, )"]
+  Shape 2 [TextBox 8 | TEXT_BOX (17) | L=-0.00, T=2.26, W=13.33, H=2.73]
+    P0 [level=0, align=None]: Proposed Solution (Describe your Idea/Solution/Prototype)
+       Runs: ["'Proposed Solution (Describe your Idea/Solution/Prototype)' (Arial, 32.0pt, BOLD, )"]
+    P3 [level=0, align=JUSTIFY (4)]: Detailed explanation of the proposed solution
+       Runs: ["'Detailed explanation of the proposed solution' (Arial, 28.0pt, , )"]
+    P4 [level=0, align=JUSTIFY (4)]:  How it addresses the problem
+       Runs: ["' How it addresses the problem' (Arial, 28.0pt, , )"]
+    P5 [level=0, align=JUSTIFY (4)]: Innovation and uniqueness of the solution 
+       Runs: ["'Innovation and uniqueness of the solution ' (Arial, 28.0pt, , )"]
+  Shape 3 [Slide Number Placeholder 5 | PLACEHOLDER (14) | L=9.56, T=6.95, W=3.11, H=0.40]
+    P0 [level=0, align=None]: 2
+
+--- SLIDE 3 [Layout: Title and Content] ---
+  Background: <pptx.slide._Background object at 0x000001EF32147440>
+  Shape 0 [Rectangle 9 | AUTO_SHAPE (1) | L=0.00, T=6.95, W=13.33, H=0.55]
+  Shape 1 [Title 1 | PLACEHOLDER (14) | L=0.67, T=-0.05, W=12.00, H=1.25]
+    P0 [level=0, align=None]: TECHNICAL APPROACH
+       Runs: ["'TECHNICAL APPROACH' (Times New Roman, 36.0pt, BOLD, )"]
+  Shape 2 [TextBox 8 | TEXT_BOX (17) | L=0.67, T=2.77, W=10.26, H=1.99]
+    P0 [level=0, align=JUSTIFY (4)]: Technologies to be used (e.g. programming languages, frameworks, hardware)
+       Runs: ["'Technologies to be used (e.g. programming languages, frameworks, hardware)' (Arial, 28.0pt, , )"]
+    P1 [level=0, align=JUSTIFY (4)]: Methodology and process for implementation (Flow Charts/Images/ working prototype)
+       Runs: ["'Methodology and process for implementation (Flow Charts/Images/ working prototype)' (Arial, 28.0pt, , )"]
+  Shape 3 [Slide Number Placeholder 5 | PLACEHOLDER (14) | L=9.56, T=6.95, W=3.11, H=0.40]
+    P0 [level=0, align=None]: 3
+
+--- SLIDE 4 [Layout: Title and Content] ---
+  Background: <pptx.slide._Background object at 0x000001EF3218EDB0>
+  Shape 0 [Rectangle 9 | AUTO_SHAPE (1) | L=0.00, T=6.95, W=13.33, H=0.55]
+  Shape 1 [Title 1 | PLACEHOLDER (14) | L=0.67, T=-0.05, W=12.00, H=1.25]
+    P0 [level=0, align=None]: FEASIBILITY AND VIABILITY
+       Runs: ["'FEASIBILITY AND VIABILITY' (Times New Roman, 36.0pt, BOLD, )"]
+  Shape 2 [TextBox 8 | TEXT_BOX (17) | L=0.67, T=2.77, W=10.26, H=1.51]
+    P0 [level=0, align=JUSTIFY (4)]: Analysis of the feasibility of the idea
+       Runs: ["'Analysis of the feasibility of the idea' (Arial, 28.0pt, , )"]
+    P1 [level=0, align=JUSTIFY (4)]: Potential challenges and risks
+       Runs: ["'Potential challenges and risks' (Arial, 28.0pt, , )"]
+    P2 [level=0, align=JUSTIFY (4)]: Strategies for overcoming these challenges
+       Runs: ["'Strategies' (Arial, 28.0pt, , )", "' for overcoming these challenges' (Arial, 28.0pt, , )"]
+  Shape 3 [Slide Number Placeholder 5 | PLACEHOLDER (14) | L=9.56, T=6.95, W=3.11, H=0.40]
+    P0 [level=0, align=RIGHT (3)]: 4
+
+--- SLIDE 5 [Layout: Title and Content] ---
+  Background: <pptx.slide._Background object at 0x000001EF3218F350>
+  Shape 0 [Rectangle 9 | AUTO_SHAPE (1) | L=0.00, T=6.95, W=13.33, H=0.55]
+  Shape 1 [Title 1 | PLACEHOLDER (14) | L=0.67, T=-0.05, W=12.00, H=1.25]
+    P0 [level=0, align=None]: IMPACT AND BENEFITS
+       Runs: ["'IMPACT AND BENEFITS' (Times New Roman, 36.0pt, BOLD, )"]
+  Shape 2 [TextBox 8 | TEXT_BOX (17) | L=0.67, T=2.77, W=10.26, H=1.51]
+    P0 [level=0, align=JUSTIFY (4)]: Potential impact on the target audience
+       Runs: ["'Potential impact on the target audience' (Arial, 28.0pt, , )"]
+    P1 [level=0, align=JUSTIFY (4)]: Benefits of the solution (social, economic, environmental, etc.)
+       Runs: ["'Benefits of the solution (social, economic, environmental, etc.)' (Arial, 28.0pt, , )"]
+  Shape 3 [Slide Number Placeholder 5 | PLACEHOLDER (14) | L=9.56, T=6.95, W=3.11, H=0.40]
+    P0 [level=0, align=RIGHT (3)]: 5
+
+--- SLIDE 6 [Layout: Title and Content] ---
+  Background: <pptx.slide._Background object at 0x000001EF3218ED20>
+  Shape 0 [Rectangle 9 | AUTO_SHAPE (1) | L=0.00, T=6.95, W=13.33, H=0.55]
+  Shape 1 [Title 1 | PLACEHOLDER (14) | L=0.67, T=-0.05, W=12.00, H=1.25]
+    P0 [level=0, align=None]: RESEARCH  AND REFERENCES
+       Runs: ["'RESEARCH  AND REFERENCES' (Times New Roman, 36.0pt, BOLD, )"]
+  Shape 2 [TextBox 8 | TEXT_BOX (17) | L=0.67, T=3.06, W=10.26, H=0.57]
+    P0 [level=0, align=JUSTIFY (4)]: Details / Links of the reference and research work
+       Runs: ["'Details / Links of the reference and research work' (Arial, 28.0pt, , )"]
+  Shape 3 [Slide Number Placeholder 5 | PLACEHOLDER (14) | L=9.56, T=6.95, W=3.11, H=0.40]
+    P0 [level=0, align=RIGHT (3)]: 6
+
+=======================================================
+INSPECTING: JIVA-AWS-Innovation-Challenge-2026-DRAFT (ppt/JIVA-AWS-Innovation-Challenge-2026-DRAFT.pptx)
+=======================================================
+Slide Dimensions: 13.333 x 7.500 inches
+Slide Count: 7
+
+--- SLIDE 1 [Layout: DEFAULT] ---
+  Background: <pptx.slide._Background object at 0x000001EF321A4D10>
+  Shape 0 [Shape 0 | AUTO_SHAPE (1) | L=-0.00, T=0.00, W=13.33, H=0.14]
+  Shape 1 [Shape 1 | AUTO_SHAPE (1) | L=10.90, T=-1.90, W=4.20, H=4.20]
+  Shape 2 [Shape 2 | AUTO_SHAPE (1) | L=-1.30, T=5.60, W=2.60, H=2.60]
+  Shape 3 [Text 3 | TEXT_BOX (17) | L=0.55, T=0.68, W=8.00, H=0.18]
+    P0 [level=0, align=None]: AWS INNOVATION CHALLENGE 2026
+       Runs: ["'AWS INNOVATION CHALLENGE 2026' (inherited, inherited, , )"]
+  Shape 4 [Text 5 | TEXT_BOX (17) | L=0.55, T=1.96, W=11.50, H=0.67]
+    P0 [level=0, align=None]: JIVA: Real-Time Healthcare Coordination
+       Runs: ["'JIVA:' (inherited, 40.0pt, , )", "' Real-Time Healthcare Coordination' (inherited, 40.0pt, , )"]
+  Shape 5 [Text 6 | TEXT_BOX (17) | L=0.55, T=2.75, W=11.50, H=0.35]
+    P0 [level=0, align=None]: Team Name: Monochrome
+       Runs: ["'Team Name: ' (inherited, inherited, , )", "'M' (inherited, inherited, , )", "'o' (inherited, inherited, , )", "'n' (inherited, inherited, , )", "'o' (inherited, inherited, , )", "'c' (inherited, inherited, , )", "'h' (inherited, inherited, , )", "'r' (inherited, inherited, , )", "'o' (inherited, inherited, , )", "'m' (inherited, inherited, , )", "'e' (inherited, inherited, , )"]
+  Shape 6 [Shape 7 | AUTO_SHAPE (1) | L=0.55, T=3.40, W=11.10, H=1.05]
+  Shape 7 [Text 8 | TEXT_BOX (17) | L=0.85, T=3.58, W=10.50, H=0.15]
+    P0 [level=0, align=None]: ONE-LINE SOLUTION STATEMENT
+       Runs: ["'ONE-LINE SOLUTION STATEMENT' (inherited, inherited, , )"]
+  Shape 8 [Text 9 | TEXT_BOX (17) | L=0.85, T=3.89, W=10.50, H=0.46]
+    P0 [level=0, align=None]: An event-driven layer that keeps a shared, timestamped care state for patients, ambulances and hospitals, and routes an ambulance using a hospital's explicit acceptance response, re-deciding when that state changes.
+       Runs: ["'An event-driven layer that keeps a shared, timestamped care state for patients, ambulances and hospitals, and routes an ambulance using a hospital's explicit acceptance response, re-deciding when that state changes.' (inherited, 13.0pt, , )"]
+  Shape 9 [Text 10 | TEXT_BOX (17) | L=0.55, T=4.82, W=4.00, H=0.15]
+    P0 [level=0, align=None]: TEAM MEMBERS
+       Runs: ["'TEAM MEMBERS' (inherited, inherited, , )"]
+  Shape 10 [Text 11 | TEXT_BOX (17) | L=0.55, T=5.13, W=11.50, H=0.24]
+    P0 [level=0, align=None]: Yukith M Joseph  •   Pranathi Nagabhushana
+       Runs: ["'Yukith M Joseph  ' (inherited, inherited, , )", "'•   ' (inherited, inherited, , )", "'Pranathi Nagabhushana' (inherited, inherited, , )"]
+  Shape 11 [Shape 12 | AUTO_SHAPE (1) | L=0.55, T=5.75, W=11.10, H=0.01]
+  Shape 12 [Text 15 | TEXT_BOX (17) | L=0.55, T=6.93, W=11.50, H=0.15]
+    P0 [level=0, align=None]: Prototype draft: working local demo on synthetic data; AWS architecture designed (CDK), not deployed.
+       Runs: ["'Prototype draft: working local demo on synthetic data; AWS architecture designed (CDK), not deployed.' (inherited, inherited, , )"]
+
+--- SLIDE 2 [Layout: DEFAULT] ---
+  Background: <pptx.slide._Background object at 0x000001EF321A5880>
+  Shape 0 [Shape 0 | AUTO_SHAPE (1) | L=12.58, T=-0.55, W=1.30, H=1.30]
+  Shape 1 [Text 1 | TEXT_BOX (17) | L=0.55, T=0.50, W=1.20, H=0.18]
+    P0 [level=0, align=None]: 01
+       Runs: ["'01' (inherited, inherited, , )"]
+  Shape 2 [Text 2 | TEXT_BOX (17) | L=0.55, T=0.79, W=9.20, H=0.35]
+    P0 [level=0, align=None]: PROBLEM STATEMENT
+       Runs: ["'PROBLEM STATEMENT' (inherited, inherited, , )"]
+  Shape 3 [Shape 3 | AUTO_SHAPE (1) | L=10.73, T=0.55, W=2.05, H=0.46]
+  Shape 4 [Text 4 | TEXT_BOX (17) | L=10.73, T=0.71, W=2.05, H=0.15]
+    P0 [level=0, align=None]: 15 POINTS
+       Runs: ["'15 POINTS' (inherited, inherited, , )"]
+  Shape 5 [Shape 5 | AUTO_SHAPE (1) | L=0.55, T=1.32, W=12.23, H=0.01]
+  Shape 6 [Text 6 | TEXT_BOX (17) | L=0.55, T=1.72, W=9.16, H=0.15]
+    P0 [level=0, align=None]: THE PROBLEM
+       Runs: ["'THE PROBLEM' (inherited, inherited, , )"]
+  Shape 7 [Text 7 | TEXT_BOX (17) | L=0.55, T=1.95, W=9.16, H=0.44]
+    P0 [level=0, align=None]: Emergency care involves several parties, each holding a partial view that is updated at different times. No shared, current picture of the case exists.
+       Runs: ["'Emergency care involves several parties, each holding a partial view that is updated at different times. No shared, current picture of the case exists.' (inherited, inherited, , )"]
+  Shape 8 [Text 8 | TEXT_BOX (17) | L=0.55, T=2.64, W=9.16, H=0.15]
+    P0 [level=0, align=None]: TARGET USERS
+       Runs: ["'TARGET USERS' (inherited, inherited, , )"]
+  Shape 9 [Text 9 | TEXT_BOX (17) | L=0.55, T=2.87, W=9.16, H=0.28]
+    P0 [level=0, align=None]: Patients and families  ·  ambulance teams  ·  hospital emergency teams  ·  emergency / care coordinators
+       Runs: ["'Patients and families  ·  ambulance teams  ·  hospital emergency teams  ·  emergency / care coordinators' (inherited, inherited, , )"]
+  Shape 10 [Text 10 | TEXT_BOX (17) | L=0.55, T=3.57, W=9.16, H=0.15]
+    P0 [level=0, align=None]: CURRENT SITUATION
+       Runs: ["'CURRENT SITUATION' (inherited, inherited, , )"]
+  Shape 11 [Text 11 | TEXT_BOX (17) | L=0.55, T=3.80, W=9.16, H=0.44]
+    P0 [level=0, align=None]: Coordination depends on disconnected, point-in-time updates. A hospital's listed capability or bed count does not confirm that it can accept this patient now.
+       Runs: ["'Coordination depends on disconnected, point-in-time updates. A hospital's listed capability or bed count does not confirm that it can accept this patient now.' (inherited, inherited, , )"]
+  Shape 12 [Text 12 | TEXT_BOX (17) | L=0.55, T=4.35, W=9.16, H=0.15]
+    P0 [level=0, align=None]: KEY GAPS
+       Runs: ["'KEY GAPS' (inherited, inherited, , )"]
+  Shape 13 [Text 13 | TEXT_BOX (17) | L=0.55, T=4.58, W=9.16, H=0.44]
+    P0 [level=0, align=None]: Stale information  ·  fragmented systems  ·  uncertain hospital acceptance
+       Runs: ["'Stale information  ·  fragmented systems  ·  uncertain hospital acceptance' (inherited, inherited, , )"]
+    P1 [level=0, align=None]: No shared real-time care state  ·  hard to respond when conditions change en route
+       Runs: ["'No shared real-time care state  ·  hard to respond when conditions change en route' (inherited, inherited, , )"]
+  Shape 14 [Shape 14 | AUTO_SHAPE (1) | L=0.55, T=5.40, W=9.16, H=0.85]
+  Shape 15 [Text 15 | TEXT_BOX (17) | L=0.85, T=5.57, W=8.56, H=0.61]
+    P0 [level=0, align=None]: Evidence from our own data work: public hospital directories (Govt. of Karnataka, BBMP) list facilities but not live capacity, so JIVA marks their operational state UNKNOWN. [TEAM: add a sourced external statistic here if available]
+       Runs: ["'Evidence from our own data work: public hospital directories (Govt. of Karnataka, BBMP) list facilities but not live capacity, so JIVA marks their operational state UNKNOWN. [TEAM: add a sourced external statistic here if available]' (inherited, 11.0pt, , )"]
+  Shape 16 [Shape 23 | AUTO_SHAPE (1) | L=0.55, T=7.06, W=12.23, H=0.01]
+  Shape 17 [Text 24 | TEXT_BOX (17) | L=0.55, T=7.21, W=9.00, H=0.14]
+    P0 [level=0, align=None]: AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026
+       Runs: ["'AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026' (inherited, inherited, , )"]
+  Shape 18 [Text 25 | TEXT_BOX (17) | L=12.28, T=7.21, W=0.50, H=0.14]
+    P0 [level=0, align=None]: 2
+       Runs: ["'2' (inherited, inherited, , )"]
+
+--- SLIDE 3 [Layout: DEFAULT] ---
+  Background: <pptx.slide._Background object at 0x000001EF321A60C0>
+  Shape 0 [Shape 0 | AUTO_SHAPE (1) | L=12.58, T=-0.55, W=1.30, H=1.30]
+  Shape 1 [Text 1 | TEXT_BOX (17) | L=0.55, T=0.50, W=1.20, H=0.18]
+    P0 [level=0, align=None]: 02
+       Runs: ["'02' (inherited, inherited, , )"]
+  Shape 2 [Text 2 | TEXT_BOX (17) | L=0.55, T=0.79, W=9.20, H=0.35]
+    P0 [level=0, align=None]: PROPOSED SOLUTION
+       Runs: ["'PROPOSED SOLUTION' (inherited, inherited, , )"]
+  Shape 3 [Shape 3 | AUTO_SHAPE (1) | L=10.73, T=0.55, W=2.05, H=0.46]
+  Shape 4 [Text 4 | TEXT_BOX (17) | L=10.73, T=0.71, W=2.05, H=0.15]
+    P0 [level=0, align=None]: 20 POINTS
+       Runs: ["'20 POINTS' (inherited, inherited, , )"]
+  Shape 5 [Shape 5 | AUTO_SHAPE (1) | L=0.55, T=1.32, W=12.23, H=0.01]
+  Shape 6 [Text 6 | TEXT_BOX (17) | L=0.55, T=1.72, W=9.16, H=0.15]
+    P0 [level=0, align=None]: OUR SOLUTION
+       Runs: ["'OUR SOLUTION' (inherited, inherited, , )"]
+  Shape 7 [Text 7 | TEXT_BOX (17) | L=0.55, T=1.95, W=9.16, H=0.68]
+    P0 [level=0, align=None]: JIVA is an event-driven coordination layer: each patient, ambulance and hospital update becomes a validated event that updates a shared, timestamped care state. Rather than assuming a hospital is available, JIVA sends a case-specific acceptance request and routes the ambulance using the hospital's actual response, re-deciding when that state changes.
+       Runs: ["'JIVA is an event-driven coordination layer: each patient, ambulance and hospital update becomes a validated event that updates a shared, timestamped care state. Rather than assuming a hospital is available, JIVA sends a case-specific acceptance request and routes the ambulance using the hospital's actual response, re-deciding when that state changes.' (inherited, 10.5pt, , )"]
+  Shape 8 [Text 8 | TEXT_BOX (17) | L=0.55, T=2.57, W=5.00, H=0.15]
+    P0 [level=0, align=None]: HOW IT WORKS
+       Runs: ["'HOW IT WORKS' (inherited, inherited, , )"]
+  Shape 9 [Shape 9 | AUTO_SHAPE (1) | L=0.55, T=2.83, W=9.16, H=2.15]
+  Shape 10 [Text 11 | TEXT_BOX (17) | L=0.55, T=5.27, W=5.00, H=0.15]
+    P0 [level=0, align=None]: KEY FEATURES
+       Runs: ["'KEY FEATURES' (inherited, inherited, , )"]
+  Shape 11 [Text 12 | TEXT_BOX (17) | L=0.55, T=5.73, W=0.65, H=0.24]
+    P0 [level=0, align=None]: 01
+       Runs: ["'01' (inherited, inherited, , )"]
+  Shape 12 [Text 13 | TEXT_BOX (17) | L=1.15, T=5.73, W=2.41, H=1.15]
+    P0 [level=0, align=None]: Closed-loop hospital acceptance
+       Runs: ["'Closed-loop hospital acceptance' (inherited, 12.0pt, BOLD, )"]
+    P1 [level=0, align=None]: A hospital must answer a case-specific request; an unanswered request expires to UNKNOWN.
+       Runs: ["'A hospital must answer a case-specific request; an unanswered request expires to UNKNOWN.' (inherited, 10.0pt, , rgb(1F2937))"]
+  Shape 13 [Text 14 | TEXT_BOX (17) | L=3.70, T=5.73, W=0.65, H=0.24]
+    P0 [level=0, align=None]: 02
+       Runs: ["'02' (inherited, inherited, , )"]
+  Shape 14 [Text 15 | TEXT_BOX (17) | L=4.30, T=5.73, W=2.41, H=1.15]
+    P0 [level=0, align=None]: Continuously updated care state
+       Runs: ["'Continuously updated care state' (inherited, 12.0pt, BOLD, )"]
+    P1 [level=0, align=None]: Validated events update patient, hospital and ambulance state, with freshness and provenance.
+       Runs: ["'Validated events update patient, hospital and ambulance state, with freshness and provenance.' (inherited, 10.0pt, , rgb(1F2937))"]
+  Shape 15 [Text 16 | TEXT_BOX (17) | L=6.86, T=5.73, W=0.65, H=0.24]
+    P0 [level=0, align=None]: 03
+       Runs: ["'03' (inherited, inherited, , )"]
+  Shape 16 [Text 17 | TEXT_BOX (17) | L=7.46, T=5.73, W=2.41, H=1.15]
+    P0 [level=0, align=None]: Event-driven dynamic rerouting
+       Runs: ["'Event-driven dynamic rerouting' (inherited, 12.0pt, BOLD, )"]
+    P1 [level=0, align=None]: Rejection, unavailability or expiry events trigger a new destination decision.
+       Runs: ["'Rejection, unavailability or expiry events trigger a new destination decision.' (inherited, 10.0pt, , rgb(1F2937))"]
+  Shape 17 [Shape 25 | AUTO_SHAPE (1) | L=0.55, T=7.06, W=12.23, H=0.01]
+  Shape 18 [Text 26 | TEXT_BOX (17) | L=0.55, T=7.21, W=9.00, H=0.14]
+    P0 [level=0, align=None]: AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026
+       Runs: ["'AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026' (inherited, inherited, , )"]
+  Shape 19 [Text 27 | TEXT_BOX (17) | L=12.28, T=7.21, W=0.50, H=0.14]
+    P0 [level=0, align=None]: 3
+       Runs: ["'3' (inherited, inherited, , )"]
+  Shape 20 [Rounded Rectangle 88 | AUTO_SHAPE (1) | L=0.67, T=2.93, W=1.30, H=0.68]
+    P0 [level=0, align=CENTER (2)]: 1
+       Runs: ["'1' (inherited, 9.0pt, BOLD, rgb(1E88E5))"]
+    P1 [level=0, align=CENTER (2)]: Healthcare event
+       Runs: ["'Healthcare event' (inherited, 10.0pt, , rgb(123B66))"]
+  Shape 21 [Right Arrow 89 | AUTO_SHAPE (1) | L=2.00, T=3.18, W=0.16, H=0.18]
+  Shape 22 [Rounded Rectangle 90 | AUTO_SHAPE (1) | L=2.19, T=2.93, W=1.30, H=0.68]
+    P0 [level=0, align=CENTER (2)]: 2
+       Runs: ["'2' (inherited, 9.0pt, BOLD, rgb(1E88E5))"]
+    P1 [level=0, align=CENTER (2)]: Event ingestion + validation
+       Runs: ["'Event ingestion + validation' (inherited, 10.0pt, , rgb(123B66))"]
+  Shape 23 [Right Arrow 91 | AUTO_SHAPE (1) | L=3.52, T=3.18, W=0.16, H=0.18]
+  Shape 24 [Rounded Rectangle 92 | AUTO_SHAPE (1) | L=3.72, T=2.93, W=1.30, H=0.68]
+    P0 [level=0, align=CENTER (2)]: 3
+       Runs: ["'3' (inherited, 9.0pt, BOLD, rgb(1E88E5))"]
+    P1 [level=0, align=CENTER (2)]: Canonical event
+       Runs: ["'Canonical event' (inherited, 10.0pt, , rgb(123B66))"]
+  Shape 25 [Right Arrow 93 | AUTO_SHAPE (1) | L=5.05, T=3.18, W=0.16, H=0.18]
+  Shape 26 [Rounded Rectangle 94 | AUTO_SHAPE (1) | L=5.24, T=2.93, W=1.30, H=0.68]
+    P0 [level=0, align=CENTER (2)]: 4
+       Runs: ["'4' (inherited, 9.0pt, BOLD, rgb(1E88E5))"]
+    P1 [level=0, align=CENTER (2)]: State update
+       Runs: ["'State update' (inherited, 10.0pt, , rgb(123B66))"]
+  Shape 27 [Right Arrow 95 | AUTO_SHAPE (1) | L=6.57, T=3.18, W=0.16, H=0.18]
+  Shape 28 [Rounded Rectangle 96 | AUTO_SHAPE (1) | L=6.77, T=2.93, W=1.30, H=0.68]
+    P0 [level=0, align=CENTER (2)]: 5
+       Runs: ["'5' (inherited, 9.0pt, BOLD, rgb(1E88E5))"]
+    P1 [level=0, align=CENTER (2)]: Care requirement
+       Runs: ["'Care requirement' (inherited, 10.0pt, , rgb(123B66))"]
+  Shape 29 [Right Arrow 97 | AUTO_SHAPE (1) | L=8.10, T=3.18, W=0.16, H=0.18]
+  Shape 30 [Rounded Rectangle 98 | AUTO_SHAPE (1) | L=8.29, T=2.93, W=1.30, H=0.68]
+    P0 [level=0, align=CENTER (2)]: 6
+       Runs: ["'6' (inherited, 9.0pt, BOLD, rgb(1E88E5))"]
+    P1 [level=0, align=CENTER (2)]: Hospital candidate
+       Runs: ["'Hospital candidate' (inherited, 10.0pt, , rgb(123B66))"]
+  Shape 31 [Down Arrow 99 | AUTO_SHAPE (1) | L=8.85, T=3.64, W=0.18, H=0.20]
+  Shape 32 [Rounded Rectangle 100 | AUTO_SHAPE (1) | L=8.29, T=3.87, W=1.30, H=0.68]
+    P0 [level=0, align=CENTER (2)]: 7
+       Runs: ["'7' (inherited, 9.0pt, BOLD, rgb(FFFFFF))"]
+    P1 [level=0, align=CENTER (2)]: Acceptance request
+       Runs: ["'Acceptance request' (inherited, 10.0pt, BOLD, rgb(FFFFFF))"]
+  Shape 33 [Left Arrow 101 | AUTO_SHAPE (1) | L=8.10, T=4.12, W=0.16, H=0.18]
+  Shape 34 [Rounded Rectangle 102 | AUTO_SHAPE (1) | L=6.77, T=3.87, W=1.30, H=0.68]
+    P0 [level=0, align=CENTER (2)]: 8
+       Runs: ["'8' (inherited, 9.0pt, BOLD, rgb(FFFFFF))"]
+    P1 [level=0, align=CENTER (2)]: Hospital response
+       Runs: ["'Hospital response' (inherited, 10.0pt, BOLD, rgb(FFFFFF))"]
+  Shape 35 [Left Arrow 103 | AUTO_SHAPE (1) | L=6.57, T=4.12, W=0.16, H=0.18]
+  Shape 36 [Rounded Rectangle 104 | AUTO_SHAPE (1) | L=5.24, T=3.87, W=1.30, H=0.68]
+    P0 [level=0, align=CENTER (2)]: 9
+       Runs: ["'9' (inherited, 9.0pt, BOLD, rgb(1E88E5))"]
+    P1 [level=0, align=CENTER (2)]: Ambulance destination
+       Runs: ["'Ambulance destination' (inherited, 10.0pt, , rgb(123B66))"]
+  Shape 37 [Left Arrow 105 | AUTO_SHAPE (1) | L=5.05, T=4.12, W=0.16, H=0.18]
+  Shape 38 [Rounded Rectangle 106 | AUTO_SHAPE (1) | L=3.72, T=3.87, W=1.30, H=0.68]
+    P0 [level=0, align=CENTER (2)]: 10
+       Runs: ["'10' (inherited, 9.0pt, BOLD, rgb(1E88E5))"]
+    P1 [level=0, align=CENTER (2)]: Realtime state changes
+       Runs: ["'Realtime state changes' (inherited, 10.0pt, , rgb(123B66))"]
+  Shape 39 [Left Arrow 107 | AUTO_SHAPE (1) | L=3.52, T=4.12, W=0.16, H=0.18]
+  Shape 40 [Rounded Rectangle 108 | AUTO_SHAPE (1) | L=2.19, T=3.87, W=1.30, H=0.68]
+    P0 [level=0, align=CENTER (2)]: 11
+       Runs: ["'11' (inherited, 9.0pt, BOLD, rgb(FFFFFF))"]
+    P1 [level=0, align=CENTER (2)]: Reroute / continue care
+       Runs: ["'Reroute / continue care' (inherited, 10.0pt, BOLD, rgb(FFFFFF))"]
+  Shape 41 [Left Arrow 109 | AUTO_SHAPE (1) | L=2.00, T=4.12, W=0.16, H=0.18]
+  Shape 42 [Rounded Rectangle 110 | AUTO_SHAPE (1) | L=0.67, T=3.87, W=1.30, H=0.68]
+    P0 [level=0, align=CENTER (2)]: Repeats on every new event
+       Runs: ["'Repeats on every new event' (inherited, 10.0pt, , rgb(667085))"]
+  Shape 43 [Rectangle 111 | AUTO_SHAPE (1) | L=0.67, T=4.60, W=8.92, H=0.30]
+    P0 [level=0, align=CENTER (2)]: Hospital response: PENDING → ACCEPTED · LIMITED · REJECTED · UNAVAILABLE · EXPIRED · UNKNOWN
+       Runs: ["'Hospital response: PENDING → ACCEPTED · LIMITED · REJECTED · UNAVAILABLE · EXPIRED · UNKNOWN' (inherited, 10.0pt, BOLD, rgb(123B66))"]
+
+--- SLIDE 4 [Layout: DEFAULT] ---
+  Background: <pptx.slide._Background object at 0x000001EF32147440>
+  Shape 0 [Shape 0 | AUTO_SHAPE (1) | L=12.58, T=-0.55, W=1.30, H=1.30]
+  Shape 1 [Text 1 | TEXT_BOX (17) | L=0.55, T=0.50, W=1.20, H=0.18]
+    P0 [level=0, align=None]: 03
+       Runs: ["'03' (inherited, inherited, , )"]
+  Shape 2 [Text 2 | TEXT_BOX (17) | L=0.55, T=0.79, W=9.20, H=0.35]
+    P0 [level=0, align=None]: INNOVATION & DIFFERENTIATION
+       Runs: ["'INNOVATION & DIFFERENTIATION' (inherited, inherited, , )"]
+  Shape 3 [Shape 3 | AUTO_SHAPE (1) | L=10.73, T=0.55, W=2.05, H=0.46]
+  Shape 4 [Text 4 | TEXT_BOX (17) | L=10.73, T=0.71, W=2.05, H=0.15]
+    P0 [level=0, align=None]: 15 POINTS
+       Runs: ["'15 POINTS' (inherited, inherited, , )"]
+  Shape 5 [Shape 5 | AUTO_SHAPE (1) | L=0.55, T=1.32, W=12.23, H=0.01]
+  Shape 6 [Shape 6 | AUTO_SHAPE (1) | L=0.55, T=1.65, W=4.43, H=2.60]
+  Shape 7 [Text 7 | TEXT_BOX (17) | L=0.83, T=1.93, W=3.87, H=0.17]
+    P0 [level=0, align=None]: EXISTING APPROACH
+       Runs: ["'EXISTING APPROACH' (inherited, inherited, , )"]
+  Shape 8 [Text 8 | TEXT_BOX (17) | L=0.83, T=2.41, W=3.87, H=1.75]
+    P0 [level=0, align=None]: Fragmented lists and one-way updates
+       Runs: ["'Fragmented lists and one-way updates' (inherited, 12.0pt, , rgb(1F2937))"]
+    P1 [level=0, align=None]: Availability assumed from static listings
+       Runs: ["'Availability assumed from static listings' (inherited, 12.0pt, , rgb(1F2937))"]
+    P2 [level=0, align=None]: Route chosen once
+       Runs: ["'Route chosen once' (inherited, 12.0pt, , rgb(1F2937))"]
+    P3 [level=0, align=None]: Data of unknown age
+       Runs: ["'Data of unknown age' (inherited, 12.0pt, , rgb(1F2937))"]
+    P4 [level=0, align=None]: Systems and roles work in isolation
+       Runs: ["'Systems and roles work in isolation' (inherited, 12.0pt, , rgb(1F2937))"]
+  Shape 9 [Shape 9 | AUTO_SHAPE (1) | L=5.28, T=1.65, W=4.43, H=2.60]
+  Shape 10 [Text 10 | TEXT_BOX (17) | L=5.56, T=1.93, W=3.87, H=0.17]
+    P0 [level=0, align=None]: OUR APPROACH
+       Runs: ["'OUR APPROACH' (inherited, inherited, , )"]
+  Shape 11 [Text 11 | TEXT_BOX (17) | L=5.56, T=2.41, W=3.87, H=1.75]
+    P0 [level=0, align=None]: Events update one shared care state
+       Runs: ["'Events update one shared care state' (inherited, 12.0pt, , rgb(1F2937))"]
+    P1 [level=0, align=None]: Hospital must respond to the case request
+       Runs: ["'Hospital must respond to the case request' (inherited, 12.0pt, , rgb(1F2937))"]
+    P2 [level=0, align=None]: Re-decided when a relevant event arrives
+       Runs: ["'Re-decided when a relevant event arrives' (inherited, 12.0pt, , rgb(1F2937))"]
+    P3 [level=0, align=None]: Timestamps, freshness and provenance kept
+       Runs: ["'Timestamps, freshness and provenance kept' (inherited, 12.0pt, , rgb(1F2937))"]
+    P4 [level=0, align=None]: Four role-scoped views of one state
+       Runs: ["'Four role-scoped views of one state' (inherited, 12.0pt, , rgb(1F2937))"]
+  Shape 12 [Shape 12 | AUTO_SHAPE (1) | L=0.55, T=4.55, W=9.16, H=1.20]
+  Shape 13 [Text 13 | TEXT_BOX (17) | L=0.85, T=4.80, W=8.56, H=0.15]
+    P0 [level=0, align=None]: KEY DIFFERENTIATOR
+       Runs: ["'KEY DIFFERENTIATOR' (inherited, inherited, , )"]
+  Shape 14 [Text 14 | TEXT_BOX (17) | L=0.85, T=5.07, W=8.56, H=0.61]
+    P0 [level=0, align=None]: EVENT STATE  +  HOSPITAL CONFIRMATION  +  FRESHNESS  +  DYNAMIC RESPONSE
+       Runs: ["'EVENT STATE  +  HOSPITAL CONFIRMATION  +  FRESHNESS  +  DYNAMIC RESPONSE' (inherited, 13.0pt, BOLD, )"]
+    P1 [level=0, align=None]: Acceptance is an explicit, time-limited state, not an assumption; any change to it triggers a new destination decision.
+       Runs: ["'Acceptance is an explicit, time-limited state, not an assumption; any change to it triggers a new destination decision.' (inherited, 11.0pt, , )"]
+  Shape 15 [Shape 22 | AUTO_SHAPE (1) | L=0.55, T=7.06, W=12.23, H=0.01]
+  Shape 16 [Text 23 | TEXT_BOX (17) | L=0.55, T=7.21, W=9.00, H=0.14]
+    P0 [level=0, align=None]: AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026
+       Runs: ["'AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026' (inherited, inherited, , )"]
+  Shape 17 [Text 24 | TEXT_BOX (17) | L=12.28, T=7.21, W=0.50, H=0.14]
+    P0 [level=0, align=None]: 4
+       Runs: ["'4' (inherited, inherited, , )"]
+
+--- SLIDE 5 [Layout: DEFAULT] ---
+  Background: <pptx.slide._Background object at 0x000001EF3218DD00>
+  Shape 0 [Shape 0 | AUTO_SHAPE (1) | L=12.58, T=-0.55, W=1.30, H=1.30]
+  Shape 1 [Text 1 | TEXT_BOX (17) | L=0.55, T=0.50, W=1.20, H=0.18]
+    P0 [level=0, align=None]: 04
+       Runs: ["'04' (inherited, inherited, , )"]
+  Shape 2 [Text 2 | TEXT_BOX (17) | L=0.55, T=0.79, W=9.20, H=0.35]
+    P0 [level=0, align=None]: TECHNICAL APPROACH
+       Runs: ["'TECHNICAL APPROACH' (inherited, inherited, , )"]
+  Shape 3 [Shape 3 | AUTO_SHAPE (1) | L=10.73, T=0.55, W=2.05, H=0.46]
+  Shape 4 [Text 4 | TEXT_BOX (17) | L=10.73, T=0.71, W=2.05, H=0.15]
+    P0 [level=0, align=None]: 15 POINTS
+       Runs: ["'15 POINTS' (inherited, inherited, , )"]
+  Shape 5 [Shape 5 | AUTO_SHAPE (1) | L=0.55, T=1.32, W=12.23, H=0.01]
+  Shape 6 [Text 6 | TEXT_BOX (17) | L=0.55, T=1.72, W=5.00, H=0.15]
+    P0 [level=0, align=None]: SYSTEM ARCHITECTURE
+       Runs: ["'SYSTEM ARCHITECTURE' (inherited, inherited, , )"]
+  Shape 7 [Shape 7 | AUTO_SHAPE (1) | L=0.55, T=1.98, W=9.16, H=2.55]
+  Shape 8 [Text 9 | TEXT_BOX (17) | L=0.55, T=4.88, W=5.00, H=0.15]
+    P0 [level=0, align=None]: TECHNOLOGY STACK
+       Runs: ["'TECHNOLOGY STACK' (inherited, inherited, , )"]
+  Shape 9 [Text 10 | TEXT_BOX (17) | L=0.55, T=5.21, W=3.02, H=0.39]
+    P0 [level=0, align=None]: Frontend:  React / Vite
+       Runs: ["'Frontend:' (inherited, 11.0pt, BOLD, )", "'  React / Vite' (inherited, 10.5pt, , rgb(1F2937))"]
+  Shape 10 [Text 11 | TEXT_BOX (17) | L=3.70, T=5.21, W=3.02, H=0.39]
+    P0 [level=0, align=None]: Backend:  Node.js / TypeScript / Zod
+       Runs: ["'Backend:' (inherited, 11.0pt, BOLD, )", "'  Node.js / TypeScript / Zod' (inherited, 10.5pt, , rgb(1F2937))"]
+  Shape 11 [Text 12 | TEXT_BOX (17) | L=6.86, T=5.21, W=3.02, H=0.39]
+    P0 [level=0, align=None]: Database:  DynamoDB (AWS architecture)
+       Runs: ["'Database:' (inherited, 11.0pt, BOLD, )", "'  DynamoDB (AWS architecture)' (inherited, 10.5pt, , rgb(1F2937))"]
+  Shape 12 [Text 13 | TEXT_BOX (17) | L=0.55, T=5.65, W=3.02, H=0.39]
+    P0 [level=0, align=None]: AI / ML:  Amazon Bedrock (advisory)
+       Runs: ["'AI / ML:' (inherited, 11.0pt, BOLD, )", "'  Amazon Bedrock (advisory)' (inherited, 10.5pt, , rgb(1F2937))"]
+  Shape 13 [Text 14 | TEXT_BOX (17) | L=3.70, T=5.65, W=3.02, H=0.39]
+    P0 [level=0, align=None]: APIs / Services:  API Gateway · EventBridge · Lambda · Socket.IO
+       Runs: ["'APIs / Services:' (inherited, 11.0pt, BOLD, )", "'  API Gateway · EventBridge · Lambda · Socket.IO' (inherited, 10.5pt, , rgb(1F2937))"]
+  Shape 14 [Text 15 | TEXT_BOX (17) | L=6.86, T=5.65, W=3.02, H=0.39]
+    P0 [level=0, align=None]: Hardware:  None required (core prototype)
+       Runs: ["'Hardware:' (inherited, 11.0pt, BOLD, )", "'  None required (core prototype)' (inherited, 10.5pt, , rgb(1F2937))"]
+  Shape 15 [Text 16 | TEXT_BOX (17) | L=0.55, T=6.13, W=9.16, H=0.15]
+    P0 [level=0, align=None]: FEASIBILITY
+       Runs: ["'FEASIBILITY' (inherited, inherited, , )"]
+  Shape 16 [Text 17 | TEXT_BOX (17) | L=0.55, T=6.34, W=9.16, H=0.66]
+    P0 [level=0, align=None]: The core emergency coordination workflow is implemented locally and runs without cloud dependency at the offline hackathon. The event-driven components are designed to map to AWS managed services (defined in CDK) for later cloud deployment.
+       Runs: ["'The core emergency coordination workflow is implemented locally and runs without cloud dependency at the offline hackathon. The event-driven components are designed to map to AWS managed services (defined in CDK) for later cloud deployment.' (inherited, 11.0pt, , )"]
+  Shape 17 [Shape 22 | AUTO_SHAPE (1) | L=0.55, T=7.06, W=12.23, H=0.01]
+  Shape 18 [Text 23 | TEXT_BOX (17) | L=0.55, T=7.21, W=9.00, H=0.14]
+    P0 [level=0, align=None]: AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026
+       Runs: ["'AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026' (inherited, inherited, , )"]
+  Shape 19 [Text 24 | TEXT_BOX (17) | L=12.28, T=7.21, W=0.50, H=0.14]
+    P0 [level=0, align=None]: 5
+       Runs: ["'5' (inherited, inherited, , )"]
+  Shape 20 [Rectangle 140 | AUTO_SHAPE (1) | L=0.67, T=2.01, W=8.92, H=0.22]
+    P0 [level=0, align=LEFT (1)]: AWS DEPLOYMENT ARCHITECTURE  ·  defined in CDK, not deployed
+       Runs: ["'AWS DEPLOYMENT ARCHITECTURE  ·  defined in CDK, not deployed' (inherited, 10.0pt, BOLD, rgb(1E88E5))"]
+  Shape 21 [Rounded Rectangle 141 | AUTO_SHAPE (1) | L=0.67, T=2.27, W=1.60, H=0.68]
+    P0 [level=0, align=CENTER (2)]: Participants
+       Runs: ["'Participants' (inherited, 10.0pt, BOLD, rgb(123B66))"]
+    P1 [level=0, align=CENTER (2)]: Patient · Ambulance
+       Runs: ["'Patient · Ambulance' (inherited, 10.0pt, , rgb(1F2937))"]
+    P2 [level=0, align=CENTER (2)]: Hospital · Management
+       Runs: ["'Hospital · Management' (inherited, 10.0pt, , rgb(1F2937))"]
+  Shape 22 [Right Arrow 142 | AUTO_SHAPE (1) | L=2.30, T=2.52, W=0.16, H=0.18]
+  Shape 23 [Rounded Rectangle 143 | AUTO_SHAPE (1) | L=2.49, T=2.27, W=1.10, H=0.68]
+    P0 [level=0, align=CENTER (2)]: API Gateway
+       Runs: ["'API Gateway' (inherited, 10.0pt, BOLD, rgb(123B66))"]
+    P1 [level=0, align=CENTER (2)]: REST ingestion
+       Runs: ["'REST ingestion' (inherited, 10.0pt, , rgb(1F2937))"]
+    P2 [level=0, align=CENTER (2)]: Cognito auth
+       Runs: ["'Cognito auth' (inherited, 10.0pt, , rgb(667085))"]
+  Shape 24 [Right Arrow 144 | AUTO_SHAPE (1) | L=3.62, T=2.52, W=0.16, H=0.18]
+  Shape 25 [Rounded Rectangle 145 | AUTO_SHAPE (1) | L=3.82, T=2.27, W=1.20, H=0.68]
+    P0 [level=0, align=CENTER (2)]: EventBridge
+       Runs: ["'EventBridge' (inherited, 10.0pt, BOLD, rgb(123B66))"]
+    P1 [level=0, align=CENTER (2)]: JIVA event bus
+       Runs: ["'JIVA event bus' (inherited, 10.0pt, , rgb(1F2937))"]
+  Shape 26 [Right Arrow 146 | AUTO_SHAPE (1) | L=5.05, T=2.52, W=0.16, H=0.18]
+  Shape 27 [Rounded Rectangle 147 | AUTO_SHAPE (1) | L=5.24, T=2.27, W=1.50, H=0.68]
+    P0 [level=0, align=CENTER (2)]: Lambda
+       Runs: ["'Lambda' (inherited, 10.0pt, BOLD, rgb(123B66))"]
+    P1 [level=0, align=CENTER (2)]: Emergency · Hospital
+       Runs: ["'Emergency · Hospital' (inherited, 10.0pt, , rgb(1F2937))"]
+    P2 [level=0, align=CENTER (2)]: acceptance · Routing
+       Runs: ["'acceptance · Routing' (inherited, 10.0pt, , rgb(1F2937))"]
+  Shape 28 [Right Arrow 148 | AUTO_SHAPE (1) | L=6.77, T=2.52, W=0.16, H=0.18]
+  Shape 29 [Rounded Rectangle 149 | AUTO_SHAPE (1) | L=6.97, T=2.27, W=1.30, H=0.68]
+    P0 [level=0, align=CENTER (2)]: DynamoDB
+       Runs: ["'DynamoDB' (inherited, 10.0pt, BOLD, rgb(123B66))"]
+    P1 [level=0, align=CENTER (2)]: (application state)
+       Runs: ["'(application state)' (inherited, 10.0pt, , rgb(1F2937))"]
+  Shape 30 [Right Arrow 150 | AUTO_SHAPE (1) | L=8.30, T=2.52, W=0.16, H=0.18]
+  Shape 31 [Rounded Rectangle 151 | AUTO_SHAPE (1) | L=8.49, T=2.27, W=1.10, H=0.68]
+    P0 [level=0, align=CENTER (2)]: API Gateway WebSockets
+       Runs: ["'API Gateway WebSockets' (inherited, 10.0pt, BOLD, rgb(123B66))"]
+    P1 [level=0, align=CENTER (2)]: → clients
+       Runs: ["'→ clients' (inherited, 10.0pt, , rgb(1F2937))"]
+  Shape 32 [Down Arrow 152 | AUTO_SHAPE (1) | L=4.33, T=2.98, W=0.18, H=0.20]
+  Shape 33 [Rounded Rectangle 153 | AUTO_SHAPE (1) | L=0.67, T=3.17, W=2.82, H=0.76]
+    P0 [level=0, align=CENTER (2)]: JIVA DOMAIN LOGIC (deterministic)
+       Runs: ["'JIVA DOMAIN LOGIC (deterministic)' (inherited, 10.0pt, BOLD, rgb(123B66))"]
+    P1 [level=0, align=CENTER (2)]: Decides eligibility, acceptance, destination
+       Runs: ["'Decides eligibility, acceptance, destination' (inherited, 10.0pt, , rgb(1F2937))"]
+  Shape 34 [Rounded Rectangle 154 | AUTO_SHAPE (1) | L=3.72, T=3.17, W=2.82, H=0.76]
+    P0 [level=0, align=CENTER (2)]: Amazon Bedrock — Advisory AI
+       Runs: ["'Amazon Bedrock — Advisory AI' (inherited, 10.0pt, BOLD, rgb(1E88E5))"]
+    P1 [level=0, align=CENTER (2)]: (CDK-defined; not live-tested)
+       Runs: ["'(CDK-defined; not live-tested)' (inherited, 10.0pt, BOLD, rgb(1E88E5))"]
+    P2 [level=0, align=CENTER (2)]: Summaries; never routes, dispatches or changes state
+       Runs: ["'Summaries; never routes, dispatches or changes state' (inherited, 10.0pt, , rgb(1F2937))"]
+  Shape 35 [Rounded Rectangle 155 | AUTO_SHAPE (1) | L=6.77, T=3.17, W=2.82, H=0.76]
+    P0 [level=0, align=CENTER (2)]: MAPS / ROUTING
+       Runs: ["'MAPS / ROUTING' (inherited, 10.0pt, BOLD, rgb(123B66))"]
+    P1 [level=0, align=CENTER (2)]: MapLibre + OSM; Valhalla / OSRM / mock: route data only
+       Runs: ["'MapLibre + OSM; Valhalla / OSRM / mock: route data only' (inherited, 10.0pt, , rgb(1F2937))"]
+  Shape 36 [Rounded Rectangle 156 | AUTO_SHAPE (1) | L=0.67, T=4.06, W=8.92, H=0.42]
+    P0 [level=0, align=LEFT (1)]: LOCAL PROTOTYPE (runs offline for the hackathon)
+       Runs: ["'LOCAL PROTOTYPE (runs offline for the hackathon)' (inherited, 10.0pt, BOLD, rgb(123B66))"]
+    P1 [level=0, align=LEFT (1)]: React / Vite  →  Node.js API  →  local event bus  →  in-memory state  →  Socket.IO
+       Runs: ["'React / Vite  →  Node.js API  →  local event bus  →  in-memory state  →  Socket.IO' (inherited, 10.0pt, , rgb(1F2937))"]
+  Shape 37 [TextBox 157 | TEXT_BOX (17) | L=10.03, T=1.98, W=2.75, H=1.91]
+    P0 [level=0, align=None]: THIRD-PARTY ATTRIBUTION
+       Runs: ["'THIRD-PARTY ATTRIBUTION' (inherited, 10.0pt, BOLD, rgb(123B66))"]
+    P1 [level=0, align=None]: Map data © OpenStreetMap contributors; MapLibre GL; Valhalla and OSRM routing engines (not verified live); hospital list from public Govt. of Karnataka / BBMP directories; Amazon Bedrock (AI, unverified).
+       Runs: ["'Map data © OpenStreetMap contributors; MapLibre GL; Valhalla and OSRM routing engines (not verified live); hospital list from public Govt. of Karnataka / BBMP directories; Amazon Bedrock (AI, unverified).' (inherited, 9.5pt, , rgb(667085))"]
+
+--- SLIDE 6 [Layout: DEFAULT] ---
+  Background: <pptx.slide._Background object at 0x000001EF3218DD60>
+  Shape 0 [Shape 0 | AUTO_SHAPE (1) | L=12.58, T=-0.55, W=1.30, H=1.30]
+  Shape 1 [Text 1 | TEXT_BOX (17) | L=0.55, T=0.50, W=1.20, H=0.18]
+    P0 [level=0, align=None]: 05
+       Runs: ["'05' (inherited, inherited, , )"]
+  Shape 2 [Text 2 | TEXT_BOX (17) | L=0.55, T=0.79, W=9.20, H=0.35]
+    P0 [level=0, align=None]: IMPACT & IMPLEMENTATION
+       Runs: ["'IMPACT & IMPLEMENTATION' (inherited, inherited, , )"]
+  Shape 3 [Shape 3 | AUTO_SHAPE (1) | L=10.73, T=0.55, W=2.05, H=0.46]
+  Shape 4 [Text 4 | TEXT_BOX (17) | L=10.73, T=0.71, W=2.05, H=0.15]
+    P0 [level=0, align=None]: 25 POINTS TOTAL
+       Runs: ["'25 POINTS TOTAL' (inherited, inherited, , )"]
+  Shape 5 [Shape 5 | AUTO_SHAPE (1) | L=0.55, T=1.32, W=12.23, H=0.01]
+  Shape 6 [Shape 6 | AUTO_SHAPE (1) | L=0.55, T=1.65, W=1.85, H=0.38]
+  Shape 7 [Text 7 | TEXT_BOX (17) | L=0.55, T=1.77, W=1.85, H=0.15]
+    P0 [level=0, align=None]: 15 POINTS
+       Runs: ["'15 POINTS' (inherited, inherited, , )"]
+  Shape 8 [Text 8 | TEXT_BOX (17) | L=0.56, T=2.45, W=3.50, H=0.17]
+    P0 [level=0, align=None]: A. EXPECTED IMPACT
+       Runs: ["'A. EXPECTED IMPACT' (inherited, inherited, , )"]
+  Shape 9 [Text 9 | TEXT_BOX (17) | L=0.55, T=3.16, W=5.92, H=0.15]
+    P0 [level=0, align=None]: WHO BENEFITS?
+       Runs: ["'WHO BENEFITS?' (inherited, inherited, , )"]
+  Shape 10 [Text 10 | TEXT_BOX (17) | L=0.55, T=3.39, W=5.92, H=0.26]
+    P0 [level=0, align=None]: Patients  ·  ambulance teams  ·  hospital emergency teams  ·  care coordinators
+       Runs: ["'Patients  ·  ambulance teams  ·  hospital emergency teams  ·  care coordinators' (inherited, inherited, , )"]
+  Shape 11 [Text 11 | TEXT_BOX (17) | L=0.55, T=3.89, W=5.92, H=0.15]
+    P0 [level=0, align=None]: EXPECTED OUTCOME
+       Runs: ["'EXPECTED OUTCOME' (inherited, inherited, , )"]
+  Shape 12 [Text 12 | TEXT_BOX (17) | L=0.55, T=4.12, W=5.92, H=0.52]
+    P0 [level=0, align=None]: Hospital acceptance becomes an explicit, timestamped step, and a changed hospital status triggers a new destination decision. Measured in simulation; no clinical outcome is claimed.
+       Runs: ["'Hospital acceptance becomes an explicit, timestamped step, and a changed hospital status triggers a new destination decision. Measured in simulation; no clinical outcome is claimed.' (inherited, inherited, , )"]
+  Shape 13 [Text 13 | TEXT_BOX (17) | L=0.55, T=4.71, W=4.00, H=0.15]
+    P0 [level=0, align=None]: SUCCESS METRICS
+       Runs: ["'SUCCESS METRICS' (inherited, inherited, , )"]
+  Shape 14 [Shape 14 | AUTO_SHAPE (1) | L=0.55, T=4.96, W=1.84, H=0.85]
+  Shape 15 [Text 15 | TEXT_BOX (17) | L=0.63, T=5.01, W=1.68, H=0.76]
+    P0 [level=0, align=None]: Time from acceptance request to hospital response
+       Runs: ["'Time from acceptance request to hospital response' (inherited, 11.0pt, , )"]
+  Shape 16 [Shape 16 | AUTO_SHAPE (1) | L=2.59, T=4.96, W=1.84, H=0.85]
+  Shape 17 [Text 17 | TEXT_BOX (17) | L=2.67, T=5.01, W=1.68, H=0.76]
+    P0 [level=0, align=None]: % of simulated flows ending in a confirmed destination
+       Runs: ["'% of simulated flows ending in a confirmed destination' (inherited, 11.0pt, , )"]
+  Shape 18 [Shape 18 | AUTO_SHAPE (1) | L=4.63, T=4.96, W=1.84, H=0.85]
+  Shape 19 [Text 19 | TEXT_BOX (17) | L=4.71, T=5.01, W=1.68, H=0.76]
+    P0 [level=0, align=None]: Time from status change to reroute decision
+       Runs: ["'Time from status change to reroute decision' (inherited, 11.0pt, , )"]
+  Shape 20 [Shape 24 | AUTO_SHAPE (1) | L=6.87, T=1.65, W=1.85, H=0.38]
+  Shape 21 [Text 25 | TEXT_BOX (17) | L=6.87, T=1.77, W=1.85, H=0.15]
+    P0 [level=0, align=None]: 10 POINTS
+       Runs: ["'10 POINTS' (inherited, inherited, , )"]
+  Shape 22 [Text 26 | TEXT_BOX (17) | L=7.10, T=2.45, W=3.50, H=0.17]
+    P0 [level=0, align=None]: B. HACKATHON PLAN
+       Runs: ["'B. HACKATHON PLAN' (inherited, inherited, , )"]
+  Shape 23 [Shape 27 | AUTO_SHAPE (1) | L=7.10, T=3.16, W=5.92, H=0.50]
+  Shape 24 [Text 28 | TEXT_BOX (17) | L=7.30, T=3.30, W=0.55, H=0.21]
+    P0 [level=0, align=None]: 01
+       Runs: ["'01' (inherited, inherited, , )"]
+  Shape 25 [Text 29 | TEXT_BOX (17) | L=7.85, T=3.16, W=4.97, H=0.50]
+    P0 [level=0, align=None]: H0–8  ·  Core event-driven workflow: ingestion, canonical events, patient / hospital / ambulance state
+       Runs: ["'H0–8  ·  Core event-driven workflow: ingestion, canonical events, patient / hospital / ambulance state' (inherited, 11.0pt, BOLD, rgb(123B66))"]
+  Shape 26 [Shape 30 | AUTO_SHAPE (1) | L=7.10, T=3.78, W=5.92, H=0.50]
+  Shape 27 [Text 31 | TEXT_BOX (17) | L=7.30, T=3.92, W=0.55, H=0.21]
+    P0 [level=0, align=None]: 02
+       Runs: ["'02' (inherited, inherited, , )"]
+  Shape 28 [Text 32 | TEXT_BOX (17) | L=7.85, T=3.78, W=4.97, H=0.50]
+    P0 [level=0, align=None]: H8–16  ·  Hospital acceptance protocol + coordination: request, response states, expiry
+       Runs: ["'H8–16  ·  Hospital acceptance protocol + coordination: request, response states, expiry' (inherited, 11.0pt, BOLD, rgb(123B66))"]
+  Shape 29 [Shape 33 | AUTO_SHAPE (1) | L=7.10, T=4.40, W=5.92, H=0.50]
+  Shape 30 [Text 34 | TEXT_BOX (17) | L=7.30, T=4.54, W=0.55, H=0.21]
+    P0 [level=0, align=None]: 03
+       Runs: ["'03' (inherited, inherited, , )"]
+  Shape 31 [Text 35 | TEXT_BOX (17) | L=7.85, T=4.40, W=4.97, H=0.50]
+    P0 [level=0, align=None]: H16–24  ·  Realtime routing / rerouting + integration testing
+       Runs: ["'H16–24  ·  Realtime routing / rerouting + integration testing' (inherited, 11.0pt, BOLD, rgb(123B66))"]
+  Shape 32 [Shape 36 | AUTO_SHAPE (1) | L=7.10, T=5.02, W=5.92, H=0.50]
+  Shape 33 [Text 37 | TEXT_BOX (17) | L=7.30, T=5.16, W=0.55, H=0.21]
+    P0 [level=0, align=None]: 04
+       Runs: ["'04' (inherited, inherited, , )"]
+  Shape 34 [Text 38 | TEXT_BOX (17) | L=7.85, T=5.02, W=4.97, H=0.50]
+    P0 [level=0, align=None]: H24–30  ·  Final integrated demo: deterministic scenario, rehearsal, submission
+       Runs: ["'H24–30  ·  Final integrated demo: deterministic scenario, rehearsal, submission' (inherited, 11.0pt, BOLD, rgb(123B66))"]
+  Shape 35 [Shape 43 | AUTO_SHAPE (1) | L=0.55, T=7.06, W=12.23, H=0.01]
+  Shape 36 [Text 44 | TEXT_BOX (17) | L=0.55, T=7.21, W=9.00, H=0.14]
+    P0 [level=0, align=None]: AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026
+       Runs: ["'AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026' (inherited, inherited, , )"]
+  Shape 37 [Text 45 | TEXT_BOX (17) | L=12.28, T=7.21, W=0.50, H=0.14]
+    P0 [level=0, align=None]: 6
+       Runs: ["'6' (inherited, inherited, , )"]
+
+--- SLIDE 7 [Layout: DEFAULT] ---
+  Background: <pptx.slide._Background object at 0x000001EF321A7350>
+  Shape 0 [Shape 0 | AUTO_SHAPE (1) | L=12.58, T=-0.55, W=1.30, H=1.30]
+  Shape 1 [Text 1 | TEXT_BOX (17) | L=0.55, T=0.50, W=1.20, H=0.18]
+    P0 [level=0, align=None]: 06
+       Runs: ["'06' (inherited, inherited, , )"]
+  Shape 2 [Text 2 | TEXT_BOX (17) | L=0.55, T=0.79, W=9.20, H=0.35]
+    P0 [level=0, align=None]: TEAM & EXECUTION READINESS
+       Runs: ["'TEAM & EXECUTION READINESS' (inherited, inherited, , )"]
+  Shape 3 [Shape 3 | AUTO_SHAPE (1) | L=10.73, T=0.55, W=2.05, H=0.46]
+  Shape 4 [Text 4 | TEXT_BOX (17) | L=10.73, T=0.71, W=2.05, H=0.15]
+    P0 [level=0, align=None]: 5 POINTS
+       Runs: ["'5 POINTS' (inherited, inherited, , )"]
+  Shape 5 [Shape 5 | AUTO_SHAPE (1) | L=0.55, T=1.32, W=12.23, H=0.01]
+  Shape 6 [Table 0 | TABLE (19) | L=0.55, T=1.90, W=9.16, H=1.48]
+    Table: 3 rows x 3 cols
+      Row 0: ['MEMBER', 'ROLE', 'RELEVANT SKILLS']
+      Row 1: ['Yukith M Joseph', 'System & Full-Stack Lead', 'TypeScript/Zod,Node.js,event-driven architecture,AWS CDK, MapLibre, React/Vite, UI Integration']
+      Row 2: ['Pranathi Nagabhushana', 'Healthcare workflow and API & Demo Integration', 'Healthcare workflow design , API Basics, Socket.IO, Realtime event handling, testing & Documentation']
+  Shape 7 [Text 6 | TEXT_BOX (17) | L=0.55, T=4.19, W=9.16, H=0.15]
+    P0 [level=0, align=None]: WHY THIS TEAM?
+       Runs: ["'WHY THIS TEAM?' (inherited, inherited, , )"]
+  Shape 8 [Text 7 | TEXT_BOX (17) | L=0.55, T=4.42, W=9.16, H=0.37]
+    P0 [level=0, align=None]: Our team combines a proven technical stack (TypeScript/Zod, Node.js + Socket.IO, React/Vite, MapLibre, AWS CDK) with high-impact problem awareness and seamless execution synergy. We rapidly iterate in parallel without friction, making us uniquely equipped to deliver this solution.
+       Runs: ["'Our team combines a proven technical stack (' (inherited, inherited, , )", "'TypeScript/Zod, Node.js + Socket.IO, React/Vite, MapLibre, AWS CDK' (inherited, inherited, BOLD, )", "') with high-impact problem awareness and seamless execution synergy. We rapidly iterate in parallel without friction, making us uniquely equipped to deliver this solution.' (inherited, inherited, , )"]
+  Shape 9 [Text 10 | TEXT_BOX (17) | L=0.80, T=5.48, W=1.90, H=0.14]
+    P0 [level=0, align=None]: OPTIONAL — NOT REQUIRED
+       Runs: ["'OPTIONAL — NOT REQUIRED' (inherited, inherited, , )"]
+  Shape 10 [Shape 17 | AUTO_SHAPE (1) | L=0.55, T=7.06, W=12.23, H=0.01]
+  Shape 11 [Text 18 | TEXT_BOX (17) | L=0.55, T=7.21, W=9.00, H=0.14]
+    P0 [level=0, align=None]: AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026
+       Runs: ["'AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026' (inherited, inherited, , )"]
+  Shape 12 [Text 19 | TEXT_BOX (17) | L=12.28, T=7.21, W=0.50, H=0.14]
+    P0 [level=0, align=None]: 7
+       Runs: ["'7' (inherited, inherited, , )"]
+
+=======================================================
+INSPECTING: AWS-INNOVATION-CHALLENGE-2026 (ppt/AWS-INNOVATION-CHALLENGE-2026.pptx)
+=======================================================
+Slide Dimensions: 13.333 x 7.500 inches
+Slide Count: 8
+
+--- SLIDE 1 [Layout: DEFAULT] ---
+  Background: <pptx.slide._Background object at 0x000001EF321C14C0>
+  Shape 0 [Shape 0 | AUTO_SHAPE (1) | L=-0.00, T=0.00, W=13.33, H=0.14]
+  Shape 1 [Shape 1 | AUTO_SHAPE (1) | L=10.90, T=-1.90, W=4.20, H=4.20]
+  Shape 2 [Shape 2 | AUTO_SHAPE (1) | L=-1.30, T=5.60, W=2.60, H=2.60]
+  Shape 3 [Text 3 | TEXT_BOX (17) | L=0.55, T=0.68, W=8.00, H=0.18]
+    P0 [level=0, align=None]: AWS INNOVATION CHALLENGE 2026
+       Runs: ["'AWS INNOVATION CHALLENGE 2026' (inherited, inherited, , )"]
+  Shape 4 [Text 5 | TEXT_BOX (17) | L=0.55, T=2.00, W=11.50, H=0.59]
+    P0 [level=0, align=None]: [PROBLEM STATEMENT]
+       Runs: ["'[PROBLEM STATEMENT]' (inherited, inherited, , )"]
+  Shape 5 [Text 6 | TEXT_BOX (17) | L=0.55, T=2.78, W=11.50, H=0.30]
+    P0 [level=0, align=None]: [TEAM NAME]
+       Runs: ["'[TEAM NAME]' (inherited, inherited, , )"]
+  Shape 6 [Shape 7 | AUTO_SHAPE (1) | L=0.55, T=3.40, W=11.10, H=1.05]
+  Shape 7 [Text 8 | TEXT_BOX (17) | L=0.85, T=3.58, W=10.50, H=0.15]
+    P0 [level=0, align=None]: ONE-LINE SOLUTION STATEMENT
+       Runs: ["'ONE-LINE SOLUTION STATEMENT' (inherited, inherited, , )"]
+  Shape 8 [Text 9 | TEXT_BOX (17) | L=0.85, T=3.97, W=10.50, H=0.20]
+    P0 [level=0, align=None]: [Summarize your proposed solution in a single clear sentence.]
+       Runs: ["'[Summarize your proposed solution in a single clear sentence.]' (inherited, inherited, , )"]
+  Shape 9 [Text 10 | TEXT_BOX (17) | L=0.55, T=4.82, W=4.00, H=0.15]
+    P0 [level=0, align=None]: TEAM MEMBERS
+       Runs: ["'TEAM MEMBERS' (inherited, inherited, , )"]
+  Shape 10 [Text 11 | TEXT_BOX (17) | L=0.55, T=5.15, W=11.50, H=0.21]
+    P0 [level=0, align=None]: [NAME 1]   •   [NAME 2]   •   [NAME 3]   •   [NAME 4]
+       Runs: ["'[NAME 1]   •   [NAME 2]   •   [NAME 3]   •   [NAME 4]' (inherited, inherited, , )"]
+  Shape 11 [Shape 12 | AUTO_SHAPE (1) | L=0.55, T=5.75, W=11.10, H=0.01]
+  Shape 12 [Text 15 | TEXT_BOX (17) | L=0.55, T=6.93, W=11.50, H=0.15]
+    P0 [level=0, align=None]: Introduce your team and summarize your proposed solution in one clear sentence.
+       Runs: ["'Introduce your team and summarize your proposed solution in one clear sentence.' (inherited, inherited, , )"]
+
+--- SLIDE 2 [Layout: DEFAULT] ---
+  Background: <pptx.slide._Background object at 0x000001EF321C20C0>
+  Shape 0 [Shape 0 | AUTO_SHAPE (1) | L=12.58, T=-0.55, W=1.30, H=1.30]
+  Shape 1 [Text 1 | TEXT_BOX (17) | L=0.55, T=0.50, W=1.20, H=0.18]
+    P0 [level=0, align=None]: 01
+       Runs: ["'01' (inherited, inherited, , )"]
+  Shape 2 [Text 2 | TEXT_BOX (17) | L=0.55, T=0.79, W=9.20, H=0.35]
+    P0 [level=0, align=None]: PROBLEM STATEMENT
+       Runs: ["'PROBLEM STATEMENT' (inherited, inherited, , )"]
+  Shape 3 [Shape 3 | AUTO_SHAPE (1) | L=10.73, T=0.55, W=2.05, H=0.46]
+  Shape 4 [Text 4 | TEXT_BOX (17) | L=10.73, T=0.71, W=2.05, H=0.15]
+    P0 [level=0, align=None]: 15 POINTS
+       Runs: ["'15 POINTS' (inherited, inherited, , )"]
+  Shape 5 [Shape 5 | AUTO_SHAPE (1) | L=0.55, T=1.32, W=12.23, H=0.01]
+  Shape 6 [Text 6 | TEXT_BOX (17) | L=0.55, T=1.72, W=4.43, H=0.15]
+    P0 [level=0, align=None]: THE PROBLEM
+       Runs: ["'THE PROBLEM' (inherited, inherited, , )"]
+  Shape 7 [Text 7 | TEXT_BOX (17) | L=0.55, T=1.95, W=4.43, H=0.15]
+    P0 [level=0, align=None]: [Describe the problem clearly.]
+       Runs: ["'[Describe the problem clearly.]' (inherited, inherited, , )"]
+  Shape 8 [Text 8 | TEXT_BOX (17) | L=0.55, T=2.64, W=4.43, H=0.15]
+    P0 [level=0, align=None]: TARGET USERS
+       Runs: ["'TARGET USERS' (inherited, inherited, , )"]
+  Shape 9 [Text 9 | TEXT_BOX (17) | L=0.55, T=2.87, W=4.43, H=0.15]
+    P0 [level=0, align=None]: [Who experiences this problem?]
+       Runs: ["'[Who experiences this problem?]' (inherited, inherited, , )"]
+  Shape 10 [Text 10 | TEXT_BOX (17) | L=0.55, T=3.57, W=4.43, H=0.15]
+    P0 [level=0, align=None]: CURRENT SITUATION
+       Runs: ["'CURRENT SITUATION' (inherited, inherited, , )"]
+  Shape 11 [Text 11 | TEXT_BOX (17) | L=0.55, T=3.80, W=4.43, H=0.15]
+    P0 [level=0, align=None]: [How is the problem currently addressed?]
+       Runs: ["'[How is the problem currently addressed?]' (inherited, inherited, , )"]
+  Shape 12 [Text 12 | TEXT_BOX (17) | L=0.55, T=4.35, W=4.43, H=0.15]
+    P0 [level=0, align=None]: KEY GAPS
+       Runs: ["'KEY GAPS' (inherited, inherited, , )"]
+  Shape 13 [Text 13 | TEXT_BOX (17) | L=0.55, T=4.58, W=4.43, H=0.15]
+    P0 [level=0, align=None]: [What limitations or unmet needs exist?]
+       Runs: ["'[What limitations or unmet needs exist?]' (inherited, inherited, , )"]
+  Shape 14 [Shape 14 | AUTO_SHAPE (1) | L=0.55, T=5.40, W=9.16, H=0.85]
+  Shape 15 [Text 15 | TEXT_BOX (17) | L=0.85, T=5.75, W=8.56, H=0.15]
+    P0 [level=0, align=None]: [INSERT SUPPORTING DATA / EVIDENCE — OPTIONAL]
+       Runs: ["'[INSERT SUPPORTING DATA / EVIDENCE — OPTIONAL]' (inherited, inherited, , )"]
+  Shape 16 [Shape 16 | AUTO_SHAPE (1) | L=10.03, T=1.65, W=2.75, H=3.25]
+  Shape 17 [Shape 17 | AUTO_SHAPE (1) | L=10.03, T=1.65, W=0.05, H=3.25]
+  Shape 18 [Text 18 | TEXT_BOX (17) | L=10.27, T=1.91, W=2.30, H=0.15]
+    P0 [level=0, align=None]: WHAT TO INCLUDE
+       Runs: ["'WHAT TO INCLUDE' (inherited, inherited, , )"]
+  Shape 19 [Text 19 | TEXT_BOX (17) | L=10.27, T=2.21, W=2.30, H=1.35]
+    P0 [level=0, align=None]: Clearly define the problem
+       Runs: ["'Clearly define the problem' (inherited, inherited, , )"]
+    P1 [level=0, align=None]: Identify who is affected
+       Runs: ["'Identify who is affected' (inherited, inherited, , )"]
+    P2 [level=0, align=None]: Explain why the problem matters
+       Runs: ["'Explain why the problem matters' (inherited, inherited, , )"]
+    P3 [level=0, align=None]: Mention current gaps or limitations
+       Runs: ["'Mention current gaps or limitations' (inherited, inherited, , )"]
+    P4 [level=0, align=None]: Use evidence/data where available
+       Runs: ["'Use evidence/data where available' (inherited, inherited, , )"]
+  Shape 20 [Shape 20 | AUTO_SHAPE (1) | L=10.03, T=5.18, W=2.75, H=1.15]
+  Shape 21 [Text 21 | TEXT_BOX (17) | L=10.25, T=5.38, W=2.31, H=0.15]
+    P0 [level=0, align=None]: IMPORTANT
+       Runs: ["'IMPORTANT' (inherited, inherited, , )"]
+  Shape 22 [Text 22 | TEXT_BOX (17) | L=10.25, T=5.76, W=2.31, H=0.33]
+    P0 [level=0, align=None]: Focus on the problem, not your proposed solution.
+       Runs: ["'Focus on the problem, not your proposed solution.' (inherited, inherited, , )"]
+  Shape 23 [Shape 23 | AUTO_SHAPE (1) | L=0.55, T=7.06, W=12.23, H=0.01]
+  Shape 24 [Text 24 | TEXT_BOX (17) | L=0.55, T=7.21, W=9.00, H=0.14]
+    P0 [level=0, align=None]: [AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026
+       Runs: ["'[AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026' (inherited, inherited, , )"]
+  Shape 25 [Text 25 | TEXT_BOX (17) | L=12.28, T=7.21, W=0.50, H=0.14]
+    P0 [level=0, align=None]: 2
+       Runs: ["'2' (inherited, inherited, , )"]
+
+--- SLIDE 3 [Layout: DEFAULT] ---
+  Background: <pptx.slide._Background object at 0x000001EF321A7830>
+  Shape 0 [Shape 0 | AUTO_SHAPE (1) | L=12.58, T=-0.55, W=1.30, H=1.30]
+  Shape 1 [Text 1 | TEXT_BOX (17) | L=0.55, T=0.50, W=1.20, H=0.18]
+    P0 [level=0, align=None]: 02
+       Runs: ["'02' (inherited, inherited, , )"]
+  Shape 2 [Text 2 | TEXT_BOX (17) | L=0.55, T=0.79, W=9.20, H=0.35]
+    P0 [level=0, align=None]: PROPOSED SOLUTION
+       Runs: ["'PROPOSED SOLUTION' (inherited, inherited, , )"]
+  Shape 3 [Shape 3 | AUTO_SHAPE (1) | L=10.73, T=0.55, W=2.05, H=0.46]
+  Shape 4 [Text 4 | TEXT_BOX (17) | L=10.73, T=0.71, W=2.05, H=0.15]
+    P0 [level=0, align=None]: 20 POINTS
+       Runs: ["'20 POINTS' (inherited, inherited, , )"]
+  Shape 5 [Shape 5 | AUTO_SHAPE (1) | L=0.55, T=1.32, W=12.23, H=0.01]
+  Shape 6 [Text 6 | TEXT_BOX (17) | L=0.55, T=1.72, W=9.16, H=0.15]
+    P0 [level=0, align=None]: OUR SOLUTION
+       Runs: ["'OUR SOLUTION' (inherited, inherited, , )"]
+  Shape 7 [Text 7 | TEXT_BOX (17) | L=0.55, T=1.95, W=9.16, H=0.15]
+    P0 [level=0, align=None]: [Explain the proposed solution in 2–4 concise sentences.]
+       Runs: ["'[Explain the proposed solution in 2–4 concise sentences.]' (inherited, inherited, , )"]
+  Shape 8 [Text 8 | TEXT_BOX (17) | L=0.55, T=2.57, W=5.00, H=0.15]
+    P0 [level=0, align=None]: HOW IT WORKS
+       Runs: ["'HOW IT WORKS' (inherited, inherited, , )"]
+  Shape 9 [Shape 9 | AUTO_SHAPE (1) | L=0.55, T=2.83, W=9.16, H=2.15]
+  Shape 10 [Text 10 | TEXT_BOX (17) | L=0.85, T=3.82, W=8.56, H=0.17]
+    P0 [level=0, align=None]: [INSERT SOLUTION WORKFLOW / USER JOURNEY / PROCESS DIAGRAM]
+       Runs: ["'[INSERT SOLUTION WORKFLOW / USER JOURNEY / PROCESS DIAGRAM]' (inherited, inherited, , )"]
+  Shape 11 [Text 11 | TEXT_BOX (17) | L=0.55, T=5.27, W=5.00, H=0.15]
+    P0 [level=0, align=None]: KEY FEATURES
+       Runs: ["'KEY FEATURES' (inherited, inherited, , )"]
+  Shape 12 [Text 12 | TEXT_BOX (17) | L=0.55, T=5.79, W=0.65, H=0.24]
+    P0 [level=0, align=None]: 01
+       Runs: ["'01' (inherited, inherited, , )"]
+  Shape 13 [Text 13 | TEXT_BOX (17) | L=1.15, T=5.82, W=2.25, H=0.17]
+    P0 [level=0, align=None]: [FEATURE 1]
+       Runs: ["'[FEATURE 1]' (inherited, inherited, , )"]
+  Shape 14 [Text 14 | TEXT_BOX (17) | L=3.70, T=5.79, W=0.65, H=0.24]
+    P0 [level=0, align=None]: 02
+       Runs: ["'02' (inherited, inherited, , )"]
+  Shape 15 [Text 15 | TEXT_BOX (17) | L=4.30, T=5.82, W=2.25, H=0.17]
+    P0 [level=0, align=None]: [FEATURE 2]
+       Runs: ["'[FEATURE 2]' (inherited, inherited, , )"]
+  Shape 16 [Text 16 | TEXT_BOX (17) | L=6.86, T=5.79, W=0.65, H=0.24]
+    P0 [level=0, align=None]: 03
+       Runs: ["'03' (inherited, inherited, , )"]
+  Shape 17 [Text 17 | TEXT_BOX (17) | L=7.46, T=5.82, W=2.25, H=0.17]
+    P0 [level=0, align=None]: [FEATURE 3]
+       Runs: ["'[FEATURE 3]' (inherited, inherited, , )"]
+  Shape 18 [Shape 18 | AUTO_SHAPE (1) | L=10.03, T=1.65, W=2.75, H=3.25]
+  Shape 19 [Shape 19 | AUTO_SHAPE (1) | L=10.03, T=1.65, W=0.05, H=3.25]
+  Shape 20 [Text 20 | TEXT_BOX (17) | L=10.27, T=1.91, W=2.30, H=0.15]
+    P0 [level=0, align=None]: WHAT TO INCLUDE
+       Runs: ["'WHAT TO INCLUDE' (inherited, inherited, , )"]
+  Shape 21 [Text 21 | TEXT_BOX (17) | L=10.27, T=2.21, W=2.30, H=1.91]
+    P0 [level=0, align=None]: Explain how your solution addresses the problem
+       Runs: ["'Explain how your solution addresses the problem' (inherited, inherited, , )"]
+    P1 [level=0, align=None]: Show the user journey or workflow
+       Runs: ["'Show the user journey or workflow' (inherited, inherited, , )"]
+    P2 [level=0, align=None]: Highlight the core functionality
+       Runs: ["'Highlight the core functionality' (inherited, inherited, , )"]
+    P3 [level=0, align=None]: Keep the solution practical and specific
+       Runs: ["'Keep the solution practical and specific' (inherited, inherited, , )"]
+    P4 [level=0, align=None]: Connect the solution to the identified problem
+       Runs: ["'Connect the solution to the identified problem' (inherited, inherited, , )"]
+  Shape 22 [Shape 22 | AUTO_SHAPE (1) | L=10.03, T=5.18, W=2.75, H=1.15]
+  Shape 23 [Text 23 | TEXT_BOX (17) | L=10.25, T=5.38, W=2.31, H=0.15]
+    P0 [level=0, align=None]: NOTE
+       Runs: ["'NOTE' (inherited, inherited, , )"]
+  Shape 24 [Text 24 | TEXT_BOX (17) | L=10.25, T=5.76, W=2.31, H=0.33]
+    P0 [level=0, align=None]: Do not fill the diagram with a fictional example.
+       Runs: ["'Do not fill the diagram with a fictional example.' (inherited, inherited, , )"]
+  Shape 25 [Shape 25 | AUTO_SHAPE (1) | L=0.55, T=7.06, W=12.23, H=0.01]
+  Shape 26 [Text 26 | TEXT_BOX (17) | L=0.55, T=7.21, W=9.00, H=0.14]
+    P0 [level=0, align=None]: AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026
+       Runs: ["'AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026' (inherited, inherited, , )"]
+  Shape 27 [Text 27 | TEXT_BOX (17) | L=12.28, T=7.21, W=0.50, H=0.14]
+    P0 [level=0, align=None]: 3
+       Runs: ["'3' (inherited, inherited, , )"]
+
+--- SLIDE 4 [Layout: DEFAULT] ---
+  Background: <pptx.slide._Background object at 0x000001EF321C3140>
+  Shape 0 [Shape 0 | AUTO_SHAPE (1) | L=12.58, T=-0.55, W=1.30, H=1.30]
+  Shape 1 [Text 1 | TEXT_BOX (17) | L=0.55, T=0.50, W=1.20, H=0.18]
+    P0 [level=0, align=None]: 03
+       Runs: ["'03' (inherited, inherited, , )"]
+  Shape 2 [Text 2 | TEXT_BOX (17) | L=0.55, T=0.79, W=9.20, H=0.35]
+    P0 [level=0, align=None]: INNOVATION & DIFFERENTIATION
+       Runs: ["'INNOVATION & DIFFERENTIATION' (inherited, inherited, , )"]
+  Shape 3 [Shape 3 | AUTO_SHAPE (1) | L=10.73, T=0.55, W=2.05, H=0.46]
+  Shape 4 [Text 4 | TEXT_BOX (17) | L=10.73, T=0.71, W=2.05, H=0.15]
+    P0 [level=0, align=None]: 15 POINTS
+       Runs: ["'15 POINTS' (inherited, inherited, , )"]
+  Shape 5 [Shape 5 | AUTO_SHAPE (1) | L=0.55, T=1.32, W=12.23, H=0.01]
+  Shape 6 [Shape 6 | AUTO_SHAPE (1) | L=0.55, T=1.65, W=4.43, H=2.60]
+  Shape 7 [Text 7 | TEXT_BOX (17) | L=0.83, T=1.93, W=3.87, H=0.17]
+    P0 [level=0, align=None]: EXISTING APPROACH
+       Runs: ["'EXISTING APPROACH' (inherited, inherited, , )"]
+  Shape 8 [Text 8 | TEXT_BOX (17) | L=0.83, T=3.05, W=3.87, H=0.15]
+    P0 [level=0, align=None]: [How is the problem currently solved?]
+       Runs: ["'[How is the problem currently solved?]' (inherited, inherited, , )"]
+  Shape 9 [Shape 9 | AUTO_SHAPE (1) | L=5.28, T=1.65, W=4.43, H=2.60]
+  Shape 10 [Text 10 | TEXT_BOX (17) | L=5.56, T=1.93, W=3.87, H=0.17]
+    P0 [level=0, align=None]: OUR APPROACH
+       Runs: ["'OUR APPROACH' (inherited, inherited, , )"]
+  Shape 11 [Text 11 | TEXT_BOX (17) | L=5.56, T=3.05, W=3.87, H=0.15]
+    P0 [level=0, align=None]: [How is our approach different?]
+       Runs: ["'[How is our approach different?]' (inherited, inherited, , )"]
+  Shape 12 [Shape 12 | AUTO_SHAPE (1) | L=0.55, T=4.55, W=9.16, H=1.20]
+  Shape 13 [Text 13 | TEXT_BOX (17) | L=0.85, T=4.80, W=8.56, H=0.15]
+    P0 [level=0, align=None]: KEY DIFFERENTIATOR
+       Runs: ["'KEY DIFFERENTIATOR' (inherited, inherited, , )"]
+  Shape 14 [Text 14 | TEXT_BOX (17) | L=0.85, T=5.26, W=8.56, H=0.17]
+    P0 [level=0, align=None]: [Describe the specific innovation, improvement, or unique aspect.]
+       Runs: ["'[Describe the specific innovation, improvement, or unique aspect.]' (inherited, inherited, , )"]
+  Shape 15 [Shape 15 | AUTO_SHAPE (1) | L=10.03, T=1.65, W=2.75, H=3.25]
+  Shape 16 [Shape 16 | AUTO_SHAPE (1) | L=10.03, T=1.65, W=0.05, H=3.25]
+  Shape 17 [Text 17 | TEXT_BOX (17) | L=10.27, T=1.91, W=2.30, H=0.15]
+    P0 [level=0, align=None]: WHAT TO INCLUDE
+       Runs: ["'WHAT TO INCLUDE' (inherited, inherited, , )"]
+  Shape 18 [Text 18 | TEXT_BOX (17) | L=10.27, T=2.21, W=2.30, H=1.91]
+    P0 [level=0, align=None]: Explain what already exists
+       Runs: ["'Explain what already exists' (inherited, inherited, , )"]
+    P1 [level=0, align=None]: Identify limitations of existing approaches
+       Runs: ["'Identify limitations of existing approaches' (inherited, inherited, , )"]
+    P2 [level=0, align=None]: Explain what is different about your approach
+       Runs: ["'Explain what is different about your approach' (inherited, inherited, , )"]
+    P3 [level=0, align=None]: Focus on concrete differences
+       Runs: ["'Focus on concrete differences' (inherited, inherited, , )"]
+    P4 [level=0, align=None]: Mention unique technology, process, or model
+       Runs: ["'Mention unique technology, process, or model' (inherited, inherited, , )"]
+  Shape 19 [Shape 19 | AUTO_SHAPE (1) | L=10.03, T=5.18, W=2.75, H=1.15]
+  Shape 20 [Text 20 | TEXT_BOX (17) | L=10.25, T=5.38, W=2.31, H=0.15]
+    P0 [level=0, align=None]: IMPORTANT
+       Runs: ["'IMPORTANT' (inherited, inherited, , )"]
+  Shape 21 [Text 21 | TEXT_BOX (17) | L=10.25, T=5.58, W=2.31, H=0.69]
+    P0 [level=0, align=None]: Avoid claims like “best” or “revolutionary”. A meaningful improvement also counts as differentiation.
+       Runs: ["'Avoid claims like “best” or “revolutionary”. A meaningful improvement also counts as differentiation.' (inherited, inherited, , )"]
+  Shape 22 [Shape 22 | AUTO_SHAPE (1) | L=0.55, T=7.06, W=12.23, H=0.01]
+  Shape 23 [Text 23 | TEXT_BOX (17) | L=0.55, T=7.21, W=9.00, H=0.14]
+    P0 [level=0, align=None]: AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026
+       Runs: ["'AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026' (inherited, inherited, , )"]
+  Shape 24 [Text 24 | TEXT_BOX (17) | L=12.28, T=7.21, W=0.50, H=0.14]
+    P0 [level=0, align=None]: 4
+       Runs: ["'4' (inherited, inherited, , )"]
+
+--- SLIDE 5 [Layout: DEFAULT] ---
+  Background: <pptx.slide._Background object at 0x000001EF321C3C80>
+  Shape 0 [Shape 0 | AUTO_SHAPE (1) | L=12.58, T=-0.55, W=1.30, H=1.30]
+  Shape 1 [Text 1 | TEXT_BOX (17) | L=0.55, T=0.50, W=1.20, H=0.18]
+    P0 [level=0, align=None]: 04
+       Runs: ["'04' (inherited, inherited, , )"]
+  Shape 2 [Text 2 | TEXT_BOX (17) | L=0.55, T=0.79, W=9.20, H=0.35]
+    P0 [level=0, align=None]: TECHNICAL APPROACH
+       Runs: ["'TECHNICAL APPROACH' (inherited, inherited, , )"]
+  Shape 3 [Shape 3 | AUTO_SHAPE (1) | L=10.73, T=0.55, W=2.05, H=0.46]
+  Shape 4 [Text 4 | TEXT_BOX (17) | L=10.73, T=0.71, W=2.05, H=0.15]
+    P0 [level=0, align=None]: 15 POINTS
+       Runs: ["'15 POINTS' (inherited, inherited, , )"]
+  Shape 5 [Shape 5 | AUTO_SHAPE (1) | L=0.55, T=1.32, W=12.23, H=0.01]
+  Shape 6 [Text 6 | TEXT_BOX (17) | L=0.55, T=1.72, W=5.00, H=0.15]
+    P0 [level=0, align=None]: SYSTEM ARCHITECTURE
+       Runs: ["'SYSTEM ARCHITECTURE' (inherited, inherited, , )"]
+  Shape 7 [Shape 7 | AUTO_SHAPE (1) | L=0.55, T=1.98, W=9.16, H=2.55]
+  Shape 8 [Text 8 | TEXT_BOX (17) | L=0.85, T=3.17, W=8.56, H=0.17]
+    P0 [level=0, align=None]: [INSERT ARCHITECTURE / SYSTEM DIAGRAM]
+       Runs: ["'[INSERT ARCHITECTURE / SYSTEM DIAGRAM]' (inherited, inherited, , )"]
+  Shape 9 [Text 9 | TEXT_BOX (17) | L=0.55, T=4.88, W=5.00, H=0.15]
+    P0 [level=0, align=None]: TECHNOLOGY STACK
+       Runs: ["'TECHNOLOGY STACK' (inherited, inherited, , )"]
+  Shape 10 [Text 10 | TEXT_BOX (17) | L=0.55, T=5.23, W=2.85, H=0.15]
+    P0 [level=0, align=None]: Frontend:  [ ]
+       Runs: ["'Frontend:  ' (inherited, inherited, , )", "'[ ]' (inherited, inherited, , rgb(667085))"]
+  Shape 11 [Text 11 | TEXT_BOX (17) | L=3.70, T=5.23, W=2.85, H=0.15]
+    P0 [level=0, align=None]: Backend:  [ ]
+       Runs: ["'Backend:  ' (inherited, inherited, , )", "'[ ]' (inherited, inherited, , rgb(667085))"]
+  Shape 12 [Text 12 | TEXT_BOX (17) | L=6.86, T=5.23, W=2.85, H=0.15]
+    P0 [level=0, align=None]: Database:  [ ]
+       Runs: ["'Database:  ' (inherited, inherited, , )", "'[ ]' (inherited, inherited, , rgb(667085))"]
+  Shape 13 [Text 13 | TEXT_BOX (17) | L=0.55, T=5.59, W=2.85, H=0.15]
+    P0 [level=0, align=None]: AI / ML:  [ ]
+       Runs: ["'AI / ML:  ' (inherited, inherited, , )", "'[ ]' (inherited, inherited, , rgb(667085))"]
+  Shape 14 [Text 14 | TEXT_BOX (17) | L=3.70, T=5.59, W=2.85, H=0.15]
+    P0 [level=0, align=None]: APIs / Services:  [ ]
+       Runs: ["'APIs / Services:  ' (inherited, inherited, , )", "'[ ]' (inherited, inherited, , rgb(667085))"]
+  Shape 15 [Text 15 | TEXT_BOX (17) | L=6.86, T=5.59, W=2.85, H=0.15]
+    P0 [level=0, align=None]: Hardware:  [ ]
+       Runs: ["'Hardware:  ' (inherited, inherited, , )", "'[ ]' (inherited, inherited, , rgb(667085))"]
+  Shape 16 [Text 16 | TEXT_BOX (17) | L=0.55, T=6.13, W=9.16, H=0.15]
+    P0 [level=0, align=None]: FEASIBILITY
+       Runs: ["'FEASIBILITY' (inherited, inherited, , )"]
+  Shape 17 [Text 17 | TEXT_BOX (17) | L=0.55, T=6.36, W=9.16, H=0.15]
+    P0 [level=0, align=None]: [Briefly explain why this solution can realistically be implemented during the offline hackathon.]
+       Runs: ["'[Briefly explain why this solution can realistically be implemented during the offline hackathon.]' (inherited, inherited, , )"]
+  Shape 18 [Shape 18 | AUTO_SHAPE (1) | L=10.03, T=1.65, W=2.75, H=3.25]
+  Shape 19 [Shape 19 | AUTO_SHAPE (1) | L=10.03, T=1.65, W=0.05, H=3.25]
+  Shape 20 [Text 20 | TEXT_BOX (17) | L=10.27, T=1.91, W=2.30, H=0.15]
+    P0 [level=0, align=None]: WHAT TO INCLUDE
+       Runs: ["'WHAT TO INCLUDE' (inherited, inherited, , )"]
+  Shape 21 [Text 21 | TEXT_BOX (17) | L=10.27, T=2.21, W=2.30, H=1.53]
+    P0 [level=0, align=None]: Show the major system components
+       Runs: ["'Show the major system components' (inherited, inherited, , )"]
+    P1 [level=0, align=None]: Explain how components interact
+       Runs: ["'Explain how components interact' (inherited, inherited, , )"]
+    P2 [level=0, align=None]: Mention key technologies
+       Runs: ["'Mention key technologies' (inherited, inherited, , )"]
+    P3 [level=0, align=None]: Identify AI/ML, APIs, hardware, or services
+       Runs: ["'Identify AI/ML, APIs, hardware, or services' (inherited, inherited, , )"]
+    P4 [level=0, align=None]: Demonstrate technical feasibility
+       Runs: ["'Demonstrate technical feasibility' (inherited, inherited, , )"]
+  Shape 22 [Shape 22 | AUTO_SHAPE (1) | L=0.55, T=7.06, W=12.23, H=0.01]
+  Shape 23 [Text 23 | TEXT_BOX (17) | L=0.55, T=7.21, W=9.00, H=0.14]
+    P0 [level=0, align=None]: AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026
+       Runs: ["'AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026' (inherited, inherited, , )"]
+  Shape 24 [Text 24 | TEXT_BOX (17) | L=12.28, T=7.21, W=0.50, H=0.14]
+    P0 [level=0, align=None]: 5
+       Runs: ["'5' (inherited, inherited, , )"]
+
+--- SLIDE 6 [Layout: DEFAULT] ---
+  Background: <pptx.slide._Background object at 0x000001EF321BC620>
+  Shape 0 [Shape 0 | AUTO_SHAPE (1) | L=12.58, T=-0.55, W=1.30, H=1.30]
+  Shape 1 [Text 1 | TEXT_BOX (17) | L=0.55, T=0.50, W=1.20, H=0.18]
+    P0 [level=0, align=None]: 05
+       Runs: ["'05' (inherited, inherited, , )"]
+  Shape 2 [Text 2 | TEXT_BOX (17) | L=0.55, T=0.79, W=9.20, H=0.35]
+    P0 [level=0, align=None]: IMPACT & IMPLEMENTATION
+       Runs: ["'IMPACT & IMPLEMENTATION' (inherited, inherited, , )"]
+  Shape 3 [Shape 3 | AUTO_SHAPE (1) | L=10.73, T=0.55, W=2.05, H=0.46]
+  Shape 4 [Text 4 | TEXT_BOX (17) | L=10.73, T=0.71, W=2.05, H=0.15]
+    P0 [level=0, align=None]: 25 POINTS TOTAL
+       Runs: ["'25 POINTS TOTAL' (inherited, inherited, , )"]
+  Shape 5 [Shape 5 | AUTO_SHAPE (1) | L=0.55, T=1.32, W=12.23, H=0.01]
+  Shape 6 [Shape 6 | AUTO_SHAPE (1) | L=0.55, T=1.65, W=1.85, H=0.38]
+  Shape 7 [Text 7 | TEXT_BOX (17) | L=0.55, T=1.77, W=1.85, H=0.15]
+    P0 [level=0, align=None]: 15 POINTS
+       Runs: ["'15 POINTS' (inherited, inherited, , )"]
+  Shape 8 [Text 8 | TEXT_BOX (17) | L=2.53, T=1.75, W=3.50, H=0.17]
+    P0 [level=0, align=None]: A. EXPECTED IMPACT
+       Runs: ["'A. EXPECTED IMPACT' (inherited, inherited, , )"]
+  Shape 9 [Text 9 | TEXT_BOX (17) | L=0.55, T=2.27, W=5.92, H=0.15]
+    P0 [level=0, align=None]: WHO BENEFITS?
+       Runs: ["'WHO BENEFITS?' (inherited, inherited, , )"]
+  Shape 10 [Text 10 | TEXT_BOX (17) | L=0.55, T=2.50, W=5.92, H=0.15]
+    P0 [level=0, align=None]: [Target users / stakeholders]
+       Runs: ["'[Target users / stakeholders]' (inherited, inherited, , )"]
+  Shape 11 [Text 11 | TEXT_BOX (17) | L=0.55, T=3.00, W=5.92, H=0.15]
+    P0 [level=0, align=None]: EXPECTED OUTCOME
+       Runs: ["'EXPECTED OUTCOME' (inherited, inherited, , )"]
+  Shape 12 [Text 12 | TEXT_BOX (17) | L=0.55, T=3.23, W=5.92, H=0.15]
+    P0 [level=0, align=None]: [What changes if the solution succeeds?]
+       Runs: ["'[What changes if the solution succeeds?]' (inherited, inherited, , )"]
+  Shape 13 [Text 13 | TEXT_BOX (17) | L=0.55, T=3.82, W=4.00, H=0.15]
+    P0 [level=0, align=None]: SUCCESS METRICS
+       Runs: ["'SUCCESS METRICS' (inherited, inherited, , )"]
+  Shape 14 [Shape 14 | AUTO_SHAPE (1) | L=0.55, T=4.07, W=1.84, H=0.85]
+  Shape 15 [Text 15 | TEXT_BOX (17) | L=0.63, T=4.42, W=1.68, H=0.15]
+    P0 [level=0, align=None]: [METRIC 1]
+       Runs: ["'[METRIC 1]' (inherited, inherited, , )"]
+  Shape 16 [Shape 16 | AUTO_SHAPE (1) | L=2.59, T=4.07, W=1.84, H=0.85]
+  Shape 17 [Text 17 | TEXT_BOX (17) | L=2.67, T=4.42, W=1.68, H=0.15]
+    P0 [level=0, align=None]: [METRIC 2]
+       Runs: ["'[METRIC 2]' (inherited, inherited, , )"]
+  Shape 18 [Shape 18 | AUTO_SHAPE (1) | L=4.63, T=4.07, W=1.84, H=0.85]
+  Shape 19 [Text 19 | TEXT_BOX (17) | L=4.71, T=4.42, W=1.68, H=0.15]
+    P0 [level=0, align=None]: [METRIC 3]
+       Runs: ["'[METRIC 3]' (inherited, inherited, , )"]
+  Shape 20 [Shape 20 | AUTO_SHAPE (1) | L=0.55, T=5.20, W=5.92, H=1.50]
+  Shape 21 [Shape 21 | AUTO_SHAPE (1) | L=0.55, T=5.20, W=0.05, H=1.50]
+  Shape 22 [Text 22 | TEXT_BOX (17) | L=0.77, T=5.39, W=5.52, H=0.15]
+    P0 [level=0, align=None]: WHAT TO INCLUDE
+       Runs: ["'WHAT TO INCLUDE' (inherited, inherited, , )"]
+  Shape 23 [Text 23 | TEXT_BOX (17) | L=0.77, T=5.62, W=5.52, H=0.75]
+    P0 [level=0, align=None]: Identify beneficiaries/stakeholders
+       Runs: ["'Identify beneficiaries/stakeholders' (inherited, inherited, , )"]
+    P1 [level=0, align=None]: Explain the expected outcome
+       Runs: ["'Explain the expected outcome' (inherited, inherited, , )"]
+    P2 [level=0, align=None]: Describe measurable success indicators
+       Runs: ["'Describe measurable success indicators' (inherited, inherited, , )"]
+    P3 [level=0, align=None]: Quantify impact where reasonable
+       Runs: ["'Quantify impact where reasonable' (inherited, inherited, , )"]
+  Shape 24 [Shape 24 | AUTO_SHAPE (1) | L=6.87, T=1.65, W=1.85, H=0.38]
+  Shape 25 [Text 25 | TEXT_BOX (17) | L=6.87, T=1.77, W=1.85, H=0.15]
+    P0 [level=0, align=None]: 10 POINTS
+       Runs: ["'10 POINTS' (inherited, inherited, , )"]
+  Shape 26 [Text 26 | TEXT_BOX (17) | L=8.85, T=1.75, W=3.50, H=0.17]
+    P0 [level=0, align=None]: B. HACKATHON PLAN
+       Runs: ["'B. HACKATHON PLAN' (inherited, inherited, , )"]
+  Shape 27 [Shape 27 | AUTO_SHAPE (1) | L=6.87, T=2.25, W=5.92, H=0.50]
+  Shape 28 [Text 28 | TEXT_BOX (17) | L=7.07, T=2.40, W=0.55, H=0.21]
+    P0 [level=0, align=None]: 01
+       Runs: ["'01' (inherited, inherited, , )"]
+  Shape 29 [Text 29 | TEXT_BOX (17) | L=7.62, T=2.41, W=4.97, H=0.17]
+    P0 [level=0, align=None]: [CORE FUNCTIONALITY]
+       Runs: ["'[CORE FUNCTIONALITY]' (inherited, inherited, , )"]
+  Shape 30 [Shape 30 | AUTO_SHAPE (1) | L=6.87, T=2.87, W=5.92, H=0.50]
+  Shape 31 [Text 31 | TEXT_BOX (17) | L=7.07, T=3.02, W=0.55, H=0.21]
+    P0 [level=0, align=None]: 02
+       Runs: ["'02' (inherited, inherited, , )"]
+  Shape 32 [Text 32 | TEXT_BOX (17) | L=7.62, T=3.03, W=4.97, H=0.17]
+    P0 [level=0, align=None]: [MAJOR FEATURE]
+       Runs: ["'[MAJOR FEATURE]' (inherited, inherited, , )"]
+  Shape 33 [Shape 33 | AUTO_SHAPE (1) | L=6.87, T=3.49, W=5.92, H=0.50]
+  Shape 34 [Text 34 | TEXT_BOX (17) | L=7.07, T=3.64, W=0.55, H=0.21]
+    P0 [level=0, align=None]: 03
+       Runs: ["'03' (inherited, inherited, , )"]
+  Shape 35 [Text 35 | TEXT_BOX (17) | L=7.62, T=3.65, W=4.97, H=0.17]
+    P0 [level=0, align=None]: [INTEGRATION / TESTING]
+       Runs: ["'[INTEGRATION / TESTING]' (inherited, inherited, , )"]
+  Shape 36 [Shape 36 | AUTO_SHAPE (1) | L=6.87, T=4.11, W=5.92, H=0.50]
+  Shape 37 [Text 37 | TEXT_BOX (17) | L=7.07, T=4.26, W=0.55, H=0.21]
+    P0 [level=0, align=None]: 04
+       Runs: ["'04' (inherited, inherited, , )"]
+  Shape 38 [Text 38 | TEXT_BOX (17) | L=7.62, T=4.27, W=4.97, H=0.17]
+    P0 [level=0, align=None]: [FINAL DEMO]
+       Runs: ["'[FINAL DEMO]' (inherited, inherited, , )"]
+  Shape 39 [Shape 39 | AUTO_SHAPE (1) | L=6.87, T=4.91, W=5.92, H=1.50]
+  Shape 40 [Shape 40 | AUTO_SHAPE (1) | L=6.87, T=4.91, W=0.05, H=1.50]
+  Shape 41 [Text 41 | TEXT_BOX (17) | L=7.09, T=5.10, W=5.52, H=0.15]
+    P0 [level=0, align=None]: WHAT TO INCLUDE
+       Runs: ["'WHAT TO INCLUDE' (inherited, inherited, , )"]
+  Shape 42 [Text 42 | TEXT_BOX (17) | L=7.09, T=5.33, W=5.52, H=0.75]
+    P0 [level=0, align=None]: Show what you intend to build during the hackathon
+       Runs: ["'Show what you intend to build during the hackathon' (inherited, inherited, , )"]
+    P1 [level=0, align=None]: Prioritize a working core product
+       Runs: ["'Prioritize a working core product' (inherited, inherited, , )"]
+    P2 [level=0, align=None]: Identify major milestones
+       Runs: ["'Identify major milestones' (inherited, inherited, , )"]
+    P3 [level=0, align=None]: Keep the plan realistic for the available time
+       Runs: ["'Keep the plan realistic for the available time' (inherited, inherited, , )"]
+  Shape 43 [Shape 43 | AUTO_SHAPE (1) | L=0.55, T=7.06, W=12.23, H=0.01]
+  Shape 44 [Text 44 | TEXT_BOX (17) | L=0.55, T=7.21, W=9.00, H=0.14]
+    P0 [level=0, align=None]: AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026
+       Runs: ["'AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026' (inherited, inherited, , )"]
+  Shape 45 [Text 45 | TEXT_BOX (17) | L=12.28, T=7.21, W=0.50, H=0.14]
+    P0 [level=0, align=None]: 6
+       Runs: ["'6' (inherited, inherited, , )"]
+
+--- SLIDE 7 [Layout: DEFAULT] ---
+  Background: <pptx.slide._Background object at 0x000001EF321BD640>
+  Shape 0 [Shape 0 | AUTO_SHAPE (1) | L=12.58, T=-0.55, W=1.30, H=1.30]
+  Shape 1 [Text 1 | TEXT_BOX (17) | L=0.55, T=0.50, W=1.20, H=0.18]
+    P0 [level=0, align=None]: 06
+       Runs: ["'06' (inherited, inherited, , )"]
+  Shape 2 [Text 2 | TEXT_BOX (17) | L=0.55, T=0.79, W=9.20, H=0.35]
+    P0 [level=0, align=None]: TEAM & EXECUTION READINESS
+       Runs: ["'TEAM & EXECUTION READINESS' (inherited, inherited, , )"]
+  Shape 3 [Shape 3 | AUTO_SHAPE (1) | L=10.73, T=0.55, W=2.05, H=0.46]
+  Shape 4 [Text 4 | TEXT_BOX (17) | L=10.73, T=0.71, W=2.05, H=0.15]
+    P0 [level=0, align=None]: 5 POINTS
+       Runs: ["'5 POINTS' (inherited, inherited, , )"]
+  Shape 5 [Shape 5 | AUTO_SHAPE (1) | L=0.55, T=1.32, W=12.23, H=0.01]
+  Shape 6 [Table 0 | TABLE (19) | L=0.55, T=1.65, W=9.16, H=2.10]
+    Table: 5 rows x 3 cols
+      Row 0: ['MEMBER', 'ROLE', 'RELEVANT SKILLS']
+      Row 1: ['[NAME]', '[ROLE]', '[SKILLS]']
+      Row 2: ['[NAME]', '[ROLE]', '[SKILLS]']
+      Row 3: ['[NAME]', '[ROLE]', '[SKILLS]']
+      Row 4: ['[NAME]', '[ROLE]', '[SKILLS]']
+  Shape 7 [Text 6 | TEXT_BOX (17) | L=0.55, T=4.07, W=9.16, H=0.15]
+    P0 [level=0, align=None]: WHY THIS TEAM?
+       Runs: ["'WHY THIS TEAM?' (inherited, inherited, , )"]
+  Shape 8 [Text 7 | TEXT_BOX (17) | L=0.55, T=4.30, W=9.16, H=0.15]
+    P0 [level=0, align=None]: [Explain briefly how the team's skills align with the proposed solution.]
+       Runs: ["'[Explain briefly how the team's skills align with the proposed solution.]' (inherited, inherited, , )"]
+  Shape 9 [Shape 8 | AUTO_SHAPE (1) | L=0.55, T=5.15, W=9.16, H=1.10]
+  Shape 10 [Shape 9 | AUTO_SHAPE (1) | L=0.80, T=5.35, W=1.90, H=0.34]
+  Shape 11 [Text 10 | TEXT_BOX (17) | L=0.80, T=5.45, W=1.90, H=0.14]
+    P0 [level=0, align=None]: OPTIONAL — NOT REQUIRED
+       Runs: ["'OPTIONAL — NOT REQUIRED' (inherited, inherited, , )"]
+  Shape 12 [Text 11 | TEXT_BOX (17) | L=2.90, T=5.43, W=4.00, H=0.17]
+    P0 [level=0, align=None]: PROTOTYPE / DEMO
+       Runs: ["'PROTOTYPE / DEMO' (inherited, inherited, , )"]
+  Shape 13 [Text 12 | TEXT_BOX (17) | L=0.80, T=5.90, W=8.66, H=0.15]
+    P0 [level=0, align=None]: [QR CODE / GITHUB / FIGMA / DEMO LINK]
+       Runs: ["'[QR CODE / GITHUB / FIGMA / DEMO LINK]' (inherited, inherited, , )"]
+  Shape 14 [Shape 13 | AUTO_SHAPE (1) | L=10.03, T=1.65, W=2.75, H=2.75]
+  Shape 15 [Shape 14 | AUTO_SHAPE (1) | L=10.03, T=1.65, W=0.05, H=2.75]
+  Shape 16 [Text 15 | TEXT_BOX (17) | L=10.27, T=1.91, W=2.30, H=0.15]
+    P0 [level=0, align=None]: WHAT TO INCLUDE
+       Runs: ["'WHAT TO INCLUDE' (inherited, inherited, , )"]
+  Shape 17 [Text 16 | TEXT_BOX (17) | L=10.27, T=2.21, W=2.30, H=1.24]
+    P0 [level=0, align=None]: Clearly define each member's role
+       Runs: ["'Clearly define each member's role' (inherited, inherited, , )"]
+    P1 [level=0, align=None]: Mention relevant skills
+       Runs: ["'Mention relevant skills' (inherited, inherited, , )"]
+    P2 [level=0, align=None]: Show distribution of responsibilities
+       Runs: ["'Show distribution of responsibilities' (inherited, inherited, , )"]
+    P3 [level=0, align=None]: Explain why the team's skills match the solution
+       Runs: ["'Explain why the team's skills match the solution' (inherited, inherited, , )"]
+  Shape 18 [Shape 17 | AUTO_SHAPE (1) | L=0.55, T=7.06, W=12.23, H=0.01]
+  Shape 19 [Text 18 | TEXT_BOX (17) | L=0.55, T=7.21, W=9.00, H=0.14]
+    P0 [level=0, align=None]: AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026
+       Runs: ["'AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026' (inherited, inherited, , )"]
+  Shape 20 [Text 19 | TEXT_BOX (17) | L=12.28, T=7.21, W=0.50, H=0.14]
+    P0 [level=0, align=None]: 7
+       Runs: ["'7' (inherited, inherited, , )"]
+
+--- SLIDE 8 [Layout: DEFAULT] ---
+  Background: <pptx.slide._Background object at 0x000001EF321BE300>
+  Shape 0 [Shape 34 | AUTO_SHAPE (1) | L=0.55, T=7.06, W=12.23, H=0.01]
+  Shape 1 [Text 35 | TEXT_BOX (17) | L=0.55, T=7.21, W=9.00, H=0.14]
+    P0 [level=0, align=None]: AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026
+       Runs: ["'AWS INNOVATION CHALLENGE  |   ONLINE SHORTLISTING   |   2026' (inherited, inherited, , )"]
+  Shape 2 [Text 36 | TEXT_BOX (17) | L=12.28, T=7.21, W=0.50, H=0.14]
+    P0 [level=0, align=None]: 8
+       Runs: ["'8' (inherited, inherited, , )"]
+  Shape 3 [Text 1 | TEXT_BOX (17) | L=0.55, T=0.50, W=1.20, H=0.18]
+    P0 [level=0, align=None]: 07
+       Runs: ["'07' (inherited, inherited, , )"]
+  Shape 4 [Text 2 | TEXT_BOX (17) | L=0.55, T=0.79, W=9.20, H=0.35]
+    P0 [level=0, align=None]: SUBMISSION GUIDELINES & RULES
+       Runs: ["'SUBMISSION GUIDELINES & RULES' (inherited, inherited, , )"]
+  Shape 5 [Shape 3 | AUTO_SHAPE (1) | L=0.55, T=1.32, W=12.23, H=0.01]
+  Shape 6 [Shape 4 | AUTO_SHAPE (1) | L=0.55, T=1.65, W=2.89, H=2.48]
+  Shape 7 [Text 5 | TEXT_BOX (17) | L=0.73, T=1.79, W=2.53, H=0.15]
+    P0 [level=0, align=None]: PRESENTATION FORMAT
+       Runs: ["'PRESENTATION FORMAT' (inherited, inherited, , )"]
+  Shape 8 [Shape 6 | AUTO_SHAPE (1) | L=0.73, T=2.15, W=1.15, H=0.24]
+  Shape 9 [Text 7 | TEXT_BOX (17) | L=0.73, T=2.20, W=1.15, H=0.14]
+    P0 [level=0, align=None]: MANDATORY
+       Runs: ["'MANDATORY' (inherited, inherited, , )"]
+  Shape 10 [Text 8 | TEXT_BOX (17) | L=0.73, T=2.45, W=2.53, H=0.98]
+    P0 [level=0, align=None]: Use the official PPT template
+       Runs: ["'Use the official PPT template' (inherited, inherited, , )"]
+    P1 [level=0, align=None]: Maximum 10 slides overall
+       Runs: ["'Maximum 10 slides overall' (inherited, inherited, , )"]
+    P2 [level=0, align=None]: This rules slide (Slide 8) may be removed before submission
+       Runs: ["'This rules slide (Slide 8) may be removed before submission' (inherited, inherited, , )"]
+    P3 [level=0, align=None]: Do not reorder the evaluation slides
+       Runs: ["'Do not reorder the evaluation slides' (inherited, inherited, , )"]
+    P4 [level=0, align=None]: Replace all placeholder text
+       Runs: ["'Replace all placeholder text' (inherited, inherited, , )"]
+  Shape 11 [Shape 9 | AUTO_SHAPE (1) | L=3.66, T=1.65, W=2.89, H=2.48]
+  Shape 12 [Text 10 | TEXT_BOX (17) | L=3.84, T=1.79, W=2.53, H=0.15]
+    P0 [level=0, align=None]: CONTENT REQUIREMENTS
+       Runs: ["'CONTENT REQUIREMENTS' (inherited, inherited, , )"]
+  Shape 13 [Text 11 | TEXT_BOX (17) | L=3.84, T=2.20, W=2.53, H=0.66]
+    P0 [level=0, align=None]: Define the problem & target users
+       Runs: ["'Define the problem & target users' (inherited, inherited, , )"]
+    P1 [level=0, align=None]: Explain solution & differentiation
+       Runs: ["'Explain solution & differentiation' (inherited, inherited, , )"]
+    P2 [level=0, align=None]: Cover technical approach & impact
+       Runs: ["'Cover technical approach & impact' (inherited, inherited, , )"]
+    P3 [level=0, align=None]: Include implementation plan & team roles
+       Runs: ["'Include implementation plan & team roles' (inherited, inherited, , )"]
+  Shape 14 [Shape 12 | AUTO_SHAPE (1) | L=6.78, T=1.65, W=2.89, H=2.48]
+  Shape 15 [Text 13 | TEXT_BOX (17) | L=6.96, T=1.79, W=2.53, H=0.15]
+    P0 [level=0, align=None]: PRESENTATION LIMIT
+       Runs: ["'PRESENTATION LIMIT' (inherited, inherited, , )"]
+  Shape 16 [Shape 14 | AUTO_SHAPE (1) | L=6.96, T=2.15, W=1.15, H=0.24]
+  Shape 17 [Text 15 | TEXT_BOX (17) | L=6.96, T=2.20, W=1.15, H=0.14]
+    P0 [level=0, align=None]: ~3 MIN
+       Runs: ["'~3 MIN' (inherited, inherited, , )"]
+  Shape 18 [Text 16 | TEXT_BOX (17) | L=6.96, T=2.45, W=2.53, H=0.48]
+    P0 [level=0, align=None]: Communicate the full submission in ~3 minutes
+       Runs: ["'Communicate the full submission in ~3 minutes' (inherited, inherited, , )"]
+    P1 [level=0, align=None]: Prioritize problem, solution, feasibility, impact
+       Runs: ["'Prioritize problem, solution, feasibility, impact' (inherited, inherited, , )"]
+    P2 [level=0, align=None]: Avoid excessive text
+       Runs: ["'Avoid excessive text' (inherited, inherited, , )"]
+  Shape 19 [Shape 17 | AUTO_SHAPE (1) | L=9.89, T=1.65, W=2.89, H=2.48]
+  Shape 20 [Text 18 | TEXT_BOX (17) | L=10.07, T=1.79, W=2.53, H=0.15]
+    P0 [level=0, align=None]: DESIGN & FORMATTING
+       Runs: ["'DESIGN & FORMATTING' (inherited, inherited, , )"]
+  Shape 21 [Text 19 | TEXT_BOX (17) | L=10.07, T=2.20, W=2.53, H=0.66]
+    P0 [level=0, align=None]: Colors, fonts, icons are customizable
+       Runs: ["'Colors, fonts, icons are customizable' (inherited, inherited, , )"]
+    P1 [level=0, align=None]: Slide structure must stay unchanged
+       Runs: ["'Slide structure must stay unchanged' (inherited, inherited, , )"]
+    P2 [level=0, align=None]: No tiny fonts or overcrowded slides
+       Runs: ["'No tiny fonts or overcrowded slides' (inherited, inherited, , )"]
+    P3 [level=0, align=None]: Avoid excessive animation
+       Runs: ["'Avoid excessive animation' (inherited, inherited, , )"]
+  Shape 22 [Shape 20 | AUTO_SHAPE (1) | L=0.55, T=4.37, W=2.89, H=2.48]
+  Shape 23 [Text 21 | TEXT_BOX (17) | L=0.73, T=4.51, W=2.53, H=0.15]
+    P0 [level=0, align=None]: FAIRNESS PRINCIPLE
+       Runs: ["'FAIRNESS PRINCIPLE' (inherited, inherited, , )"]
+  Shape 24 [Text 22 | TEXT_BOX (17) | L=0.73, T=4.92, W=2.53, H=0.29]
+    P0 [level=0, align=None]: Judges evaluate content, not design skill
+       Runs: ["'Judges evaluate content, not design skill' (inherited, inherited, , )"]
+    P1 [level=0, align=None]: Same structure & criteria for every team
+       Runs: ["'Same structure & criteria for every team' (inherited, inherited, , )"]
+  Shape 25 [Shape 23 | AUTO_SHAPE (1) | L=3.66, T=4.37, W=2.89, H=2.48]
+  Shape 26 [Text 24 | TEXT_BOX (17) | L=3.84, T=4.51, W=2.53, H=0.15]
+    P0 [level=0, align=None]: PROTOTYPE / DEMO
+       Runs: ["'PROTOTYPE / DEMO' (inherited, inherited, , )"]
+  Shape 27 [Shape 25 | AUTO_SHAPE (1) | L=3.84, T=4.87, W=1.15, H=0.24]
+  Shape 28 [Text 26 | TEXT_BOX (17) | L=3.84, T=4.92, W=1.15, H=0.14]
+    P0 [level=0, align=None]: OPTIONAL
+       Runs: ["'OPTIONAL' (inherited, inherited, , )"]
+  Shape 29 [Text 27 | TEXT_BOX (17) | L=3.84, T=5.17, W=2.53, H=0.29]
+    P0 [level=0, align=None]: Not mandatory for online shortlisting
+       Runs: ["'Not mandatory for online shortlisting' (inherited, inherited, , )"]
+    P1 [level=0, align=None]: Add link or QR only in the designated area
+       Runs: ["'Add link or QR only in the designated area' (inherited, inherited, , )"]
+  Shape 30 [Shape 28 | AUTO_SHAPE (1) | L=6.78, T=4.37, W=2.89, H=2.48]
+  Shape 31 [Text 29 | TEXT_BOX (17) | L=6.96, T=4.51, W=2.53, H=0.15]
+    P0 [level=0, align=None]: ORIGINALITY & OWNERSHIP
+       Runs: ["'ORIGINALITY & OWNERSHIP' (inherited, inherited, , )"]
+  Shape 32 [Text 30 | TEXT_BOX (17) | L=6.96, T=4.92, W=2.53, H=0.48]
+    P0 [level=0, align=None]: Submit only work you have rights to present
+       Runs: ["'Submit only work you have rights to present' (inherited, inherited, , )"]
+    P1 [level=0, align=None]: Acknowledge third-party tech/datasets/APIs
+       Runs: ["'Acknowledge third-party tech/datasets/APIs' (inherited, inherited, , )"]
+    P2 [level=0, align=None]: Do not fabricate results or claims
+       Runs: ["'Do not fabricate results or claims' (inherited, inherited, , )"]
+  Shape 33 [Shape 31 | AUTO_SHAPE (1) | L=9.89, T=4.37, W=2.89, H=2.48]
+  Shape 34 [Text 32 | TEXT_BOX (17) | L=10.07, T=4.51, W=2.53, H=0.15]
+    P0 [level=0, align=None]: AI / THIRD-PARTY TOOLS
+       Runs: ["'AI / THIRD-PARTY TOOLS' (inherited, inherited, , )"]
+  Shape 35 [Text 33 | TEXT_BOX (17) | L=10.07, T=4.92, W=2.53, H=0.48]
+    P0 [level=0, align=None]: AI tools & APIs allowed unless prohibited
+       Runs: ["'AI tools & APIs allowed unless prohibited' (inherited, inherited, , )"]
+    P1 [level=0, align=None]: Team must understand the proposed solution
+       Runs: ["'Team must understand the proposed solution' (inherited, inherited, , )"]
+    P2 [level=0, align=None]: Verify AI-generated claims before presenting
+       Runs: ["'Verify AI-generated claims before presenting' (inherited, inherited, , )"]

@@ -1,13 +1,4 @@
 @import "tailwindcss";
-
-@theme {
-  --font-sans: "Inter", system-ui, sans-serif;
-}
-
-body {
-  background-color: #000;
-  color: #fff;
-  font-family: var(--font-sans);
-  margin: 0;
-  padding: 0;
-}
+@import "../../../packages/ui/src/styles/jiva.css";
+/* Shared components live outside this app; let Tailwind see their class names. */
+@source "../../../packages/ui/src";

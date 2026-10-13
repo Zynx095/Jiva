@@ -1,4 +1,5 @@
 import { Provenance, GeoPoint } from './patient';
+import type { DataStatus } from './hospital';
 
 export interface AmbulanceState {
   ambulanceId: string;
@@ -25,4 +26,6 @@ export interface AmbulanceState {
     calculatedAt: string;
   };
   provenance: Provenance[];
+  /** SYNTHETIC_DEMO for the demo fleet; absent for units registered by an operator. */
+  dataStatus?: DataStatus;
 }

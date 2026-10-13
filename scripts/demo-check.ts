@@ -5,6 +5,10 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { CATALOGUE_KINDS } from '@jiva/event-schema';
+import { CatalogueAssets, defaultCatalogueDir } from '../services/api/src/catalogue/assets';
+import { CatalogueStore } from '../services/api/src/catalogue/catalogue';
+import { loadBundledCatalogue } from '../services/api/src/catalogue';
 
 const ROOT = path.resolve(__dirname, '..');
 const API = process.env.API_URL || 'http://localhost:4000';
@@ -18,7 +22,7 @@ async function probe(url: string, init?: RequestInit, ms = 1500) {
 
 async function main() {
   // --- static: production bundles exist and include the MapLibre worker
-  for (const app of ['management-web', 'ambulance-web', 'hospital-web', 'patient-web']) {
+  for (const app of ['management-web', 'ambulance-web', 'hospital-web', 'patient-web', 'doctor-web', 'demo-portal']) {
     const assets = path.join(ROOT, 'apps', app, 'dist', 'assets');
     const files = fs.existsSync(assets) ? fs.readdirSync(assets) : [];
     const needsMap = app === 'management-web' || app === 'ambulance-web';
@@ -51,6 +55,18 @@ async function main() {
   const synthOk = synthetic.every((h: any) => h.dataStatus === 'SYNTHETIC_DEMO' && h.operationalState.acceptance === 'UNKNOWN');
   add('Data: synthetic demo', synthOk ? 'PASS' : 'FAIL', `${synthetic.length} hospitals labelled SYNTHETIC_DEMO, acceptance UNKNOWN at seed`);
 
+  // --- clinical catalogue: the bundled files, validated exactly as the API loads them
+  {
+    const store = new CatalogueStore(new CatalogueAssets(path.join(defaultCatalogueDir(), 'assets')));
+    const counts: string[] = [];
+    let problems = 0;
+    for (const kind of CATALOGUE_KINDS) {
+      problems += loadBundledCatalogue(store, kind).length;
+      counts.push(`${store.list(kind).length} ${kind}`);
+    }
+    add('Data: clinical catalogue', problems ? 'FAIL' : 'PASS', problems ? `${problems} problem(s) — run npm run catalogue:validate` : `${counts.join(', ')} (synthetic samples verified by size, sha256 and file type)`);
+  }
+
   // --- routing providers actually reachable?
   const valhalla = await probe('http://localhost:8002/status');
   const osrm = await probe('http://localhost:5000/nearest/v1/driving/77.5946,12.9716');
@@ -70,6 +86,17 @@ async function main() {
     const bad = await probe(`${API}/api/events`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-jiva-demo-user': 'demo-admin' }, body: '{"eventId":"x","eventType":"patient.emergency.created"}' });
     const still = await probe(`${API}/api/health`);
     add('Runtime: malformed event rejected, API alive', bad?.status === 400 && !!still?.ok ? 'PASS' : 'FAIL', `→ ${bad?.status}, alive=${!!still?.ok}`);
+    if (h.mode === 'DEMO') {
+      const cat = await probe(`${API}/api/catalogue`, { headers: { 'x-jiva-demo-user': 'demo-admin' } });
+      const kinds = cat?.ok ? (await cat.json()).kinds : undefined;
+      add('Runtime: clinical catalogue served', kinds?.['scan-assets']?.available && kinds?.medications?.entries > 0 ? 'PASS' : 'FAIL', kinds ? `${kinds.medications?.entries} medications, ${kinds['scan-assets']?.entries} synthetic samples` : `→ ${cat?.status}`);
+    } else {
+      add('Runtime: clinical catalogue', 'INFO', 'operational mode: no synthetic samples; medication catalogue empty until imported', false);
+    }
+    for (const [name, dev, prod] of [['Doctor workspace', 5177, 4177], ['Demo portal', 5178, 4178]] as const) {
+      const up = (await probe(`http://localhost:${dev}/`))?.ok ? dev : (await probe(`http://localhost:${prod}/`))?.ok ? prod : undefined;
+      add(`Runtime: ${name}`, up ? 'PASS' : 'INFO', up ? `answering on :${up}` : 'not running (npm run dev starts it)', false);
+    }
   }
 
   add('AWS', 'INFO', 'CDK synthesizes (run `npx cdk synth` in infrastructure/aws); NOT deployed, NOT live-verified', false);

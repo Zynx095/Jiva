@@ -73,11 +73,13 @@ export class JivaAwsStack extends cdk.Stack {
         hospitalId: new cognito.StringAttribute({ mutable: true }),
         ambulanceId: new cognito.StringAttribute({ mutable: true }),
         caseId: new cognito.StringAttribute({ mutable: true }),
+        // CLINICIAN scope: the practitioner (staff record) a doctor's clinical actions are bound to.
+        practitionerId: new cognito.StringAttribute({ mutable: true }),
       },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    // Policy 2 (production identity/trust, Option B): hospitalId/ambulanceId/caseId are the
+    // Policy 2 (production identity/trust, Option B): hospitalId/ambulanceId/caseId/practitionerId are the
     // identity-binding claims the trust chain relies on (authorizeEventSubmission compares
     // auth.hospitalId/ambulanceId/caseId against the payload; evidenceTrust derives HOSPITAL_CONFIRMED
     // from auth.role alone). They stay `mutable: true` so an ADMIN can still correct them via
@@ -96,7 +98,7 @@ export class JivaAwsStack extends cdk.Stack {
     });
 
     // Roles as User Pool Groups
-    const roles = ['ADMIN', 'MANAGEMENT', 'HOSPITAL', 'AMBULANCE', 'PATIENT'];
+    const roles = ['ADMIN', 'MANAGEMENT', 'HOSPITAL', 'CLINICIAN', 'AMBULANCE', 'PATIENT'];
     roles.forEach((roleName) => {
       new cognito.CfnUserPoolGroup(this, `Group-${roleName}`, {
         userPoolId: userPool.userPoolId,
@@ -324,9 +326,11 @@ export class JivaAwsStack extends cdk.Stack {
 
     // ----------------------------------------------------
     // 7b. API GATEWAY WEBSOCKET: realtime fan-out
-    //     $connect requires IAM (SigV4) auth. The broadcast Lambda does not yet apply
-    //     per-role event filtering, so the socket is deliberately NOT open to anonymous
-    //     browsers. A Cognito-token Lambda authorizer + filtering is the next step.
+    //     $connect requires IAM (SigV4) auth, so the socket is NOT open to anonymous browsers.
+    //     The broadcast Lambda verifies a principal at $connect (Cognito JWT via ?token=) and
+    //     delivers each event only to connections allowed to receive it (same rules as local
+    //     Socket.IO; fail closed). Opening it to browsers still needs a Cognito-token authorizer
+    //     on $connect instead of IAM — not changed here (nothing is deployed).
     // ----------------------------------------------------
     const wsIntegration = new WebSocketLambdaIntegration('WsHandlerIntegration', webSocketLambda);
     const webSocketApi = new apigwv2.WebSocketApi(this, 'JivaWebSocketApi', {

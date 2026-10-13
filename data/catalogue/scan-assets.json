@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "kind": "scan-assets",
+  "catalogueVersion": 1,
+  "notice": "Synthetic sample documents generated for JIVA by scripts/catalogue-assets.ts. They depict no person, show no finding and must not be used for diagnosis or training. This is a small illustrative selection, not a complete set of examinations.",
+  "entries": [
+    {
+      "schemaVersion": 1,
+      "assetId": "SCAN-XRAY-CHEST-PA",
+      "status": "ACTIVE",
+      "category": "IMAGING",
+      "documentType": "XRAY",
+      "title": "Chest X-ray (PA) — synthetic sample",
+      "description": "Schematic posteroanterior chest radiograph drawn from simple shapes.",
+      "bodySite": "Chest",
+      "assetRef": "synthetic-chest-xray-pa.png",
+      "contentType": "image/png",
+      "sizeBytes": 184843,
+      "sha256": "11f91fa42f35f0f3c93730014dd46ac4d2b28c48ee66cd14dbaca623bbe1deb0",
+      "designation": "SYNTHETIC",
+      "provenance": {
+        "source": "Generated procedurally by scripts/catalogue-assets.ts (JIVA)",
+        "licence": "Project file; synthetic, no personal data"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "assetId": "SCAN-XRAY-LEG-LATERAL",
+      "status": "ACTIVE",
+      "category": "IMAGING",
+      "documentType": "XRAY",
+      "title": "Lower leg X-ray (lateral) — synthetic sample",
+      "description": "Schematic lateral radiograph of the tibia and fibula.",
+      "bodySite": "Lower leg",
+      "assetRef": "synthetic-leg-xray-lateral.png",
+      "contentType": "image/png",
+      "sizeBytes": 159747,
+      "sha256": "625df2d74ba457d9ce0b1efb634fc90432c7e0d03724e71a584a485b7a8f2b7c",
+      "designation": "SYNTHETIC",
+      "provenance": {
+        "source": "Generated procedurally by scripts/catalogue-assets.ts (JIVA)",
+        "licence": "Project file; synthetic, no personal data"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "assetId": "SCAN-CT-HEAD-AXIAL",
+      "status": "ACTIVE",
+      "category": "IMAGING",
+      "documentType": "CT",
+      "title": "CT head (axial slice) — synthetic sample",
+      "description": "Schematic single axial slice; not a CT data set.",
+      "bodySite": "Head",
+      "assetRef": "synthetic-ct-head-axial.png",
+      "contentType": "image/png",
+      "sizeBytes": 71708,
+      "sha256": "76f69688effa57db30ea0cc86f57d2c7c35fcfbf1e20503f30907f6b527f4e27",
+      "designation": "SYNTHETIC",
+      "provenance": {
+        "source": "Generated procedurally by scripts/catalogue-assets.ts (JIVA)",
+        "licence": "Project file; synthetic, no personal data"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "assetId": "SCAN-MRI-BRAIN-SAGITTAL",
+      "status": "ACTIVE",
+      "category": "IMAGING",
+      "documentType": "MRI",
+      "title": "MRI brain (sagittal slice) — synthetic sample",
+      "description": "Schematic single sagittal slice; not an MRI series.",
+      "bodySite": "Head",
+      "assetRef": "synthetic-mri-brain-sagittal.png",
+      "contentType": "image/png",
+      "sizeBytes": 81725,
+      "sha256": "7db57c267913324017364ad293ba5596cb742cc4e2ac9f3221fe3b6e0808cc85",
+      "designation": "SYNTHETIC",
+      "provenance": {
+        "source": "Generated procedurally by scripts/catalogue-assets.ts (JIVA)",
+        "licence": "Project file; synthetic, no personal data"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "assetId": "SCAN-US-ABDOMEN",
+      "status": "ACTIVE",
+      "category": "IMAGING",
+      "documentType": "ULTRASOUND",
+      "title": "Abdominal ultrasound — synthetic sample",
+      "description": "Schematic sector image with speckle texture and an organ outline.",
+      "bodySite": "Abdomen",
+      "assetRef": "synthetic-ultrasound-abdomen.png",
+      "contentType": "image/png",
+      "sizeBytes": 67241,
+      "sha256": "eaf1a1ee41d356c4aa8e901e71d32e72987afb122a2b59215209017c2c1df703",
+      "designation": "SYNTHETIC",
+      "provenance": {
+        "source": "Generated procedurally by scripts/catalogue-assets.ts (JIVA)",
+        "licence": "Project file; synthetic, no personal data"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "assetId": "SCAN-ECG-LEAD-II",
+      "status": "ACTIVE",
+      "category": "ECG",
+      "documentType": "ECG",
+      "title": "ECG rhythm strip (lead II) — synthetic sample",
+      "description": "Mathematically generated waveform on standard grid paper (25 mm/s, 10 mm/mV).",
+      "assetRef": "synthetic-ecg-lead-ii.png",
+      "contentType": "image/png",
+      "sizeBytes": 6352,
+      "sha256": "2e0ed14699147dd7910b2b38e9f440de7974c96decdc0b093e4b18f959b8416c",
+      "designation": "SYNTHETIC",
+      "provenance": {
+        "source": "Generated procedurally by scripts/catalogue-assets.ts (JIVA)",
+        "licence": "Project file; synthetic, no personal data"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "assetId": "SCAN-LAB-CBC",
+      "status": "ACTIVE",
+      "category": "LABORATORY",
+      "documentType": "LAB_REPORT",
+      "title": "Complete blood count — synthetic sample report",
+      "description": "One-page PDF with illustrative values, marked as a synthetic sample.",
+      "assetRef": "synthetic-lab-cbc.pdf",
+      "contentType": "application/pdf",
+      "sizeBytes": 2312,
+      "sha256": "03359d11739d31d1cea56a0f316e338b01ea0c1bb7b1f59611c20e5c5e168069",
+      "designation": "SYNTHETIC",
+      "provenance": {
+        "source": "Generated procedurally by scripts/catalogue-assets.ts (JIVA)",
+        "licence": "Project file; synthetic, no personal data"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "assetId": "SCAN-LAB-METABOLIC",
+      "status": "ACTIVE",
+      "category": "LABORATORY",
+      "documentType": "LAB_REPORT",
+      "title": "Basic metabolic panel — synthetic sample report",
+      "description": "One-page PDF with illustrative values, marked as a synthetic sample.",
+      "assetRef": "synthetic-lab-metabolic-panel.pdf",
+      "contentType": "application/pdf",
+      "sizeBytes": 2618,
+      "sha256": "098d51f964eeb1b94c91fd796a31c5673712149f050905d1a2b30e9b67127302",
+      "designation": "SYNTHETIC",
+      "provenance": {
+        "source": "Generated procedurally by scripts/catalogue-assets.ts (JIVA)",
+        "licence": "Project file; synthetic, no personal data"
+      }
+    }
+  ]
+}

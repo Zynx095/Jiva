@@ -21,6 +21,13 @@ export const DEMO_USERS: Record<string, AuthContext> = {
   'demo-hosp-2': { userId: 'demo-hosp-2', role: 'HOSPITAL', hospitalId: 'HOSP-BLR-002', isDemo: true },
   'demo-hosp-3': { userId: 'demo-hosp-3', role: 'HOSPITAL', hospitalId: 'HOSP-BLR-003', isDemo: true },
   'demo-hosp-4': { userId: 'demo-hosp-4', role: 'HOSPITAL', hospitalId: 'HOSP-BLR-004', isDemo: true },
+  // Synthetic clinicians (see data/synthetic/bengaluru/clinicians.json). Two at HOSP-BLR-004 so that
+  // "a doctor at the same hospital who is NOT assigned" can be exercised.
+  'demo-doc-1': { userId: 'demo-doc-1', role: 'CLINICIAN', hospitalId: 'HOSP-BLR-004', practitionerId: 'PRAC-BLR-004-01', isDemo: true },
+  'demo-doc-2': { userId: 'demo-doc-2', role: 'CLINICIAN', hospitalId: 'HOSP-BLR-004', practitionerId: 'PRAC-BLR-004-02', isDemo: true },
+  'demo-doc-3': { userId: 'demo-doc-3', role: 'CLINICIAN', hospitalId: 'HOSP-BLR-001', practitionerId: 'PRAC-BLR-001-01', isDemo: true },
+  'demo-doc-4': { userId: 'demo-doc-4', role: 'CLINICIAN', hospitalId: 'HOSP-BLR-002', practitionerId: 'PRAC-BLR-002-01', isDemo: true },
+  'demo-doc-5': { userId: 'demo-doc-5', role: 'CLINICIAN', hospitalId: 'HOSP-BLR-003', practitionerId: 'PRAC-BLR-003-01', isDemo: true },
   'demo-amb-1': { userId: 'demo-amb-1', role: 'AMBULANCE', ambulanceId: 'AMB-BLR-001', isDemo: true },
   'demo-amb-2': { userId: 'demo-amb-2', role: 'AMBULANCE', ambulanceId: 'AMB-BLR-002', isDemo: true },
   'demo-amb-3': { userId: 'demo-amb-3', role: 'AMBULANCE', ambulanceId: 'AMB-BLR-003', isDemo: true },

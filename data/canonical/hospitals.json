@@ -19,17 +19,9 @@
     "location": {
       "latitude": 13.0334,
       "longitude": 77.5925,
-      "coordinateSource": "GEOCODED"
+      "coordinateSource": "MANUAL_UNVERIFIED"
     },
-    "capabilities": {
-      "emergency": true,
-      "trauma": true,
-      "icu": true,
-      "ventilator": true,
-      "cardiology": true,
-      "neurology": true,
-      "orthopaedics": true
-    },
+    "capabilities": {},
     "historicalCapacity": {
       "totalBeds": 450
     },
@@ -118,15 +110,8 @@
         }
       },
       "capabilities": {
-        "value": {
-          "emergency": true,
-          "trauma": true,
-          "icu": true,
-          "ventilator": true,
-          "cardiology": true,
-          "neurology": true,
-          "orthopaedics": true
-        },
+        "value": {},
+        "notes": "Services are not listed in this source; they stay unknown until a source states them.",
         "source": "institutions",
         "sourceType": "HOSPITAL_WEBSITE",
         "observedAt": "2026-09-25T00:00:00Z",
@@ -168,13 +153,14 @@
         "value": {
           "latitude": 13.0334,
           "longitude": 77.5925,
-          "coordinateSource": "GEOCODED"
+          "coordinateSource": "MANUAL_UNVERIFIED"
         },
-        "source": "geocoder-nominatim",
-        "sourceType": "GEOCODER",
+        "source": "manual-entry",
+        "sourceType": "MANUAL_ENTRY",
         "observedAt": "2026-09-25T00:00:00Z",
-        "confidence": 0.9,
-        "dataStatus": "PUBLIC_LISTED"
+        "confidence": 0.5,
+        "dataStatus": "UNVERIFIED",
+        "notes": "Typed in by a contributor; the earlier geocoder label could not be reproduced. Unverified (see data/directory for OSM-matched coordinates)."
       }
     },
     "lastSynchronizedAt": "2026-09-25T00:00:00Z"
@@ -199,17 +185,9 @@
     "location": {
       "latitude": 12.9592,
       "longitude": 77.6485,
-      "coordinateSource": "GEOCODED"
+      "coordinateSource": "MANUAL_UNVERIFIED"
     },
-    "capabilities": {
-      "emergency": true,
-      "trauma": true,
-      "icu": true,
-      "ventilator": true,
-      "cardiology": true,
-      "neurology": true,
-      "orthopaedics": true
-    },
+    "capabilities": {},
     "historicalCapacity": {},
     "operationalState": {
       "emergency": "UNKNOWN",
@@ -296,15 +274,8 @@
         }
       },
       "capabilities": {
-        "value": {
-          "emergency": true,
-          "trauma": true,
-          "icu": true,
-          "ventilator": true,
-          "cardiology": true,
-          "neurology": true,
-          "orthopaedics": true
-        },
+        "value": {},
+        "notes": "Services are not listed in this source; they stay unknown until a source states them.",
         "source": "institutions",
         "sourceType": "HOSPITAL_WEBSITE",
         "observedAt": "2026-09-25T00:00:00Z",
@@ -335,13 +306,14 @@
         "value": {
           "latitude": 12.9592,
           "longitude": 77.6485,
-          "coordinateSource": "GEOCODED"
+          "coordinateSource": "MANUAL_UNVERIFIED"
         },
-        "source": "geocoder-nominatim",
-        "sourceType": "GEOCODER",
+        "source": "manual-entry",
+        "sourceType": "MANUAL_ENTRY",
         "observedAt": "2026-09-25T00:00:00Z",
-        "confidence": 0.9,
-        "dataStatus": "PUBLIC_LISTED"
+        "confidence": 0.5,
+        "dataStatus": "UNVERIFIED",
+        "notes": "Typed in by a contributor; the earlier geocoder label could not be reproduced. Unverified (see data/directory for OSM-matched coordinates)."
       }
     },
     "lastSynchronizedAt": "2026-09-25T00:00:00Z"
@@ -363,14 +335,9 @@
     "location": {
       "latitude": 12.9961,
       "longitude": 77.5712,
-      "coordinateSource": "GEOCODED"
+      "coordinateSource": "MANUAL_UNVERIFIED"
     },
-    "capabilities": {
-      "emergency": true,
-      "icu": true,
-      "generalSurgery": true,
-      "orthopaedics": true
-    },
+    "capabilities": {},
     "historicalCapacity": {},
     "operationalState": {
       "emergency": "UNKNOWN",
@@ -440,12 +407,8 @@
         "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility/kc-general-hospital/"
       },
       "capabilities": {
-        "value": {
-          "emergency": true,
-          "icu": true,
-          "generalSurgery": true,
-          "orthopaedics": true
-        },
+        "value": {},
+        "notes": "Services are not listed in this source; they stay unknown until a source states them.",
         "source": "bengaluru-urban",
         "sourceType": "GOVERNMENT_DATASET",
         "observedAt": "2026-09-25T00:00:00Z",
@@ -476,13 +439,14 @@
         "value": {
           "latitude": 12.9961,
           "longitude": 77.5712,
-          "coordinateSource": "GEOCODED"
+          "coordinateSource": "MANUAL_UNVERIFIED"
         },
-        "source": "geocoder-nominatim",
-        "sourceType": "GEOCODER",
+        "source": "manual-entry",
+        "sourceType": "MANUAL_ENTRY",
         "observedAt": "2026-09-25T00:00:00Z",
-        "confidence": 0.95,
-        "dataStatus": "PUBLIC_LISTED"
+        "confidence": 0.5,
+        "dataStatus": "UNVERIFIED",
+        "notes": "Typed in by a contributor; the earlier geocoder label could not be reproduced. Unverified (see data/directory for OSM-matched coordinates)."
       }
     },
     "lastSynchronizedAt": "2026-09-25T00:00:00Z"
@@ -504,14 +468,9 @@
     "location": {
       "latitude": 12.9304,
       "longitude": 77.5855,
-      "coordinateSource": "GEOCODED"
+      "coordinateSource": "MANUAL_UNVERIFIED"
     },
-    "capabilities": {
-      "emergency": true,
-      "icu": true,
-      "generalSurgery": true,
-      "orthopaedics": true
-    },
+    "capabilities": {},
     "historicalCapacity": {},
     "operationalState": {
       "emergency": "UNKNOWN",
@@ -581,12 +540,8 @@
         "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility-category/hospitals/"
       },
       "capabilities": {
-        "value": {
-          "emergency": true,
-          "icu": true,
-          "generalSurgery": true,
-          "orthopaedics": true
-        },
+        "value": {},
+        "notes": "Services are not listed in this source; they stay unknown until a source states them.",
         "source": "bengaluru-urban",
         "sourceType": "GOVERNMENT_DATASET",
         "observedAt": "2026-09-25T00:00:00Z",
@@ -617,13 +572,14 @@
         "value": {
           "latitude": 12.9304,
           "longitude": 77.5855,
-          "coordinateSource": "GEOCODED"
+          "coordinateSource": "MANUAL_UNVERIFIED"
         },
-        "source": "geocoder-nominatim",
-        "sourceType": "GEOCODER",
+        "source": "manual-entry",
+        "sourceType": "MANUAL_ENTRY",
         "observedAt": "2026-09-25T00:00:00Z",
-        "confidence": 0.95,
-        "dataStatus": "PUBLIC_LISTED"
+        "confidence": 0.5,
+        "dataStatus": "UNVERIFIED",
+        "notes": "Typed in by a contributor; the earlier geocoder label could not be reproduced. Unverified (see data/directory for OSM-matched coordinates)."
       }
     },
     "lastSynchronizedAt": "2026-09-25T00:00:00Z"
@@ -645,14 +601,9 @@
     "location": {
       "latitude": 12.9822,
       "longitude": 77.6016,
-      "coordinateSource": "GEOCODED"
+      "coordinateSource": "MANUAL_UNVERIFIED"
     },
-    "capabilities": {
-      "emergency": true,
-      "icu": true,
-      "generalSurgery": true,
-      "orthopaedics": true
-    },
+    "capabilities": {},
     "historicalCapacity": {},
     "operationalState": {
       "emergency": "UNKNOWN",
@@ -722,12 +673,8 @@
         "sourceUrl": "https://bengaluruurban.nic.in/en/public-utility-category/hospitals/"
       },
       "capabilities": {
-        "value": {
-          "emergency": true,
-          "icu": true,
-          "generalSurgery": true,
-          "orthopaedics": true
-        },
+        "value": {},
+        "notes": "Services are not listed in this source; they stay unknown until a source states them.",
         "source": "bengaluru-urban",
         "sourceType": "GOVERNMENT_DATASET",
         "observedAt": "2026-09-25T00:00:00Z",
@@ -758,13 +705,14 @@
         "value": {
           "latitude": 12.9822,
           "longitude": 77.6016,
-          "coordinateSource": "GEOCODED"
+          "coordinateSource": "MANUAL_UNVERIFIED"
         },
-        "source": "geocoder-nominatim",
-        "sourceType": "GEOCODER",
+        "source": "manual-entry",
+        "sourceType": "MANUAL_ENTRY",
         "observedAt": "2026-09-25T00:00:00Z",
-        "confidence": 0.95,
-        "dataStatus": "PUBLIC_LISTED"
+        "confidence": 0.5,
+        "dataStatus": "UNVERIFIED",
+        "notes": "Typed in by a contributor; the earlier geocoder label could not be reproduced. Unverified (see data/directory for OSM-matched coordinates)."
       }
     },
     "lastSynchronizedAt": "2026-09-25T00:00:00Z"
@@ -787,11 +735,9 @@
     "location": {
       "latitude": 12.9926,
       "longitude": 77.5641,
-      "coordinateSource": "GEOCODED"
+      "coordinateSource": "MANUAL_UNVERIFIED"
     },
-    "capabilities": {
-      "emergency": true
-    },
+    "capabilities": {},
     "historicalCapacity": {},
     "operationalState": {
       "emergency": "UNKNOWN",
@@ -862,9 +808,8 @@
         "sourceUrl": "https://site.bbmp.gov.in/departmentwebsites/Health/palikehospitals.html"
       },
       "capabilities": {
-        "value": {
-          "emergency": true
-        },
+        "value": {},
+        "notes": "Services are not listed in this source; they stay unknown until a source states them.",
         "source": "bbmp",
         "sourceType": "GOVERNMENT_DATASET",
         "observedAt": "2026-09-25T00:00:00Z",
@@ -895,13 +840,14 @@
         "value": {
           "latitude": 12.9926,
           "longitude": 77.5641,
-          "coordinateSource": "GEOCODED"
+          "coordinateSource": "MANUAL_UNVERIFIED"
         },
-        "source": "geocoder-nominatim",
-        "sourceType": "GEOCODER",
+        "source": "manual-entry",
+        "sourceType": "MANUAL_ENTRY",
         "observedAt": "2026-09-25T00:00:00Z",
-        "confidence": 0.95,
-        "dataStatus": "PUBLIC_LISTED"
+        "confidence": 0.5,
+        "dataStatus": "UNVERIFIED",
+        "notes": "Typed in by a contributor; the earlier geocoder label could not be reproduced. Unverified (see data/directory for OSM-matched coordinates)."
       }
     },
     "lastSynchronizedAt": "2026-09-25T00:00:00Z"
@@ -924,13 +870,9 @@
     "location": {
       "latitude": 12.9779,
       "longitude": 77.6245,
-      "coordinateSource": "GEOCODED"
+      "coordinateSource": "MANUAL_UNVERIFIED"
     },
-    "capabilities": {
-      "obstetrics": true,
-      "gynaecology": true,
-      "neonatology": true
-    },
+    "capabilities": {},
     "historicalCapacity": {},
     "operationalState": {
       "emergency": "UNKNOWN",
@@ -1001,11 +943,8 @@
         "sourceUrl": "https://site.bbmp.gov.in/departmentwebsites/Health/palikehospitals.html"
       },
       "capabilities": {
-        "value": {
-          "obstetrics": true,
-          "gynaecology": true,
-          "neonatology": true
-        },
+        "value": {},
+        "notes": "Services are not listed in this source; they stay unknown until a source states them.",
         "source": "bbmp",
         "sourceType": "GOVERNMENT_DATASET",
         "observedAt": "2026-09-25T00:00:00Z",
@@ -1036,13 +975,14 @@
         "value": {
           "latitude": 12.9779,
           "longitude": 77.6245,
-          "coordinateSource": "GEOCODED"
+          "coordinateSource": "MANUAL_UNVERIFIED"
         },
-        "source": "geocoder-nominatim",
-        "sourceType": "GEOCODER",
+        "source": "manual-entry",
+        "sourceType": "MANUAL_ENTRY",
         "observedAt": "2026-09-25T00:00:00Z",
-        "confidence": 0.95,
-        "dataStatus": "PUBLIC_LISTED"
+        "confidence": 0.5,
+        "dataStatus": "UNVERIFIED",
+        "notes": "Typed in by a contributor; the earlier geocoder label could not be reproduced. Unverified (see data/directory for OSM-matched coordinates)."
       }
     },
     "lastSynchronizedAt": "2026-09-25T00:00:00Z"

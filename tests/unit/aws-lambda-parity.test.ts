@@ -92,7 +92,7 @@ const normTraceEvent = (e: any) => ({
 
 const hospitalView = (h: any) => pick(h.operationalState, ['emergency', 'icu', 'trauma', 'ventilator', 'acceptance', 'acceptanceCaseId', 'acceptanceAsOf', 'expiresAt', 'capacityAsOf', 'lastConfirmedAt', 'source']);
 const ambulanceView = (a: any) => ({ status: a.status, destination: a.destinationHospital, route: a.activeRoute?.hospitalId, patient: a.assignedPatient });
-const patientView = (p: any) => pick(p, ['currentStatus', 'assignedHospital', 'assignedAmbulance', 'careRequirements']);
+const patientView = (p: any) => pick(p, ['currentStatus', 'assignedHospital', 'assignedAmbulance', 'careRequirements', 'reportedSymptoms', 'suspectedCause', 'requestedCapabilities', 'intake']);
 
 async function main() {
   console.log('[Test] AWS lambda cores vs local state engines (identical event scripts)\n');
@@ -371,6 +371,49 @@ async function main() {
     ]);
     eq(roles(r.aws).ambulances['AMB-BLR-001'].patient, c2, 'reassigned');
     eq(roles(r.aws).ambulances['AMB-BLR-001'].destination, undefined, 'previous destination not carried over (case 2 has no acceptance yet)');
+  });
+
+  // ---------------------------------------------------------------- crew-reported emergency (Phase 2)
+  const crewReport = (caseId: string, ambulanceId: string, requested: string[]) =>
+    mk('patient.emergency.created', { type: 'ambulance', id: ambulanceId }, {
+      condition: 'Suspected: road traffic accident · Reported: bleeding, leg deformity', location: HEBBAL, severity: 'HIGH',
+      reportedSymptoms: ['bleeding', 'leg deformity'], suspectedCause: 'road traffic accident', requestedCapabilities: requested,
+      intake: { channel: 'AMBULANCE_CREW', locationMethod: 'MAP_PIN' },
+    }, { patientId: caseId });
+
+  await check('S7 crew-reported emergency: reporting crew assigned ON_SCENE, requested care unioned with the rules, structured intake projected (identical on both sides)', async () => {
+    const c = 'CASE-S7';
+    const r = await runBoth('S7', () => [
+      { name: 'crew reports', event: () => crewReport(c, 'AMB-BLR-002', ['VENTILATOR']) },
+    ]);
+    const a = roles(r.aws).ambulances['AMB-BLR-002'];
+    eq([a.status, a.patient], ['ON_SCENE', c], 'crew attends its own report');
+    const p = r.aws.patients[c] as any;
+    eq(p.careRequirements, ['EMERGENCY', 'TRAUMA', 'ICU', 'VENTILATOR'], 'rules + requested');
+    eq([p.reportedSymptoms, p.suspectedCause], [['bleeding', 'leg deformity'], 'road traffic accident'], 'symptoms and suspected cause kept apart');
+    eq(p.intake, { channel: 'AMBULANCE_CREW', reportedByAmbulanceId: 'AMB-BLR-002', locationMethod: 'MAP_PIN' }, 'intake provenance');
+    ok(r.aws.decisions.some((d: any) => d[0] === 'requested' && d[2] === 'HOSP-BLR-001'), 'capable hospitals asked');
+    ok(!r.aws.decisions.some((d: any) => d[0] === 'requested' && d[2] === 'HOSP-BLR-003'), 'incapable hospital not asked');
+  });
+
+  await check('S7b crew asks for care no connected hospital lists: nobody is asked, no destination, crew stays ON_SCENE (identical on both sides)', async () => {
+    const c = 'CASE-S7B';
+    const r = await runBoth('S7b', () => [
+      { name: 'crew reports (cardiology)', event: () => crewReport(c, 'AMB-BLR-003', ['CARDIOLOGY']) },
+    ]);
+    ok(!r.aws.decisions.some((d: any) => d[0] === 'requested'), 'no referral can be sent');
+    eq(roles(r.aws).ambulances['AMB-BLR-003'].status, 'ON_SCENE', 'crew still with the patient');
+    eq(roles(r.aws).ambulances['AMB-BLR-003'].destination, undefined, 'no destination invented');
+  });
+
+  await check('S7c a busy crew reporting a new emergency is NOT reassigned (identical on both sides)', async () => {
+    const r = await runBoth('S7c', () => [
+      { name: 'first case', event: () => emergency('CASE-S7C1') },
+      { name: 'dispatch crew to it', event: () => dispatch('AMB-BLR-001', 'CASE-S7C1') },
+      { name: 'busy crew reports another', event: () => crewReport('CASE-S7C2', 'AMB-BLR-001', []) },
+    ]);
+    eq(roles(r.aws).ambulances['AMB-BLR-001'].patient, 'CASE-S7C1', 'still on its first case');
+    eq((r.aws.patients['CASE-S7C2'] as any).assignedAmbulance, undefined, 'new case awaits dispatch');
   });
 
   // ---------------------------------------------------------------- AWS-only structural checks

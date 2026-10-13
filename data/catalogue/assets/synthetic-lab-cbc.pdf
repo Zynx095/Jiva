@@ -1,0 +1,70 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+6 0 obj
+<< /Length 1660 >>
+stream
+0.75 0.12 0.12 rg 40 770 515 44 re f
+1 1 1 rg
+BT /F2 12 Tf 52 796 Td (SYNTHETIC SAMPLE - NOT A REAL PATIENT - NOT FOR DIAGNOSIS) Tj ET
+BT /F1 9 Tf 52 780 Td (Generated for software demonstration by JIVA. The values are illustrative, not a result.) Tj ET
+0 0 0 rg
+BT /F2 18 Tf 40 735 Td (Complete blood count \(synthetic sample\)) Tj ET
+BT /F1 10 Tf 40 712 Td (Laboratory: JIVA Synthetic Laboratory \(fictional\)) Tj ET
+BT /F1 10 Tf 40 698 Td (Patient: synthetic sample - no real person) Tj ET
+BT /F1 10 Tf 40 684 Td (Specimen: illustrative) Tj ET
+0.85 0.85 0.85 rg 40 650 515 22 re f 0 0 0 rg
+BT /F2 10 Tf 48 657 Td (Test) Tj ET
+BT /F2 10 Tf 260 657 Td (Result) Tj ET
+BT /F2 10 Tf 350 657 Td (Units) Tj ET
+BT /F2 10 Tf 440 657 Td (Reference range) Tj ET
+BT /F1 10 Tf 48 630 Td (Haemoglobin) Tj ET
+BT /F1 10 Tf 260 630 Td (13.8) Tj ET
+BT /F1 10 Tf 350 630 Td (g/dL) Tj ET
+BT /F1 10 Tf 440 630 Td (13.0 - 17.0) Tj ET
+BT /F1 10 Tf 48 610 Td (White cell count) Tj ET
+BT /F1 10 Tf 260 610 Td (7.2) Tj ET
+BT /F1 10 Tf 350 610 Td (x10^9/L) Tj ET
+BT /F1 10 Tf 440 610 Td (4.0 - 11.0) Tj ET
+BT /F1 10 Tf 48 590 Td (Platelets) Tj ET
+BT /F1 10 Tf 260 590 Td (245) Tj ET
+BT /F1 10 Tf 350 590 Td (x10^9/L) Tj ET
+BT /F1 10 Tf 440 590 Td (150 - 410) Tj ET
+BT /F1 10 Tf 48 570 Td (Haematocrit) Tj ET
+BT /F1 10 Tf 260 570 Td (41) Tj ET
+BT /F1 10 Tf 350 570 Td (%) Tj ET
+BT /F1 10 Tf 440 570 Td (40 - 50) Tj ET
+BT /F1 10 Tf 48 550 Td (Mean cell volume) Tj ET
+BT /F1 10 Tf 260 550 Td (89) Tj ET
+BT /F1 10 Tf 350 550 Td (fL) Tj ET
+BT /F1 10 Tf 440 550 Td (83 - 101) Tj ET
+BT /F1 9 Tf 40 510 Td (Reference ranges differ between laboratories. JIVA does not interpret results.) Tj ET
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000000321 00000 n 
+0000000396 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+2108
+%%EOF

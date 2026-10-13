@@ -7,6 +7,7 @@ import {
 } from './materializedAcceptance';
 import fs from 'fs';
 import path from 'path';
+import { runtimeMode } from '../../mode';
 
 export class LocalStateStore implements IStateStore {
   private patients = new Map<string, PatientState>();
@@ -142,9 +143,14 @@ export class LocalStateStore implements IStateStore {
     let hospitalsData: HospitalState[] = [];
     const baseDir = path.resolve(__dirname, '../../../../../data');
 
+    // Operational mode never loads the synthetic network: hospitals and ambulances must come from
+    // authoritative sources, and an empty network is shown as empty (see services/api/src/mode.ts).
+    const operational = runtimeMode() === 'OPERATIONAL';
     if (process.env.USE_CANONICAL) {
       const canonicalPath = path.join(baseDir, 'canonical/hospitals.json');
       if (fs.existsSync(canonicalPath)) hospitalsData = JSON.parse(fs.readFileSync(canonicalPath, 'utf8'));
+    } else if (operational) {
+      console.log('[LocalStateStore] Operational mode: no synthetic hospitals loaded.');
     } else {
       const syntheticPath = path.join(baseDir, 'synthetic/bengaluru/hospitals.json');
       if (fs.existsSync(syntheticPath)) hospitalsData = JSON.parse(fs.readFileSync(syntheticPath, 'utf8'));
@@ -157,7 +163,9 @@ export class LocalStateStore implements IStateStore {
 
     // Load ambulances
     const ambPath = path.join(baseDir, 'synthetic/bengaluru/ambulances.json');
-    if (fs.existsSync(ambPath)) {
+    if (operational) {
+      console.log('[LocalStateStore] Operational mode: no synthetic ambulances loaded.');
+    } else if (fs.existsSync(ambPath)) {
       const ambData = JSON.parse(fs.readFileSync(ambPath, 'utf8'));
       for (const a of ambData) {
         this.ambulances.set(a.ambulanceId, {
@@ -167,6 +175,7 @@ export class LocalStateStore implements IStateStore {
           requiredCapabilities: a.requiredCapabilities || [],
           lastUpdated: new Date().toISOString(),
           provenance: [],
+          dataStatus: 'SYNTHETIC_DEMO',
         });
       }
       console.log(`[LocalStateStore] Preloaded ${ambData.length} ambulances.`);

@@ -26,3 +26,10 @@ export async function apiPost(path: string, body?: unknown, persona = PERSONA): 
 }
 
 export const socket = io(API_URL, { auth: { demoUser: PERSONA } });
+
+/** Fetch one of the patient's documents as a Blob, with this persona's credentials (no public URL). */
+export async function apiBlob(path: string): Promise<Blob> {
+  const res = await fetch(API_URL + path, { headers: headers() });
+  if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
+  return res.blob();
+}
