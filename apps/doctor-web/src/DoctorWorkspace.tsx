@@ -147,7 +147,7 @@ export function DoctorWorkspace() {
           ) : (
             <ul className="space-y-2" role="listbox" aria-label="Assigned patients">
               {c.encounters.map((e) => (
-                <li key={e.encounterId}>
+                <li key={e.encounterId} role="presentation">
                   <PatientRow e={e} patient={patientOf(e.caseId)} selected={e.encounterId === c.selectedId} now={now} onSelect={() => requestSelect(e.encounterId)} />
                 </li>
               ))}
@@ -167,7 +167,8 @@ export function DoctorWorkspace() {
             // Keyed by the encounter: switching patients remounts every panel, so a half-filled form
             // (vital signs, prescription, note, report, upload) can never be submitted to the next patient.
             <Fragment key={selected.encounterId}>
-              <div className="sticky top-[var(--jiva-header-h)] z-20 -mx-1 -mt-6 bg-canvas px-1 pb-4 pt-6">
+              {/* Pinned under the header from tablets up; on phones it scrolls away so the records keep the screen. */}
+              <div className="z-20 mb-4 md:sticky md:top-[var(--jiva-header-h)] md:-mx-1 md:-mt-6 md:mb-0 md:bg-canvas md:px-1 md:pb-4 md:pt-6">
                 <PatientContext e={selected} patient={patientOf(selected.caseId)} now={now}>
                   <JivaTabs items={tabs} value={tab} onChange={setTab} label="Encounter sections" idPrefix="enc" className="border-b-0 px-2 sm:px-3" />
                 </PatientContext>

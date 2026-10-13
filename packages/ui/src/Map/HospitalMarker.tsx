@@ -84,12 +84,13 @@ export const HospitalMarker: React.FC<HospitalMarkerProps> = ({
     el.dataset.selected = selected ? 'true' : 'false';
     el.dataset.dimmed = dimmed ? 'true' : 'false';
     el.style.zIndex = selected ? '3' : '1';
-    el.setAttribute('aria-label', `${name}: ${text}${demo}`);
+    // The accessible name starts with the visible label (WCAG 2.5.3), then the full name.
+    el.setAttribute('aria-label', `${short} ${text}${name !== short ? ` — ${name}` : ''}${demo}`);
     el.setAttribute('aria-pressed', selected ? 'true' : 'false');
     el.innerHTML = `
-      <span class="jiva-mk__body"><span class="jiva-mk__h" aria-hidden="true">H</span></span>
+      <span class="jiva-mk__body"><svg class="jiva-mk__h" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2.5 1.5v9M9.5 1.5v9M2.5 6h7" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg></span>
       <span class="jiva-mk__badge">${iconSvg(meta.icon, 11, 2.6)}</span>
-      <span class="jiva-mk__label">${escapeHtml(short)}<small>${escapeHtml(text)}</small></span>`;
+      <span class="jiva-mk__label">${escapeHtml(short)} <small>${escapeHtml(text)}</small></span>`;
   }, [map, isLoaded, hospitalId, emergencyStatus, statusLabel, label, name, selected, dimmed, dataStatus]);
 
   useEffect(() => {

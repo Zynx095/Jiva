@@ -162,7 +162,7 @@ function CaseCard({ p }: { p: PatientState }) {
           )}
         </div>
       )}
-      <span className="mt-2 flex items-center justify-end gap-0.5 text-xs font-semibold text-brand-700 opacity-80 group-hover:opacity-100">
+      <span className="mt-2 flex items-center justify-end gap-0.5 text-xs font-semibold text-brand-700 group-hover:text-brand-800">
         View case <Icon name="chevronRight" size={14} />
       </span>
     </button>
