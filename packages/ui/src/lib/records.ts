@@ -15,6 +15,8 @@ export interface RecordAuthor {
 export interface PrescriptionFields {
   medication: string;
   strength?: string;
+  /** Dosage form (TABLET, INJECTION …). */
+  formulation?: string;
   dose: string;
   route: string;
   frequency: string;
@@ -22,15 +24,19 @@ export interface PrescriptionFields {
   instructions?: string;
 }
 
+export type PrescriptionStatusCode = 'DRAFT' | 'ACTIVE' | 'DISCONTINUED' | 'CANCELLED';
+
 export interface PrescriptionVersionView extends PrescriptionFields {
   version: number;
-  status: 'ACTIVE' | 'DISCONTINUED';
+  status: PrescriptionStatusCode;
   recordedAt: string;
   recordedBy: EncounterActor;
   author: RecordAuthor;
-  action: 'CREATED' | 'AMENDED' | 'DISCONTINUED';
+  action: 'CREATED' | 'AMENDED' | 'AUTHORISED' | 'DISCONTINUED' | 'CANCELLED';
   changeReason?: string;
   contentHash: string;
+  /** The catalogue entry (and its revision) the medication was chosen from, if any. */
+  catalogueRef?: { medicationId: string; revision: number; catalogueVersion: number };
 }
 
 /** Clinician view. */
@@ -39,10 +45,12 @@ export interface PrescriptionRecord {
   encounterId: string;
   current: PrescriptionVersionView;
   history: PrescriptionVersionView[];
+  /** Latest authorisation (absent while the prescription is a draft that was never authorised). */
+  authorisation?: { authorisedAt: string; authorisedBy: EncounterActor; version: number };
   dataStatus: string;
 }
 
-/** Patient view: the current medication, who prescribed it and when. */
+/** Patient view: the current medication, who prescribed it and when (authorised prescriptions only). */
 export interface PatientPrescription extends PrescriptionFields {
   prescriptionId: string;
   encounterId: string;
@@ -98,6 +106,29 @@ export interface PatientReport extends ReportFields {
 
 export const MEDICATION_ROUTES = ['ORAL', 'IV', 'IM', 'SC', 'INHALED', 'TOPICAL', 'SUBLINGUAL', 'RECTAL', 'OTHER'] as const;
 
+export const MEDICATION_FORMULATIONS = [
+  'TABLET', 'CAPSULE', 'ORAL_SOLUTION', 'ORAL_SUSPENSION', 'INJECTION', 'INFUSION', 'INHALER', 'NEBULISER_SOLUTION',
+  'SPRAY', 'CREAM', 'OINTMENT', 'PATCH', 'SUPPOSITORY', 'DROPS', 'OTHER',
+] as const;
+
+export const FORMULATION_TEXT: Record<string, string> = {
+  TABLET: 'Tablet',
+  CAPSULE: 'Capsule',
+  ORAL_SOLUTION: 'Oral solution',
+  ORAL_SUSPENSION: 'Oral suspension',
+  INJECTION: 'Injection',
+  INFUSION: 'Infusion',
+  INHALER: 'Inhaler',
+  NEBULISER_SOLUTION: 'Nebuliser solution',
+  SPRAY: 'Spray',
+  CREAM: 'Cream',
+  OINTMENT: 'Ointment',
+  PATCH: 'Patch',
+  SUPPOSITORY: 'Suppository',
+  DROPS: 'Drops',
+  OTHER: 'Other form',
+};
+
 export const ROUTE_TEXT: Record<string, string> = {
   ORAL: 'By mouth',
   IV: 'Intravenous (IV)',
@@ -120,19 +151,26 @@ export const CATEGORY_TEXT: Record<string, string> = {
   OTHER: 'Other',
 };
 
-/** One line for a medication: "Amoxicillin 500 mg — 1 capsule, by mouth, every 8 hours, for 5 days". */
+/** One line for a medication: "Amoxicillin 500 mg capsule — 1 capsule, by mouth, every 8 hours, for 5 days". */
 export function medicationLine(p: PrescriptionFields): string {
-  const head = [p.medication, p.strength].filter(Boolean).join(' ');
+  const head = [p.medication, p.strength, p.formulation && (FORMULATION_TEXT[p.formulation] ?? p.formulation).toLowerCase()].filter(Boolean).join(' ');
   const how = [p.dose, (ROUTE_TEXT[p.route] ?? p.route).toLowerCase(), p.frequency.toLowerCase(), p.duration && `for ${p.duration}`].filter(Boolean).join(', ');
   return `${head} — ${how}`;
 }
 
 export function prescriptionStatus(status?: string): StatusMeta {
-  return status === 'ACTIVE'
-    ? { label: 'Active', tone: 'ok', icon: 'pill' }
-    : status === 'DISCONTINUED'
-      ? { label: 'Stopped', tone: 'neutral', icon: 'ban', hint: 'This medication was stopped. Do not take it unless your care team tells you to.' }
-      : { label: 'Unknown', tone: 'neutral', icon: 'help' };
+  switch (status) {
+    case 'ACTIVE':
+      return { label: 'Active', tone: 'ok', icon: 'pill' };
+    case 'DISCONTINUED':
+      return { label: 'Stopped', tone: 'neutral', icon: 'ban', hint: 'This medication was stopped. Do not take it unless your care team tells you to.' };
+    case 'DRAFT':
+      return { label: 'Draft · not authorised', tone: 'warn', icon: 'clock', hint: 'Not in force and not visible to the patient until a clinician authorises it.' };
+    case 'CANCELLED':
+      return { label: 'Discarded draft', tone: 'neutral', icon: 'xCircle', hint: 'Never authorised; kept in the history only.' };
+    default:
+      return { label: 'Unknown', tone: 'neutral', icon: 'help' };
+  }
 }
 
 export function reportStatus(status?: string): StatusMeta {

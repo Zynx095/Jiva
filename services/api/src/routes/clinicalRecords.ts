@@ -6,15 +6,21 @@ import type { DiagnosticReport, HospitalEncounter, Prescription, ReportContent }
 import {
   AmendPrescriptionCommandSchema,
   AmendReportCommandSchema,
+  AuthorisePrescriptionCommandSchema,
   CreatePrescriptionCommandSchema,
   CreateReportCommandSchema,
+  DiscardPrescriptionDraftCommandSchema,
   DiscontinuePrescriptionCommandSchema,
+  type MedicationEntry,
 } from '@jiva/event-schema';
 import { clinicalStore } from '../clinical';
 import { actorFromAuth, authorizeEncounterAction, type EncounterAction } from '../clinical/policy';
 import {
-  amendPrescription, amendReport, createPrescription, createReport, discontinuePrescription, type RecordMeta, type RecordResult,
+  amendPrescription, amendReport, authorisePrescription, createPrescription, createReport, discardPrescriptionDraft, discontinuePrescription,
+  everAuthorised, type RecordMeta, type RecordResult,
 } from '../clinical/records';
+import { checkAgainstCatalogue, type MedicationFields } from '../clinical/medication';
+import { catalogue } from '../catalogue';
 import { projectPrescription, projectReport, recordProvenance, type AuthorLookup } from '../clinical/views';
 import { asyncRoute, audit, auditAccess, CLOCK_SKEW_MS, conflict, denied, idempotent, replayOr, validationError, withKeyLock } from '../commands/support';
 import { encounterFor, publishCommandEvent } from './encounters';
@@ -30,6 +36,13 @@ const authorLookup: AuthorLookup = actor => {
 };
 
 const viewFor = (auth: AuthContext): 'CLINICIAN' | 'PATIENT' => (auth.role === 'PATIENT' ? 'PATIENT' : 'CLINICIAN');
+
+/** A medication chosen from the catalogue must agree with its entry; the entry's revision is recorded. */
+const catalogueCheck = (f: MedicationFields) =>
+  checkAgainstCatalogue(f, id => {
+    const s = catalogue.isAvailable('medications') ? catalogue.get('medications', id) : undefined;
+    return s && { entry: s.entry as MedicationEntry, revision: s.revision };
+  }, catalogue.version('medications'));
 
 /** Attachments of a report shared with the patient: its verified documents of the same encounter. */
 const releasedDocuments = (encounterId: string) => (ids: string[]) =>
@@ -101,8 +114,9 @@ function prescriptionEvent(auth: AuthContext, rx: Prescription) {
       prescriptionId: rx.prescriptionId, encounterId: rx.encounterId, caseId: rx.caseId, hospitalId: rx.hospitalId,
       recordedAt: v.recordedAt, recordedBy: v.recordedBy, dataStatus: rx.dataStatus,
       version: v.version, action: v.action, status: v.status, contentHash: v.contentHash,
-      // A patient's own medication list is always theirs to see.
-      patientVisible: true,
+      // A patient's own medication list is always theirs to see — once a prescription has been authorised.
+      // Drafts (and discarded drafts) are never in force and never reach the patient.
+      patientVisible: everAuthorised(rx),
     },
   };
 }
@@ -156,8 +170,10 @@ export function clinicalRecordsRouter(): Router {
     const enc = encounterFor(req, res, 'prescription.read', 'prescription.read');
     if (!enc) return;
     auditAccess(auth, 'prescription.read', target(enc, 'PRESCRIPTION'));
-    const list = clinicalStore.listPrescriptions(enc.encounterId).sort((a, b) =>
-      Number(a.current.status !== 'ACTIVE') - Number(b.current.status !== 'ACTIVE') || Date.parse(b.history[0].recordedAt) - Date.parse(a.history[0].recordedAt));
+    const open = (rx: Prescription) => rx.current.status === 'ACTIVE' || rx.current.status === 'DRAFT';
+    const list = clinicalStore.listPrescriptions(enc.encounterId)
+      .filter(rx => auth.role !== 'PATIENT' || everAuthorised(rx))
+      .sort((a, b) => Number(!open(a)) - Number(!open(b)) || Date.parse(b.history[0].recordedAt) - Date.parse(a.history[0].recordedAt));
     res.json(list.map(rx => projectPrescription(rx, viewFor(auth), authorLookup)));
   });
 
@@ -167,7 +183,7 @@ export function clinicalRecordsRouter(): Router {
     if (!found) return;
     const parsed = CreatePrescriptionCommandSchema.safeParse(req.body);
     if (!parsed.success) return validationError(res, parsed.error);
-    const { clientRequestId, ...content } = parsed.data;
+    const { clientRequestId, draft, medicationId, ...fields } = parsed.data;
     const idem = idempotent('prescription.create', auth, clientRequestId, { encounterId: found.encounterId, ...parsed.data });
     if (replayOr(res, idem)) return;
 
@@ -175,18 +191,20 @@ export function clinicalRecordsRouter(): Router {
       if (replayOr(res, idem)) return;
       const enc = writableEncounter(req, res, found.encounterId, 'prescription.write', 'prescription.create');
       if (!enc) return;
-      const rx = createPrescription(newId('RX'), content, metaFor(auth, enc));
+      const cat = catalogueCheck({ ...fields, medicationId });
+      if (!cat.ok) return res.status(cat.status).json({ error: cat.error, message: cat.message });
+      const rx = createPrescription(newId('RX'), { ...fields, ...(cat.ref ? { catalogueRef: cat.ref } : {}) }, metaFor(auth, enc), { draft: draft === true });
       await commit(r => clinicalStore.putPrescription(r), () => clinicalStore.removePrescription(rx.prescriptionId), rx, auth, prescriptionEvent(auth, rx));
-      audit(auth, 'prescription.create', 'ALLOWED', target(enc, 'PRESCRIPTION', rx.prescriptionId));
+      audit(auth, draft ? 'prescription.draft' : 'prescription.create', 'ALLOWED', target(enc, 'PRESCRIPTION', rx.prescriptionId));
       const body = { status: 'recorded', prescription: projectPrescription(rx, 'CLINICIAN', authorLookup) };
       idem.remember(201, body);
       return res.status(201).json(body);
     });
   }));
 
-  /** Amend or discontinue: a new version based on `expectedVersion`, with the reason for the change. */
-  function changePrescription<B extends { clientRequestId: string; expectedVersion: number; changeReason: string }>(
-    action: 'prescription.amend' | 'prescription.discontinue',
+  /** Amend, discontinue, authorise or discard: a new version based on `expectedVersion`. */
+  function changePrescription<B extends { clientRequestId: string; expectedVersion: number }>(
+    action: 'prescription.amend' | 'prescription.discontinue' | 'prescription.authorise' | 'prescription.discard',
     schema: ZodType<B, ZodTypeDef, unknown>,
     apply: (rx: Prescription, body: B, meta: RecordMeta) => RecordResult<Prescription>,
   ) {
@@ -220,9 +238,18 @@ export function clinicalRecordsRouter(): Router {
     });
   }
   router.post('/encounters/:id/prescriptions/:rxId/amend', changePrescription('prescription.amend', AmendPrescriptionCommandSchema,
-    (rx, { clientRequestId: _key, expectedVersion, changeReason, ...content }, meta) => amendPrescription(rx, expectedVersion, content, changeReason, meta)));
+    (rx, { clientRequestId: _key, expectedVersion, changeReason, medicationId, ...fields }, meta) => {
+      const cat = catalogueCheck({ ...fields, medicationId });
+      if (!cat.ok) return { ok: false, status: cat.status, code: cat.error, message: cat.message };
+      return amendPrescription(rx, expectedVersion, { ...fields, ...(cat.ref ? { catalogueRef: cat.ref } : {}) }, changeReason, meta);
+    }));
   router.post('/encounters/:id/prescriptions/:rxId/discontinue', changePrescription('prescription.discontinue', DiscontinuePrescriptionCommandSchema,
     (rx, body, meta) => discontinuePrescription(rx, body.expectedVersion, body.changeReason, meta)));
+  // A draft becomes a prescription only through this explicit, attested action of the assigned clinician.
+  router.post('/encounters/:id/prescriptions/:rxId/authorise', changePrescription('prescription.authorise', AuthorisePrescriptionCommandSchema,
+    (rx, body, meta) => authorisePrescription(rx, body.expectedVersion, meta)));
+  router.post('/encounters/:id/prescriptions/:rxId/discard', changePrescription('prescription.discard', DiscardPrescriptionDraftCommandSchema,
+    (rx, body, meta) => discardPrescriptionDraft(rx, body.expectedVersion, body.changeReason, meta)));
 
   // ---------------------------------------------------------------- diagnostic reports
   router.get('/encounters/:id/reports', (req: AuthedRequest, res) => {

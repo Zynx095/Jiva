@@ -8,10 +8,12 @@ import {
   DoctorAssignmentReasonSchema,
   LatitudeSchema,
   LongitudeSchema,
+  MedicationFormulationSchema,
   MedicationRouteSchema,
   RecordIdSchema,
   Sha256HexSchema,
 } from './primitives';
+import { MedicationIdSchema } from './catalogue';
 
 /**
  * Request bodies of the command endpoints that produce encounter and clinical events.
@@ -76,15 +78,27 @@ export const AssignDoctorCommandSchema = z.object({
 const prescriptionContent = {
   medication: boundedText(120),
   strength: boundedText(40).optional(),
+  formulation: MedicationFormulationSchema.optional(),
   dose: boundedText(60),
   route: MedicationRouteSchema,
   frequency: boundedText(60),
   duration: boundedText(60).optional(),
   instructions: boundedText(500).optional(),
+  /**
+   * The catalogue entry the medication was chosen from. The server checks that name, strength, dosage form
+   * and route agree with that entry and records the entry's revision; a catalogue match never prescribes.
+   */
+  medicationId: MedicationIdSchema.optional(),
 };
 
+/**
+ * Without `draft`, the assigned clinician writes and authorises the prescription in one explicit action
+ * (it is ACTIVE at once). With `draft: true` it is saved as a DRAFT: not in force, invisible to the
+ * patient, until the clinician authorises it (AuthorisePrescriptionCommandSchema).
+ */
 export const CreatePrescriptionCommandSchema = z.object({
   clientRequestId: ClientRequestIdSchema,
+  draft: z.boolean().optional(),
   ...prescriptionContent,
 }).strict();
 
@@ -97,6 +111,23 @@ export const AmendPrescriptionCommandSchema = z.object({
 }).strict();
 
 export const DiscontinuePrescriptionCommandSchema = z.object({
+  clientRequestId: ClientRequestIdSchema,
+  expectedVersion: z.number().int().min(1),
+  changeReason: boundedText(300),
+}).strict();
+
+/**
+ * The clinician's explicit authorisation of a draft: exactly the version they reviewed (`expectedVersion`)
+ * and an attestation that must be literally `true` — it can never be implied or defaulted.
+ */
+export const AuthorisePrescriptionCommandSchema = z.object({
+  clientRequestId: ClientRequestIdSchema,
+  expectedVersion: z.number().int().min(1),
+  attestation: z.literal(true),
+}).strict();
+
+/** Discard a draft that was never authorised (final; the history is kept). */
+export const DiscardPrescriptionDraftCommandSchema = z.object({
   clientRequestId: ClientRequestIdSchema,
   expectedVersion: z.number().int().min(1),
   changeReason: boundedText(300),
@@ -216,6 +247,8 @@ export type AssignDoctorCommand = z.infer<typeof AssignDoctorCommandSchema>;
 export type CreatePrescriptionCommand = z.infer<typeof CreatePrescriptionCommandSchema>;
 export type AmendPrescriptionCommand = z.infer<typeof AmendPrescriptionCommandSchema>;
 export type DiscontinuePrescriptionCommand = z.infer<typeof DiscontinuePrescriptionCommandSchema>;
+export type AuthorisePrescriptionCommand = z.infer<typeof AuthorisePrescriptionCommandSchema>;
+export type DiscardPrescriptionDraftCommand = z.infer<typeof DiscardPrescriptionDraftCommandSchema>;
 export type CreateReportCommand = z.infer<typeof CreateReportCommandSchema>;
 export type AmendReportCommand = z.infer<typeof AmendReportCommandSchema>;
 export type DocumentUploadIntentCommand = z.infer<typeof DocumentUploadIntentCommandSchema>;

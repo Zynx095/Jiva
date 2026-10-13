@@ -20,6 +20,9 @@ import { canonicalJson } from '@jiva/feasibility';
  * Version rules
  *  - Prescriptions: CREATED (ACTIVE) → AMENDED (content changed, still ACTIVE) → DISCONTINUED (final).
  *    A discontinued prescription is never changed again; a new one is written instead.
+ *    Drafts: CREATED (DRAFT) → AMENDED (still DRAFT) → AUTHORISED (ACTIVE, by the clinician's explicit
+ *    authorisation of exactly the version they reviewed) or CANCELLED (discarded, final). A draft is never
+ *    in force and never shown to the patient; nothing authorises a draft automatically.
  *  - Reports: PRELIMINARY → PRELIMINARY | FINAL. A FINAL report whose clinical content changes becomes
  *    AMENDED; it can never return to PRELIMINARY. Changing only the release to the patient keeps the
  *    clinical status (a released final report is not "amended" for the patient).
@@ -52,13 +55,18 @@ export function prescriptionContent(c: PrescriptionContent): PrescriptionContent
   return {
     medication: c.medication,
     ...(c.strength ? { strength: c.strength } : {}),
+    ...(c.formulation ? { formulation: c.formulation } : {}),
     dose: c.dose,
     route: c.route,
     frequency: c.frequency,
     ...(c.duration ? { duration: c.duration } : {}),
     ...(c.instructions ? { instructions: c.instructions } : {}),
+    ...(c.catalogueRef ? { catalogueRef: { medicationId: c.catalogueRef.medicationId, revision: c.catalogueRef.revision, catalogueVersion: c.catalogueRef.catalogueVersion } } : {}),
   };
 }
+
+/** Has this prescription ever been in force? Drafts and discarded drafts have not (the patient never sees them). */
+export const everAuthorised = (rx: Prescription) => rx.history.some(v => v.status === 'ACTIVE');
 
 export const prescriptionHash = (c: PrescriptionContent, status: PrescriptionStatus) => sha256({ ...prescriptionContent(c), status });
 
@@ -78,27 +86,59 @@ function prescriptionVersion(
   };
 }
 
-export function createPrescription(prescriptionId: string, content: PrescriptionContent, meta: RecordMeta): Prescription {
-  const v1 = prescriptionVersion(content, 'ACTIVE', 1, 'CREATED', meta);
-  return { prescriptionId, encounterId: meta.encounterId, caseId: meta.caseId, hospitalId: meta.hospitalId, current: v1, history: [v1], dataStatus: meta.dataStatus };
+const authorisationOf = (v: PrescriptionVersion) => ({ authorisedAt: v.recordedAt, authorisedBy: v.recordedBy, version: v.version });
+
+/** Written and authorised in one explicit action (ACTIVE), or saved as a draft that is not in force. */
+export function createPrescription(prescriptionId: string, content: PrescriptionContent, meta: RecordMeta, opts: { draft?: boolean } = {}): Prescription {
+  const v1 = prescriptionVersion(content, opts.draft ? 'DRAFT' : 'ACTIVE', 1, 'CREATED', meta);
+  return {
+    prescriptionId, encounterId: meta.encounterId, caseId: meta.caseId, hospitalId: meta.hospitalId, current: v1, history: [v1],
+    ...(opts.draft ? {} : { authorisation: authorisationOf(v1) }),
+    dataStatus: meta.dataStatus,
+  };
 }
 
 function checkVersion<T>(current: number, expected: number): RecordResult<T> | undefined {
   return current === expected ? undefined : fail(409, 'version_conflict', `This record changed meanwhile (now version ${current}, you edited version ${expected}). Reload it and apply your change again.`);
 }
 
+/** Change the content. A draft stays a draft; an amended ACTIVE prescription is authorised by the amending clinician. */
 export function amendPrescription(rx: Prescription, expectedVersion: number, content: PrescriptionContent, changeReason: string, meta: RecordMeta): RecordResult<Prescription> {
   const stale = checkVersion<Prescription>(rx.current.version, expectedVersion);
   if (stale) return stale;
-  if (rx.current.status !== 'ACTIVE') return fail(409, 'discontinued', 'A discontinued prescription cannot be changed. Write a new prescription instead.');
-  if (prescriptionHash(content, 'ACTIVE') === rx.current.contentHash) return fail(422, 'no_change', 'Nothing was changed.');
-  const next = prescriptionVersion(content, 'ACTIVE', rx.current.version + 1, 'AMENDED', meta, changeReason);
+  const status = rx.current.status;
+  if (status === 'DISCONTINUED') return fail(409, 'discontinued', 'A discontinued prescription cannot be changed. Write a new prescription instead.');
+  if (status === 'CANCELLED') return fail(409, 'cancelled', 'A discarded draft cannot be changed. Write a new prescription instead.');
+  if (prescriptionHash(content, status) === rx.current.contentHash) return fail(422, 'no_change', 'Nothing was changed.');
+  const next = prescriptionVersion(content, status, rx.current.version + 1, 'AMENDED', meta, changeReason);
+  return { ok: true, record: { ...rx, current: next, history: [...rx.history, next], ...(status === 'ACTIVE' ? { authorisation: authorisationOf(next) } : {}) } };
+}
+
+/**
+ * The clinician's explicit authorisation of a draft: the version they reviewed becomes ACTIVE, unchanged.
+ * Only a draft can be authorised; a stale version is refused like any other edit.
+ */
+export function authorisePrescription(rx: Prescription, expectedVersion: number, meta: RecordMeta): RecordResult<Prescription> {
+  const stale = checkVersion<Prescription>(rx.current.version, expectedVersion);
+  if (stale) return stale;
+  if (rx.current.status !== 'DRAFT') return fail(409, 'not_a_draft', rx.current.status === 'ACTIVE' ? 'This prescription is already authorised.' : 'Only a draft can be authorised.');
+  const next = prescriptionVersion(rx.current, 'ACTIVE', rx.current.version + 1, 'AUTHORISED', meta);
+  return { ok: true, record: { ...rx, current: next, history: [...rx.history, next], authorisation: authorisationOf(next) } };
+}
+
+/** Discard a draft that was never authorised (final). */
+export function discardPrescriptionDraft(rx: Prescription, expectedVersion: number, changeReason: string, meta: RecordMeta): RecordResult<Prescription> {
+  const stale = checkVersion<Prescription>(rx.current.version, expectedVersion);
+  if (stale) return stale;
+  if (rx.current.status !== 'DRAFT') return fail(409, 'not_a_draft', 'Only a draft can be discarded. Stop an authorised prescription instead.');
+  const next = prescriptionVersion(rx.current, 'CANCELLED', rx.current.version + 1, 'CANCELLED', meta, changeReason);
   return { ok: true, record: { ...rx, current: next, history: [...rx.history, next] } };
 }
 
 export function discontinuePrescription(rx: Prescription, expectedVersion: number, changeReason: string, meta: RecordMeta): RecordResult<Prescription> {
   const stale = checkVersion<Prescription>(rx.current.version, expectedVersion);
   if (stale) return stale;
+  if (rx.current.status === 'DRAFT') return fail(409, 'draft', 'A draft is not in force: discard it instead of stopping it.');
   if (rx.current.status !== 'ACTIVE') return fail(409, 'already_discontinued', 'This prescription is already discontinued.');
   const next = prescriptionVersion(rx.current, 'DISCONTINUED', rx.current.version + 1, 'DISCONTINUED', meta, changeReason);
   return { ok: true, record: { ...rx, current: next, history: [...rx.history, next] } };

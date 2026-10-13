@@ -101,9 +101,10 @@ export const ClinicalPrescriptionRecordedSchema = BaseEventSchema.extend({
     prescriptionId: RecordIdSchema,
     ...recordRef,
     version: z.number().int().min(1),
-    action: z.enum(['CREATED', 'AMENDED', 'DISCONTINUED']),
-    status: z.enum(['ACTIVE', 'DISCONTINUED']),
+    action: z.enum(['CREATED', 'AMENDED', 'AUTHORISED', 'DISCONTINUED', 'CANCELLED']),
+    status: z.enum(['DRAFT', 'ACTIVE', 'DISCONTINUED', 'CANCELLED']),
     contentHash: Sha256HexSchema,
+    /** False while the prescription has never been authorised (drafts and discarded drafts). */
     patientVisible: z.boolean(),
   }).strict(),
 });

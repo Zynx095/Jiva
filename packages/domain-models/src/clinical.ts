@@ -98,17 +98,38 @@ export interface HospitalEncounter {
 // ------------------------------------------------------------------ prescriptions
 
 export type MedicationRoute = 'ORAL' | 'IV' | 'IM' | 'SC' | 'INHALED' | 'TOPICAL' | 'SUBLINGUAL' | 'RECTAL' | 'OTHER';
-export type PrescriptionStatus = 'ACTIVE' | 'DISCONTINUED';
+export type MedicationFormulation =
+  | 'TABLET' | 'CAPSULE' | 'ORAL_SOLUTION' | 'ORAL_SUSPENSION' | 'INJECTION' | 'INFUSION' | 'INHALER' | 'NEBULISER_SOLUTION'
+  | 'SPRAY' | 'CREAM' | 'OINTMENT' | 'PATCH' | 'SUPPOSITORY' | 'DROPS' | 'OTHER';
+
+/**
+ * DRAFT        — written but not authorised: not in force, never shown to the patient.
+ * ACTIVE       — authorised by the assigned clinician (at creation, or by authorising a draft).
+ * DISCONTINUED — an authorised prescription that was stopped (final).
+ * CANCELLED    — a draft that was discarded without ever being authorised (final).
+ */
+export type PrescriptionStatus = 'DRAFT' | 'ACTIVE' | 'DISCONTINUED' | 'CANCELLED';
+
+/** The catalogue entry a prescription was written from (the revision in force at the time). */
+export interface CatalogueReference {
+  medicationId: string;
+  revision: number;
+  catalogueVersion: number;
+}
 
 /** What the clinician wrote. Free text is bounded and validated at the API boundary. */
 export interface PrescriptionContent {
   medication: string;
   strength?: string;
+  /** Dosage form, e.g. TABLET. Required when the medication was chosen from the catalogue. */
+  formulation?: MedicationFormulation;
   dose: string;
   route: MedicationRoute;
   frequency: string;
   duration?: string;
   instructions?: string;
+  /** Set by the server when the medication was chosen from the catalogue (never sent by a client). */
+  catalogueRef?: CatalogueReference;
 }
 
 export interface PrescriptionVersion extends PrescriptionContent {
@@ -116,8 +137,8 @@ export interface PrescriptionVersion extends PrescriptionContent {
   status: PrescriptionStatus;
   recordedAt: string;
   recordedBy: ActorRef;
-  action: 'CREATED' | 'AMENDED' | 'DISCONTINUED';
-  /** Required for amendments and discontinuation. */
+  action: 'CREATED' | 'AMENDED' | 'AUTHORISED' | 'DISCONTINUED' | 'CANCELLED';
+  /** Required for amendments, discontinuation and discarding a draft. */
   changeReason?: string;
   /** sha256 of the canonical content of this version. */
   contentHash: string;
@@ -132,6 +153,8 @@ export interface Prescription {
   current: PrescriptionVersion;
   /** Append-only, oldest first; includes the current version. */
   history: PrescriptionVersion[];
+  /** The latest authorisation: who put the current content in force, when, at which version. */
+  authorisation?: { authorisedAt: string; authorisedBy: ActorRef; version: number };
   dataStatus: DataStatus;
 }
 
