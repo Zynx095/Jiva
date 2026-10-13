@@ -53,6 +53,16 @@ export interface Scenario {
   id: string;
   title: string;
   summary: string;
+  /** What the scenario demonstrates about JIVA. */
+  demonstrates: string;
+  /** The roles whose screens change (each step acts as one of them). */
+  roles: string[];
+  /** What the presenter does. */
+  operator: string;
+  /** What should be true at the end — each step checks it against the server. */
+  outcome: string;
+  /** The data it uses, and what is simulated. */
+  data: string;
   /** Resets the demo first (everyone watching sees the reset). */
   resets: boolean;
   steps: Step[];
@@ -357,55 +367,107 @@ const REFERRED = [H1, H2, H4];
 
 const toHandover = (): Step[] => [steps.reset(), steps.report(), steps.referrals(REFERRED), steps.answer(H1, 'ACCEPTED'), steps.destination(H1), steps.gpsArrival(H1), steps.recordArrival(H1), steps.recordHandover(H1)];
 
+const RUN_STEPS = 'Run the steps one at a time (watching the role screens) or all at once.';
+
 export const SCENARIOS: Scenario[] = [
   {
     id: 'accept', title: 'Successful hospital acceptance', resets: true,
     summary: 'The crew reports, JIVA refers the case to capable hospitals, Hebbal accepts, and the crew is routed there.',
+    demonstrates: 'An emergency reported from the scene reaching a hospital that explicitly agreed to take it.',
+    roles: ['Ambulance crew', 'Hospital coordinators', 'Patient', 'Management'],
+    operator: RUN_STEPS,
+    outcome: 'Hebbal’s answer is recorded against its own referral and the crew’s destination is Hebbal.',
+    data: 'Synthetic case CASE-BLR-876, crew AMB-BLR-002 and the seeded Bengaluru hospitals; routes from the mock provider.',
     steps: [steps.reset(), steps.report(), steps.referrals(REFERRED), steps.answer(H1, 'ACCEPTED'), steps.destination(H1)],
   },
   {
     id: 'reject', title: 'Rejection followed by rerouting', resets: true,
     summary: 'Hebbal accepts and the crew is routed; Indiranagar also accepts; Hebbal then declines — the crew is rerouted to Indiranagar.',
+    demonstrates: 'Rerouting when an accepting hospital withdraws: JIVA only routes to a hospital whose acceptance still stands.',
+    roles: ['Ambulance crew', 'Hospital coordinators', 'Patient', 'Management'],
+    operator: RUN_STEPS,
+    outcome: 'Hebbal’s decline is recorded, and the crew is rerouted to Indiranagar without anyone re-entering the case.',
+    data: 'Synthetic case CASE-BLR-876, crew AMB-BLR-002 and the seeded Bengaluru hospitals; routes from the mock provider.',
     steps: [steps.reset(), steps.report(), steps.referrals(REFERRED), steps.answer(H1, 'ACCEPTED'), steps.destination(H1), steps.answer(H4, 'ACCEPTED'), steps.answer(H1, 'REJECTED'), steps.destination(H4)],
   },
   {
     id: 'busy', title: 'Busy (unavailable) followed by rerouting', resets: true,
     summary: 'Hebbal accepts, then reports it is unavailable; the crew is rerouted to Indiranagar, which had accepted.',
+    demonstrates: 'A hospital that becomes unavailable after accepting, and the reroute that follows.',
+    roles: ['Ambulance crew', 'Hospital coordinators', 'Patient', 'Management'],
+    operator: RUN_STEPS,
+    outcome: 'Hebbal is shown as unavailable for this case, and the crew is rerouted to Indiranagar.',
+    data: 'Synthetic case CASE-BLR-876, crew AMB-BLR-002 and the seeded Bengaluru hospitals; routes from the mock provider.',
     steps: [steps.reset(), steps.report(), steps.referrals(REFERRED), steps.answer(H1, 'ACCEPTED'), steps.destination(H1), steps.answer(H4, 'ACCEPTED'), steps.answer(H1, 'UNAVAILABLE'), steps.destination(H4)],
   },
   {
     id: 'multi', title: 'Several rejections before an acceptance', resets: true,
     summary: 'Whitefield and Hebbal decline; the crew holds without a destination until Indiranagar accepts.',
+    demonstrates: 'Declines are per hospital and per case; with no acceptance the crew is told to hold rather than given a guess.',
+    roles: ['Ambulance crew', 'Hospital coordinators', 'Patient', 'Management'],
+    operator: RUN_STEPS,
+    outcome: 'The crew has no destination after two declines, then is routed to Indiranagar once it accepts.',
+    data: 'Synthetic case CASE-BLR-876, crew AMB-BLR-002 and the seeded Bengaluru hospitals; routes from the mock provider.',
     steps: [steps.reset(), steps.report(), steps.referrals(REFERRED), steps.answer(H2, 'REJECTED'), steps.answer(H1, 'REJECTED'), steps.destination(null), steps.answer(H4, 'ACCEPTED'), steps.destination(H4)],
   },
   {
     id: 'expiry', title: 'Referral answer expires', resets: true,
     summary: 'Hebbal accepts for 20 seconds only; Indiranagar accepts for 30 minutes. When Hebbal’s answer lapses, the crew is rerouted.',
+    demonstrates: 'Answers are time-bound: an acceptance that lapses stops counting, without anyone pressing a button.',
+    roles: ['Ambulance crew', 'Hospital coordinators', 'Patient', 'Management'],
+    operator: RUN_STEPS,
+    outcome: 'Hebbal’s answer is shown as expired and the crew is rerouted to Indiranagar.',
+    data: 'Synthetic case CASE-BLR-876, crew AMB-BLR-002 and the seeded Bengaluru hospitals; routes from the mock provider. Hebbal’s answer is deliberately short (20 seconds).',
     steps: [steps.reset(), steps.report(), steps.referrals(REFERRED), steps.answer(H1, 'ACCEPTED', 20_000), steps.destination(H1), steps.answer(H4, 'ACCEPTED'), steps.expiry(H1), steps.destination(H4)],
   },
   {
     id: 'handover', title: 'Ambulance arrival and handover', resets: true,
     summary: 'The ambulance reaches Hebbal; the hospital records the arrival (encounter) and the handover (care begins, crew released).',
+    demonstrates: 'The hospital, not the ambulance, records the arrival and the handover; care begins and the crew is released.',
+    roles: ['Ambulance crew', 'Hebbal coordinator', 'Patient', 'Management'],
+    operator: RUN_STEPS,
+    outcome: 'An encounter exists at Hebbal in care, the handover is recorded, and the ambulance is free for the next job.',
+    data: 'Synthetic case CASE-BLR-876, crew AMB-BLR-002 and the seeded Bengaluru hospitals; routes from the mock provider. The ambulance’s arrival position is simulated (no GPS).',
     steps: toHandover(),
   },
   {
     id: 'doctor', title: 'Doctor assignment and encounter review', resets: true,
     summary: 'After the handover the coordinator assigns Dr. Ravi Kumar, who reviews the encounter and the crew’s observations.',
+    demonstrates: 'A responsible doctor assigned by the receiving hospital, who then sees that patient — and only after assignment.',
+    roles: ['Hebbal coordinator', 'Doctor', 'Patient'],
+    operator: RUN_STEPS,
+    outcome: 'Dr. Ravi Kumar is responsible for the encounter and can read the crew’s observations.',
+    data: 'Synthetic case CASE-BLR-876, crew AMB-BLR-002 and the seeded Bengaluru hospitals; routes from the mock provider. Clinicians are synthetic.',
     steps: [...toHandover(), steps.assignDoctor(), steps.doctorReview()],
   },
   {
     id: 'scan', title: 'Synthetic scan attached', resets: true,
     summary: 'The assigned doctor attaches a synthetic chest X-ray from the catalogue; it is stored and shown as a sample.',
+    demonstrates: 'Diagnostic documents attached by the assigned doctor, stored and labelled as samples.',
+    roles: ['Hebbal coordinator', 'Doctor', 'Patient'],
+    operator: RUN_STEPS,
+    outcome: 'The encounter holds a chest X-ray labelled as a synthetic sample.',
+    data: 'Synthetic case CASE-BLR-876, crew AMB-BLR-002 and the seeded Bengaluru hospitals; routes from the mock provider. The image is a labelled synthetic sample from the asset library — not a real scan.',
     steps: [...toHandover(), steps.assignDoctor(), steps.attachSample()],
   },
   {
     id: 'prescription', title: 'Clinician-authorised demonstration prescription', resets: true,
     summary: 'The doctor drafts a catalogue prescription (invisible to the patient), then authorises it explicitly (now visible).',
+    demonstrates: 'A prescription is invisible to the patient until the clinician explicitly authorises it.',
+    roles: ['Hebbal coordinator', 'Doctor', 'Patient'],
+    operator: RUN_STEPS,
+    outcome: 'The draft is hidden from the patient; after authorisation the patient sees it.',
+    data: 'Synthetic case CASE-BLR-876, crew AMB-BLR-002 and the seeded Bengaluru hospitals; routes from the mock provider. The medication comes from the demonstration catalogue — not a clinical recommendation.',
     steps: [...toHandover(), steps.assignDoctor(), steps.draftPrescription(), steps.authorisePrescription()],
   },
   {
     id: 'outage', title: 'Realtime outage and recovery', resets: false,
     summary: 'All live connections are cut for 15 seconds; screens show it and reconnect by themselves. (A full API outage: stop and restart the API process.)',
+    demonstrates: 'What screens do when live delivery drops: they say so, then reconnect and catch up by themselves.',
+    roles: ['Every connected screen'],
+    operator: 'Run it with the role screens open in other tabs; nothing is reset.',
+    outcome: 'Every screen shows the interruption, then reconnects within about 15 seconds.',
+    data: 'No data changes; only the live connections are interrupted (fault injection, demo mode only).',
     steps: [steps.interruptRealtime(15), steps.realtimeRecovery(15)],
   },
 ];
