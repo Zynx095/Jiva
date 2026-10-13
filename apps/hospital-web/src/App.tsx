@@ -381,7 +381,7 @@ function StatusStrip({ hospital, now, onUnavailable, onAvailable }: { hospital: 
           {live && op?.expiresAt && <span className="text-xs text-ink-500">valid {timeUntil(op.expiresAt, now)}</span>}
         </div>
         <p className="text-xs text-ink-500">{op?.capacityAsOf ? `Status reported ${timeAgo(op.capacityAsOf, now)}` : 'Seed status — not a live report'}</p>
-        <div className="ml-auto flex gap-2">
+        <div className="ml-auto flex flex-wrap gap-2">
           {op?.emergency === 'UNAVAILABLE' ? (
             <AsyncButton size="sm" variant="ok-soft" icon="checkCircle" pendingText="Reporting…" onAction={onAvailable}>
               Report ED available
