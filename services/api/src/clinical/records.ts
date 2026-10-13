@@ -1,6 +1,9 @@
 import { createHash } from 'crypto';
 import type {
   ActorRef,
+  ClinicalNote,
+  ClinicalNoteContent,
+  ClinicalNoteVersion,
   DataStatus,
   DiagnosticReport,
   Prescription,
@@ -198,4 +201,35 @@ export function amendReport(
   if (!clinicalChanged && !releaseChanged && status === report.current.status) return fail(422, 'no_change', 'Nothing was changed.');
   const next = reportVersion(content, status, report.current.version + 1, 'AMENDED', meta, changeReason);
   return { ok: true, record: { ...report, current: next, history: [...report.history, next] } };
+}
+
+// ------------------------------------------------------------------ clinical notes
+
+/**
+ * Internal notes of the care team (progress, assessment, procedure, handover …): versioned and append-only
+ * like the other records, never released to the patient. A note records what a clinician wrote; JIVA
+ * neither generates nor interprets it.
+ */
+export const noteContent = (c: ClinicalNoteContent): ClinicalNoteContent => ({ noteType: c.noteType, title: c.title, text: c.text });
+export const noteHash = (c: ClinicalNoteContent) => sha256(noteContent(c));
+
+function noteVersion(content: ClinicalNoteContent, version: number, action: ClinicalNoteVersion['action'], meta: RecordMeta, changeReason?: string): ClinicalNoteVersion {
+  return {
+    ...noteContent(content), version, recordedAt: meta.at, recordedBy: meta.actor, action,
+    ...(changeReason ? { changeReason } : {}),
+    contentHash: noteHash(content), eventId: meta.eventId,
+  };
+}
+
+export function createNote(noteId: string, content: ClinicalNoteContent, meta: RecordMeta): ClinicalNote {
+  const v1 = noteVersion(content, 1, 'CREATED', meta);
+  return { noteId, encounterId: meta.encounterId, caseId: meta.caseId, hospitalId: meta.hospitalId, current: v1, history: [v1], dataStatus: meta.dataStatus };
+}
+
+export function amendNote(note: ClinicalNote, expectedVersion: number, content: ClinicalNoteContent, changeReason: string, meta: RecordMeta): RecordResult<ClinicalNote> {
+  const stale = checkVersion<ClinicalNote>(note.current.version, expectedVersion);
+  if (stale) return stale;
+  if (noteHash(content) === note.current.contentHash) return fail(422, 'no_change', 'Nothing was changed.');
+  const next = noteVersion(content, note.current.version + 1, 'AMENDED', meta, changeReason);
+  return { ok: true, record: { ...note, current: next, history: [...note.history, next] } };
 }

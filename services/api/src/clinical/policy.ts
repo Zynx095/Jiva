@@ -1,6 +1,6 @@
 import type { AuthContext } from '@jiva/auth';
 import type { ActorRef, EncounterStatus } from '@jiva/domain-models';
-import { CLINICAL_RECORD_EVENT_TYPES, ENCOUNTER_EVENT_TYPES } from '@jiva/event-schema';
+import { CLINICAL_RECORD_EVENT_TYPES, ENCOUNTER_EVENT_TYPES, PREHOSPITAL_EVENT_TYPES } from '@jiva/event-schema';
 
 /**
  * PURE authorization policy for encounters and clinical records (no stores, no I/O), so it can be unit
@@ -42,6 +42,8 @@ export type EncounterAction =
   | 'prescription.read'
   | 'report.write'
   | 'report.read'
+  | 'note.write'
+  | 'note.read'
   | 'document.write'
   | 'document.read'
   | 'telemetry.write'
@@ -111,6 +113,7 @@ export function authorizeEncounterAction(
 
     case 'prescription.write':
     case 'report.write':
+    case 'note.write':
     case 'document.write':
     case 'telemetry.write':
       if (isAssignedClinician(auth, enc)) return ALLOW;
@@ -128,9 +131,44 @@ export function authorizeEncounterAction(
       if (isOwnPatient(auth, enc.caseId)) return opts.patientVisible === false ? notFound('NOT_RELEASED') : ALLOW;
       return forbidden('NO_CLINICAL_ACCESS', 'This role has no access to clinical records');
 
+    case 'note.read':
+      // Clinical notes are internal to the care team: never released to the patient.
+      if (isAssignedClinician(auth, enc)) return ALLOW;
+      if (isOwnPatient(auth, enc.caseId)) return forbidden('INTERNAL_NOTES', 'Clinical notes are internal to the care team');
+      return forbidden('NO_CLINICAL_ACCESS', 'This role has no access to clinical records');
+
     default:
       return forbidden('UNKNOWN_ACTION', 'Unknown action');
   }
+}
+
+/** The facts the pre-hospital record's authorization depends on. */
+export interface PrehospitalFacts {
+  caseId: string;
+  /** The ambulance currently assigned to (attending) the case, if any. */
+  attendingAmbulanceId?: string;
+  /** The case's encounters (a clinician is related through an assignment to one of them). */
+  encounters: EncounterFacts[];
+}
+
+export type PrehospitalAction = 'prehospital.write' | 'prehospital.read';
+
+/**
+ * Pre-hospital record of a case: written only by the crew attending the case (until the handover releases
+ * it); read by that crew, the clinician assigned to the case's encounter and the patient. Coordinators,
+ * network coordination and administrators are related but have no clinical access (403); everyone else
+ * gets 404.
+ */
+export function authorizePrehospitalAction(auth: AuthContext, facts: PrehospitalFacts, action: PrehospitalAction): Decision {
+  const crew = auth.role === 'AMBULANCE' && !!auth.ambulanceId && auth.ambulanceId === facts.attendingAmbulanceId;
+  const clinician = facts.encounters.some(e => isAssignedClinician(auth, e));
+  const patient = isOwnPatient(auth, facts.caseId);
+  const coordinator = auth.role === 'HOSPITAL' && facts.encounters.some(e => sameHospital(auth, e.hospitalId));
+  if (!crew && !clinician && !patient && !coordinator && !isPrivileged(auth)) return notFound();
+  if (action === 'prehospital.write') {
+    return crew ? ALLOW : forbidden('ATTENDING_CREW_ONLY', 'Only the ambulance crew attending this patient records pre-hospital observations');
+  }
+  return crew || clinician || patient ? ALLOW : forbidden('NO_CLINICAL_ACCESS', 'This role has no access to clinical records');
 }
 
 /** Recording an arrival happens before an encounter exists: hospital coordination staff of that hospital only. */
@@ -157,10 +195,11 @@ export function authorizeAuditRead(auth: AuthContext): Decision {
 export const ENCOUNTER_ASSIGNMENT_EVENTS = new Set<string>(['encounter.doctor.assigned']);
 export const ENCOUNTER_LIFECYCLE_EVENTS = new Set<string>(ENCOUNTER_EVENT_TYPES.filter(t => !ENCOUNTER_ASSIGNMENT_EVENTS.has(t)));
 export const CLINICAL_RECORD_EVENTS = new Set<string>(CLINICAL_RECORD_EVENT_TYPES);
+export const PREHOSPITAL_EVENTS = new Set<string>(PREHOSPITAL_EVENT_TYPES);
 
 /** Event types whose delivery is decided by `canReceiveClinicalDomainEvent`. */
 export const isClinicalDomainEvent = (eventType: string) =>
-  ENCOUNTER_LIFECYCLE_EVENTS.has(eventType) || ENCOUNTER_ASSIGNMENT_EVENTS.has(eventType) || CLINICAL_RECORD_EVENTS.has(eventType);
+  ENCOUNTER_LIFECYCLE_EVENTS.has(eventType) || ENCOUNTER_ASSIGNMENT_EVENTS.has(eventType) || CLINICAL_RECORD_EVENTS.has(eventType) || PREHOSPITAL_EVENTS.has(eventType);
 
 interface DomainEventLike {
   eventType: string;
@@ -175,6 +214,9 @@ interface DomainEventLike {
   };
 }
 
+/** The case's encounters, for events that are linked to a case only (pre-hospital record). */
+export type CaseEncounterLookup = (caseId: string) => EncounterFacts[];
+
 /**
  * Realtime and ledger delivery for encounter and clinical events. Default deny.
  *  - clinical.*: the patient (released records only) and the assigned clinician. Nobody else — not
@@ -187,9 +229,18 @@ export function canReceiveClinicalDomainEvent(
   auth: AuthContext,
   event: DomainEventLike,
   lookup: (encounterId: string) => EncounterFacts | undefined,
+  caseEncounters: CaseEncounterLookup = () => [],
 ): boolean {
   const p = event.payload || {};
   const caseId = typeof p.caseId === 'string' ? p.caseId : undefined;
+  // Pre-hospital record: the crew that recorded it, the patient, and the clinician assigned to the case's
+  // encounter. Nobody else — not management, not the coordinator — even though the event has no content.
+  if (PREHOSPITAL_EVENTS.has(event.eventType)) {
+    if (!caseId) return false;
+    if (auth.role === 'AMBULANCE') return !!auth.ambulanceId && p.ambulanceId === auth.ambulanceId;
+    if (isOwnPatient(auth, caseId)) return true;
+    return auth.role === 'CLINICIAN' && caseEncounters(caseId).some(e => isAssignedClinician(auth, e));
+  }
   const hospitalId = typeof p.hospitalId === 'string' ? p.hospitalId : undefined;
   const encounterId = typeof p.encounterId === 'string' ? p.encounterId : undefined;
   if (!caseId || !hospitalId || !encounterId) return false;

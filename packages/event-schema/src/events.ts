@@ -3,6 +3,8 @@ import { BaseEventSchema } from './base';
 import { boundedText, CapabilityCodeSchema } from './primitives';
 import {
   ClinicalDocumentStoredSchema,
+  ClinicalNoteRecordedSchema,
+  ClinicalPrehospitalRecordedSchema,
   ClinicalPrescriptionRecordedSchema,
   ClinicalReportRecordedSchema,
   ClinicalTelemetryRecordedSchema,
@@ -411,6 +413,8 @@ export const AnyEventSchema = z.discriminatedUnion('eventType', [
   ClinicalReportRecordedSchema,
   ClinicalDocumentStoredSchema,
   ClinicalTelemetryRecordedSchema,
+  ClinicalNoteRecordedSchema,
+  ClinicalPrehospitalRecordedSchema,
 ]);
 
 export type PatientEmergencyCreated = z.infer<typeof PatientEmergencyCreatedSchema>;

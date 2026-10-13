@@ -158,6 +158,38 @@ export interface Prescription {
   dataStatus: DataStatus;
 }
 
+// ------------------------------------------------------------------ clinical notes
+
+/** Internal notes of the care team. Never released to the patient. */
+export type ClinicalNoteType = 'PROGRESS' | 'ASSESSMENT' | 'PROCEDURE' | 'HANDOVER' | 'OTHER';
+
+export interface ClinicalNoteContent {
+  noteType: ClinicalNoteType;
+  title: string;
+  text: string;
+}
+
+export interface ClinicalNoteVersion extends ClinicalNoteContent {
+  version: number;
+  recordedAt: string;
+  recordedBy: ActorRef;
+  action: 'CREATED' | 'AMENDED';
+  changeReason?: string;
+  contentHash: string;
+  eventId: string;
+}
+
+export interface ClinicalNote {
+  noteId: string;
+  encounterId: string;
+  caseId: string;
+  hospitalId: string;
+  current: ClinicalNoteVersion;
+  /** Append-only, oldest first; includes the current version. */
+  history: ClinicalNoteVersion[];
+  dataStatus: DataStatus;
+}
+
 // ------------------------------------------------------------------ diagnostic reports and documents
 
 export type DiagnosticCategory = 'LABORATORY' | 'IMAGING' | 'ECG' | 'PROCEDURE' | 'OTHER';
@@ -249,10 +281,15 @@ export interface DiagnosticDocument {
 
 /**
  * MANUAL_CLINICIAN — entered by an authenticated clinician.
+ * MANUAL_CREW      — entered by the attending ambulance crew (pre-hospital).
  * DEVICE_SIMULATED — generated for demonstrations; never a real measurement.
  * MEDICAL_DEVICE   — from a registered device integration (none is integrated yet).
  */
-export type TelemetrySource = 'MANUAL_CLINICIAN' | 'DEVICE_SIMULATED' | 'MEDICAL_DEVICE';
+export type TelemetrySource = 'MANUAL_CLINICIAN' | 'MANUAL_CREW' | 'DEVICE_SIMULATED' | 'MEDICAL_DEVICE';
+/** The person measuring may flag a value as questionable (e.g. motion artefact, poor perfusion). */
+export type ObservationQuality = 'RELIABLE' | 'QUESTIONABLE';
+/** Why a vital sign was not recorded: stated, never left to look like a normal value. */
+export type ObservationUnavailableReason = 'NOT_MEASURED' | 'EQUIPMENT_UNAVAILABLE' | 'UNABLE_TO_OBTAIN';
 export type MeasurementType = 'HEART_RATE' | 'SPO2' | 'BLOOD_PRESSURE' | 'TEMPERATURE' | 'RESPIRATORY_RATE';
 export type MeasurementUnit = 'bpm' | '%' | 'mmHg' | 'degC' | 'breaths/min';
 
@@ -273,7 +310,47 @@ export interface TelemetryMeasurement {
   source: TelemetrySource;
   recordedBy?: ActorRef;
   deviceId?: string;
+  /** As flagged by whoever measured it; absent = not flagged. */
+  quality?: ObservationQuality;
   dataStatus: DataStatus;
+}
+
+// ------------------------------------------------------------------ pre-hospital record (ambulance)
+
+/** One vital sign the crew measured, or recorded as not available (with the reason). */
+export interface PrehospitalObservation {
+  type: MeasurementType;
+  status: 'MEASURED' | 'NOT_AVAILABLE';
+  value?: number;
+  secondaryValue?: number;
+  unit?: MeasurementUnit;
+  /** When it was measured (for NOT_AVAILABLE: when that was recorded). */
+  observedAt: string;
+  quality?: ObservationQuality;
+  unavailableReason?: ObservationUnavailableReason;
+}
+
+/**
+ * What the attending crew recorded before the hospital took over: vital signs with their times, source and
+ * quality, and the symptom narrative. Linked to the case; the clinician assigned to that case's encounter
+ * reads it. Never a diagnosis.
+ */
+export interface PrehospitalEntry {
+  entryId: string;
+  caseId: string;
+  ambulanceId: string;
+  recordedAt: string;
+  recordedBy: ActorRef;
+  /** MANUAL_CREW (typed in by the crew) or DEVICE_SIMULATED (demo only). No device is integrated. */
+  source: 'MANUAL_CREW' | 'DEVICE_SIMULATED';
+  deviceId?: string;
+  observations: PrehospitalObservation[];
+  /** Free-text description of the symptoms, as reported or observed. */
+  symptomDescription?: string;
+  /** When the symptoms started, as reported. */
+  symptomOnsetAt?: string;
+  dataStatus: DataStatus;
+  eventId: string;
 }
 
 // ------------------------------------------------------------------ audit

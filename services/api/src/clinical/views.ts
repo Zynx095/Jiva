@@ -1,5 +1,5 @@
 import type { AuthContext } from '@jiva/auth';
-import type { ActorRef, DiagnosticReport, HospitalEncounter, Prescription } from '@jiva/domain-models';
+import type { ActorRef, ClinicalNote, DiagnosticReport, HospitalEncounter, Prescription } from '@jiva/domain-models';
 import type { EncounterView } from './policy';
 import { evidenceEnvironment } from '../evidenceTrust';
 
@@ -108,4 +108,9 @@ export function projectReport(report: DiagnosticReport, view: 'CLINICIAN' | 'PAT
     version: c.version,
     dataStatus: report.dataStatus,
   };
+}
+
+/** A clinical note (assigned clinician only; notes are never projected for patients): every version with author names. */
+export function projectNote(note: ClinicalNote, lookup: AuthorLookup) {
+  return { ...note, current: { ...note.current, author: authorOf(lookup, note.current.recordedBy) }, history: note.history.map(v => ({ ...v, author: authorOf(lookup, v.recordedBy) })) };
 }

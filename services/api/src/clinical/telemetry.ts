@@ -58,6 +58,7 @@ export function measurementsFromInputs(inputs: MeasurementInput[], ctx: BatchCon
     source: ctx.source,
     ...(ctx.recordedBy ? { recordedBy: ctx.recordedBy } : {}),
     ...(ctx.deviceId ? { deviceId: ctx.deviceId } : {}),
+    ...(m.quality ? { quality: m.quality } : {}),
     dataStatus: ctx.dataStatus,
   }));
 }

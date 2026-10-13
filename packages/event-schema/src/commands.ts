@@ -3,6 +3,7 @@ import {
   boundedText,
   CapabilityCodeSchema,
   ClientRequestIdSchema,
+  ClinicalNoteTypeSchema,
   DiagnosticCategorySchema,
   DocumentContentTypeSchema,
   DoctorAssignmentReasonSchema,
@@ -10,8 +11,11 @@ import {
   LongitudeSchema,
   DocumentTypeSchema,
   documentTypeFits,
+  MeasurementTypeSchema,
   MedicationFormulationSchema,
   MedicationRouteSchema,
+  ObservationQualitySchema,
+  ObservationUnavailableReasonSchema,
   RecordIdSchema,
   Sha256HexSchema,
 } from './primitives';
@@ -52,6 +56,12 @@ export const EmergencyIntakeCommandSchema = z.object({
   /** Care the crew believes is needed, added to JIVA's rule-based assessment (never removed from it). */
   requiredCapabilities: z.array(CapabilityCodeSchema).max(12).default([]),
   notes: boundedText(1000).optional(),
+  /**
+   * Optional pre-hospital clinical record taken with the report: vital signs (with time, quality, or the
+   * reason they are not available), a symptom description and the onset time. Stored in the clinical
+   * store — never on the operational event bus — and read by the crew and, later, the assigned clinician.
+   */
+  clinical: z.lazy(() => PrehospitalClinicalSchema).optional(),
 }).strict();
 
 // ------------------------------------------------------------------ encounter lifecycle
@@ -221,6 +231,8 @@ const measurement = <T extends keyof typeof MEASUREMENT_RULES>(type: T) =>
     value: z.number().finite().min(MEASUREMENT_RULES[type].min).max(MEASUREMENT_RULES[type].max),
     unit: z.literal(MEASUREMENT_RULES[type].unit),
     observedAt: timestamp,
+    /** Flag a value the person measuring doubts (motion artefact, poor perfusion …). */
+    quality: ObservationQualitySchema.optional(),
   }).strict();
 
 const bloodPressure = z.object({
@@ -229,6 +241,7 @@ const bloodPressure = z.object({
   secondaryValue: z.number().finite().min(MEASUREMENT_RULES.BLOOD_PRESSURE.secondaryMin).max(MEASUREMENT_RULES.BLOOD_PRESSURE.secondaryMax),
   unit: z.literal('mmHg'),
   observedAt: timestamp,
+  quality: ObservationQualitySchema.optional(),
 }).strict().refine(m => m.value > m.secondaryValue, { message: 'Systolic must be higher than diastolic', path: ['secondaryValue'] });
 
 export const MeasurementInputSchema = z.union([
@@ -247,6 +260,63 @@ export const RecordTelemetryCommandSchema = z.object({
 /** Demo only: ask the simulated bedside monitor for one labelled, synthetic reading. */
 export const SimulateTelemetryCommandSchema = z.object({
   clientRequestId: ClientRequestIdSchema,
+}).strict();
+
+// ------------------------------------------------------------------ pre-hospital record (ambulance crew)
+
+/** A vital sign the crew could not record, with the reason (never shown as if it were normal). */
+export const UnavailableObservationSchema = z.object({
+  type: MeasurementTypeSchema,
+  reason: ObservationUnavailableReasonSchema,
+}).strict();
+
+const prehospitalFields = {
+  measurements: z.array(MeasurementInputSchema).max(20).default([]),
+  unavailable: z.array(UnavailableObservationSchema).max(5).default([]),
+  /** Free-text description of the symptoms (what the patient or bystanders report, what the crew sees). */
+  symptomDescription: boundedText(1000).optional(),
+  /** When the symptoms started, as reported. */
+  symptomOnsetAt: timestamp.optional(),
+};
+
+const prehospitalRules = (v: { measurements: Array<{ type: string }>; unavailable: Array<{ type: string }>; symptomDescription?: string; symptomOnsetAt?: string }, ctx: z.RefinementCtx) => {
+  if (!v.measurements.length && !v.unavailable.length && !v.symptomDescription && !v.symptomOnsetAt) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['measurements'], message: 'Record at least one vital sign, an unavailable vital sign, a symptom description or the onset time' });
+  }
+  const measured = new Set(v.measurements.map(m => m.type));
+  const missing = v.unavailable.map(u => u.type);
+  if (missing.some(t => measured.has(t))) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['unavailable'], message: 'A vital sign cannot be both measured and unavailable' });
+  if (new Set(missing).size !== missing.length) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['unavailable'], message: 'A vital sign is listed twice as unavailable' });
+};
+
+/** The clinical part of an intake (no idempotency key of its own: the intake command carries one). */
+export const PrehospitalClinicalSchema = z.object(prehospitalFields).strict().superRefine(prehospitalRules);
+
+/** En route: the attending crew adds vital signs or notes to the pre-hospital record of its case. */
+export const RecordPrehospitalCommandSchema = z.object({
+  clientRequestId: ClientRequestIdSchema,
+  ...prehospitalFields,
+}).strict().superRefine(prehospitalRules);
+
+// ------------------------------------------------------------------ clinical notes
+
+const noteContent = {
+  noteType: ClinicalNoteTypeSchema,
+  title: boundedText(120),
+  text: boundedText(8000),
+};
+
+/** An internal note of the care team (never released to the patient). */
+export const CreateClinicalNoteCommandSchema = z.object({
+  clientRequestId: ClientRequestIdSchema,
+  ...noteContent,
+}).strict();
+
+export const AmendClinicalNoteCommandSchema = z.object({
+  clientRequestId: ClientRequestIdSchema,
+  expectedVersion: z.number().int().min(1),
+  changeReason: boundedText(300),
+  ...noteContent,
 }).strict();
 
 /**
@@ -279,5 +349,9 @@ export type AmendReportCommand = z.infer<typeof AmendReportCommandSchema>;
 export type DocumentUploadIntentCommand = z.infer<typeof DocumentUploadIntentCommandSchema>;
 export type AttachCatalogueSampleCommand = z.infer<typeof AttachCatalogueSampleCommandSchema>;
 export type MeasurementInput = z.infer<typeof MeasurementInputSchema>;
+export type PrehospitalClinical = z.infer<typeof PrehospitalClinicalSchema>;
+export type RecordPrehospitalCommand = z.infer<typeof RecordPrehospitalCommandSchema>;
+export type CreateClinicalNoteCommand = z.infer<typeof CreateClinicalNoteCommandSchema>;
+export type AmendClinicalNoteCommand = z.infer<typeof AmendClinicalNoteCommandSchema>;
 export type RecordTelemetryCommand = z.infer<typeof RecordTelemetryCommandSchema>;
 export type DeviceObservationBatch = z.infer<typeof DeviceObservationBatchSchema>;

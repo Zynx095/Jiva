@@ -8,6 +8,8 @@ import { recordAndPublish } from '../ingest';
 import { composeCondition, ambulanceCanAttend } from '../intake';
 import { isWithinServiceArea, serviceArea } from '../serviceArea';
 import { asyncRoute, audit, conflict, idempotent, replayOr, validationError, withKeyLock } from '../commands/support';
+import { prehospitalTimeProblem } from '../clinical/prehospital';
+import { recordPrehospital } from './prehospital';
 
 type AuthedRequest = Request & { auth?: AuthContext };
 
@@ -43,6 +45,8 @@ export function emergencyRouter(): Router {
     if (!parsed.success) return validationError(res, parsed.error);
     const cmd = parsed.data;
     const ambulanceId = auth.ambulanceId;
+    const timeProblem = cmd.clinical ? prehospitalTimeProblem(cmd.clinical, Date.now()) : undefined;
+    if (timeProblem) return res.status(400).json({ error: 'validation_failed', issues: [{ path: 'clinical', message: timeProblem }] });
 
     const idem = idempotent('emergency.report', auth, cmd.clientRequestId, cmd);
     if (replayOr(res, idem)) return;
@@ -108,6 +112,9 @@ export function emergencyRouter(): Router {
 
       await recordAndPublish(auth, valid.data as AnyEvent);
       audit(auth, 'emergency.report', 'ALLOWED', { entityType: 'EMERGENCY', caseId });
+      // Vital signs and the symptom narrative go to the clinical store (never onto the operational bus).
+      const prehospital = cmd.clinical ? await recordPrehospital(auth, caseId, ambulanceId, cmd.clinical, 'MANUAL_CREW') : undefined;
+      if (prehospital) audit(auth, 'prehospital.record', 'ALLOWED', { entityType: 'PREHOSPITAL', entityId: prehospital.entryId, caseId });
 
       const body = {
         status: 'accepted',
@@ -116,6 +123,7 @@ export function emergencyRouter(): Router {
         // Local mode projects synchronously; these let the crew see the outcome without waiting.
         projected: patientsStore.has(caseId),
         assignedToThisAmbulance: ambulancesStore.get(ambulanceId)?.assignedPatient === caseId,
+        ...(prehospital ? { prehospitalEntryId: prehospital.entryId } : {}),
       };
       idem.remember(202, body);
       return res.status(202).json(body);

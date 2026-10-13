@@ -1,9 +1,11 @@
 import type {
   AuditRecord,
+  ClinicalNote,
   DiagnosticDocument,
   DiagnosticReport,
   HospitalEncounter,
   Practitioner,
+  PrehospitalEntry,
   Prescription,
   TelemetryMeasurement,
 } from '@jiva/domain-models';
@@ -51,6 +53,10 @@ export interface IClinicalStore {
   listReports(encounterId: string): DiagnosticReport[];
   putReport(r: DiagnosticReport): void;
   removeReport(id: string): void;
+  getNote(id: string): ClinicalNote | undefined;
+  listNotes(encounterId: string): ClinicalNote[];
+  putNote(n: ClinicalNote): void;
+  removeNote(id: string): void;
   getDocument(id: string): DiagnosticDocument | undefined;
   listDocuments(encounterId: string): DiagnosticDocument[];
   putDocument(d: DiagnosticDocument): void;
@@ -60,6 +66,12 @@ export interface IClinicalStore {
   listMeasurements(encounterId: string): TelemetryMeasurement[];
   /** Only to roll back a batch whose canonical event could not be recorded. */
   removeMeasurementBatch(encounterId: string, batchId: string): void;
+
+  // pre-hospital record (per case; written by the attending crew before an encounter exists)
+  addPrehospitalEntry(e: PrehospitalEntry): void;
+  listPrehospitalEntries(caseId: string): PrehospitalEntry[];
+  /** Only to roll back an entry whose canonical event could not be recorded. */
+  removePrehospitalEntry(caseId: string, entryId: string): void;
 
   // audit (append-only; content-free)
   appendAudit(record: AuditRecord): void;
@@ -74,6 +86,7 @@ export interface IClinicalStore {
 
 const MAX_AUDIT = 20_000;
 const MAX_MEASUREMENTS_PER_ENCOUNTER = 5_000;
+const MAX_PREHOSPITAL_ENTRIES_PER_CASE = 500;
 /** Remembered command results (idempotent replays); the oldest are forgotten first. */
 const MAX_COMMAND_RESULTS = 20_000;
 
@@ -82,8 +95,10 @@ export class LocalClinicalStore implements IClinicalStore {
   private encounters = new Map<string, HospitalEncounter>();
   private prescriptions = new Map<string, Prescription>();
   private reports = new Map<string, DiagnosticReport>();
+  private notes = new Map<string, ClinicalNote>();
   private documents = new Map<string, DiagnosticDocument>();
   private measurements = new Map<string, TelemetryMeasurement[]>();
+  private prehospital = new Map<string, PrehospitalEntry[]>();
   private audit: AuditRecord[] = [];
   private commands = new Map<string, CommandResult>();
 
@@ -143,6 +158,11 @@ export class LocalClinicalStore implements IClinicalStore {
   putReport(r: DiagnosticReport) { this.reports.set(r.reportId, r); }
   removeReport(id: string) { this.reports.delete(id); }
 
+  getNote(id: string) { return this.notes.get(id); }
+  listNotes(encounterId: string) { return [...this.notes.values()].filter(n => n.encounterId === encounterId); }
+  putNote(n: ClinicalNote) { this.notes.set(n.noteId, n); }
+  removeNote(id: string) { this.notes.delete(id); }
+
   getDocument(id: string) { return this.documents.get(id); }
   listDocuments(encounterId: string) { return [...this.documents.values()].filter(d => d.encounterId === encounterId); }
   putDocument(d: DiagnosticDocument) { this.documents.set(d.documentId, d); }
@@ -164,6 +184,22 @@ export class LocalClinicalStore implements IClinicalStore {
   removeMeasurementBatch(encounterId: string, batchId: string): void {
     const arr = this.measurements.get(encounterId);
     if (arr) this.measurements.set(encounterId, arr.filter(m => m.batchId !== batchId));
+  }
+
+  addPrehospitalEntry(e: PrehospitalEntry): void {
+    const arr = this.prehospital.get(e.caseId) || [];
+    arr.push(e);
+    if (arr.length > MAX_PREHOSPITAL_ENTRIES_PER_CASE) arr.splice(0, arr.length - MAX_PREHOSPITAL_ENTRIES_PER_CASE);
+    this.prehospital.set(e.caseId, arr);
+  }
+
+  listPrehospitalEntries(caseId: string): PrehospitalEntry[] {
+    return [...(this.prehospital.get(caseId) || [])];
+  }
+
+  removePrehospitalEntry(caseId: string, entryId: string): void {
+    const arr = this.prehospital.get(caseId);
+    if (arr) this.prehospital.set(caseId, arr.filter(e => e.entryId !== entryId));
   }
 
   appendAudit(record: AuditRecord): void {
@@ -190,8 +226,10 @@ export class LocalClinicalStore implements IClinicalStore {
     this.encounters.clear();
     this.prescriptions.clear();
     this.reports.clear();
+    this.notes.clear();
     this.documents.clear();
     this.measurements.clear();
+    this.prehospital.clear();
     this.audit = [];
     this.commands.clear();
   }

@@ -6,6 +6,7 @@ import {
   DocumentContentTypeSchema,
   DocumentTypeSchema,
   DoctorAssignmentReasonSchema,
+  ClinicalNoteTypeSchema,
   MeasurementTypeSchema,
   RecordIdSchema,
   Sha256HexSchema,
@@ -27,9 +28,13 @@ export const ENCOUNTER_EVENT_TYPES = ['encounter.arrival.recorded', 'encounter.h
 export const CLINICAL_RECORD_EVENT_TYPES = [
   'clinical.prescription.recorded',
   'clinical.report.recorded',
+  'clinical.note.recorded',
   'clinical.document.stored',
   'clinical.telemetry.recorded',
 ] as const;
+
+/** Pre-hospital record events: linked to a case (no encounter or hospital exists yet). */
+export const PREHOSPITAL_EVENT_TYPES = ['clinical.prehospital.recorded'] as const;
 
 const timestamp = z.string().datetime();
 
@@ -158,6 +163,46 @@ export const ClinicalTelemetryRecordedSchema = BaseEventSchema.extend({
   }).strict(),
 });
 
+/** An internal clinical note was written or amended. Content-free: type, version and hash only. */
+export const ClinicalNoteRecordedSchema = BaseEventSchema.extend({
+  eventType: z.literal('clinical.note.recorded'),
+  payload: z.object({
+    noteId: RecordIdSchema,
+    ...recordRef,
+    version: z.number().int().min(1),
+    action: z.enum(['CREATED', 'AMENDED']),
+    noteType: ClinicalNoteTypeSchema,
+    contentHash: Sha256HexSchema,
+    /** Notes are internal to the care team. */
+    patientVisible: z.literal(false),
+  }).strict(),
+});
+
+/**
+ * The attending crew added to the pre-hospital record of a case. Content-free: counts, measurement types,
+ * times, source — never a value, never the symptom text.
+ */
+export const ClinicalPrehospitalRecordedSchema = BaseEventSchema.extend({
+  eventType: z.literal('clinical.prehospital.recorded'),
+  payload: z.object({
+    entryId: RecordIdSchema,
+    caseId: RecordIdSchema,
+    ambulanceId: RecordIdSchema,
+    recordedAt: timestamp,
+    recordedBy: ActorSchema,
+    dataStatus: RecordProvenanceSchema.optional(),
+    source: TelemetrySourceSchema,
+    measurementCount: z.number().int().min(0).max(20),
+    measurementTypes: z.array(MeasurementTypeSchema).max(5),
+    unavailableCount: z.number().int().min(0).max(5),
+    /** Whether a symptom description or onset time was recorded (the text itself is not in the event). */
+    narrative: z.boolean(),
+    observedFrom: timestamp.optional(),
+    observedTo: timestamp.optional(),
+    deviceId: RecordIdSchema.optional(),
+  }).strict(),
+});
+
 export type EncounterArrivalRecorded = z.infer<typeof EncounterArrivalRecordedSchema>;
 export type EncounterHandoverRecorded = z.infer<typeof EncounterHandoverRecordedSchema>;
 export type EncounterDoctorAssigned = z.infer<typeof EncounterDoctorAssignedSchema>;
@@ -165,3 +210,5 @@ export type ClinicalPrescriptionRecorded = z.infer<typeof ClinicalPrescriptionRe
 export type ClinicalReportRecorded = z.infer<typeof ClinicalReportRecordedSchema>;
 export type ClinicalDocumentStored = z.infer<typeof ClinicalDocumentStoredSchema>;
 export type ClinicalTelemetryRecorded = z.infer<typeof ClinicalTelemetryRecordedSchema>;
+export type ClinicalNoteRecorded = z.infer<typeof ClinicalNoteRecordedSchema>;
+export type ClinicalPrehospitalRecorded = z.infer<typeof ClinicalPrehospitalRecordedSchema>;

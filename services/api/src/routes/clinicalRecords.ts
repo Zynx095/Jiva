@@ -2,11 +2,13 @@ import { Router, type Request, type Response } from 'express';
 import type { ZodType, ZodTypeDef } from 'zod';
 import { randomBytes, randomUUID } from 'crypto';
 import type { AuthContext } from '@jiva/auth';
-import type { DiagnosticReport, HospitalEncounter, Prescription, ReportContent } from '@jiva/domain-models';
+import type { ClinicalNote, DiagnosticReport, HospitalEncounter, Prescription, ReportContent } from '@jiva/domain-models';
 import {
+  AmendClinicalNoteCommandSchema,
   AmendPrescriptionCommandSchema,
   AmendReportCommandSchema,
   AuthorisePrescriptionCommandSchema,
+  CreateClinicalNoteCommandSchema,
   CreatePrescriptionCommandSchema,
   CreateReportCommandSchema,
   DiscardPrescriptionDraftCommandSchema,
@@ -16,12 +18,12 @@ import {
 import { clinicalStore } from '../clinical';
 import { actorFromAuth, authorizeEncounterAction, type EncounterAction } from '../clinical/policy';
 import {
-  amendPrescription, amendReport, authorisePrescription, createPrescription, createReport, discardPrescriptionDraft, discontinuePrescription,
-  everAuthorised, type RecordMeta, type RecordResult,
+  amendNote, amendPrescription, amendReport, authorisePrescription, createNote, createPrescription, createReport, discardPrescriptionDraft,
+  discontinuePrescription, everAuthorised, type RecordMeta, type RecordResult,
 } from '../clinical/records';
 import { checkAgainstCatalogue, type MedicationFields } from '../clinical/medication';
 import { catalogue } from '../catalogue';
-import { projectPrescription, projectReport, recordProvenance, type AuthorLookup } from '../clinical/views';
+import { projectNote, projectPrescription, projectReport, recordProvenance, type AuthorLookup } from '../clinical/views';
 import { asyncRoute, audit, auditAccess, CLOCK_SKEW_MS, conflict, denied, idempotent, replayOr, validationError, withKeyLock } from '../commands/support';
 import { encounterFor, publishCommandEvent } from './encounters';
 
@@ -51,8 +53,8 @@ const releasedDocuments = (encounterId: string) => (ids: string[]) =>
     return !!d && d.encounterId === encounterId && d.status === 'AVAILABLE';
   });
 
-type RecordEntity = 'PRESCRIPTION' | 'REPORT' | 'DOCUMENT' | 'TELEMETRY';
-const ENTITY_OF: Record<string, RecordEntity> = { prescription: 'PRESCRIPTION', report: 'REPORT', document: 'DOCUMENT', telemetry: 'TELEMETRY' };
+type RecordEntity = 'PRESCRIPTION' | 'REPORT' | 'NOTE' | 'DOCUMENT' | 'TELEMETRY';
+const ENTITY_OF: Record<string, RecordEntity> = { prescription: 'PRESCRIPTION', report: 'REPORT', note: 'NOTE', document: 'DOCUMENT', telemetry: 'TELEMETRY' };
 
 export const target = (enc: HospitalEncounter, entityType: RecordEntity, entityId?: string) =>
   ({ entityType, ...(entityId ? { entityId } : {}), encounterId: enc.encounterId, caseId: enc.caseId, hospitalId: enc.hospitalId });
@@ -131,6 +133,20 @@ function reportEvent(auth: AuthContext, report: DiagnosticReport) {
       recordedAt: v.recordedAt, recordedBy: v.recordedBy, dataStatus: report.dataStatus,
       version: v.version, action: v.action, category: v.category, status: v.status, documentCount: v.documentIds.length,
       contentHash: v.contentHash, patientVisible: v.patientVisible,
+    },
+  };
+}
+
+function noteEvent(auth: AuthContext, note: ClinicalNote) {
+  const v = note.current;
+  return {
+    eventId: v.eventId, eventType: 'clinical.note.recorded', timestamp: v.recordedAt, version: '1.0',
+    source: { type: 'clinician', id: auth.practitionerId ?? auth.userId }, patientId: note.caseId,
+    payload: {
+      noteId: note.noteId, encounterId: note.encounterId, caseId: note.caseId, hospitalId: note.hospitalId,
+      recordedAt: v.recordedAt, recordedBy: v.recordedBy, dataStatus: note.dataStatus,
+      version: v.version, action: v.action, noteType: v.noteType, contentHash: v.contentHash,
+      patientVisible: false,
     },
   };
 }
@@ -329,6 +345,68 @@ export function clinicalRecordsRouter(): Router {
       await commit(r => clinicalStore.putReport(r), () => clinicalStore.putReport(report), next, auth, reportEvent(auth, next));
       audit(auth, 'report.amend', 'ALLOWED', target(enc, 'REPORT', reportId));
       const body = { status: 'recorded', report: projectReport(next, 'CLINICIAN', authorLookup) };
+      idem.remember(200, body);
+      return res.status(200).json(body);
+    });
+  }));
+
+  // ---------------------------------------------------------------- clinical notes (internal to the care team)
+  router.get('/encounters/:id/notes', (req: AuthedRequest, res) => {
+    const auth = req.auth!;
+    const enc = encounterFor(req, res, 'note.read', 'note.read');
+    if (!enc) return;
+    auditAccess(auth, 'note.read', target(enc, 'NOTE'));
+    const list = clinicalStore.listNotes(enc.encounterId).sort((a, b) => Date.parse(b.current.recordedAt) - Date.parse(a.current.recordedAt));
+    res.json(list.map(n => projectNote(n, authorLookup)));
+  });
+
+  router.post('/encounters/:id/notes', asyncRoute(async (req: AuthedRequest, res) => {
+    const auth = req.auth!;
+    const found = encounterFor(req, res, 'note.write', 'note.create');
+    if (!found) return;
+    const parsed = CreateClinicalNoteCommandSchema.safeParse(req.body);
+    if (!parsed.success) return validationError(res, parsed.error);
+    const { clientRequestId, ...content } = parsed.data;
+    const idem = idempotent('note.create', auth, clientRequestId, { encounterId: found.encounterId, ...parsed.data });
+    if (replayOr(res, idem)) return;
+
+    return withKeyLock(`case:${found.caseId}`, async () => {
+      if (replayOr(res, idem)) return;
+      const enc = writableEncounter(req, res, found.encounterId, 'note.write', 'note.create');
+      if (!enc) return;
+      const note = createNote(newId('NOTE'), content, metaFor(auth, enc));
+      await commit(n => clinicalStore.putNote(n), () => clinicalStore.removeNote(note.noteId), note, auth, noteEvent(auth, note));
+      audit(auth, 'note.create', 'ALLOWED', target(enc, 'NOTE', note.noteId));
+      const body = { status: 'recorded', note: projectNote(note, authorLookup) };
+      idem.remember(201, body);
+      return res.status(201).json(body);
+    });
+  }));
+
+  router.post('/encounters/:id/notes/:noteId/amend', asyncRoute(async (req: AuthedRequest, res) => {
+    const auth = req.auth!;
+    const found = encounterFor(req, res, 'note.write', 'note.amend');
+    if (!found) return;
+    const noteId = String(req.params.noteId);
+    const existing = clinicalStore.getNote(noteId);
+    if (!existing || existing.encounterId !== found.encounterId) return res.status(404).json({ error: 'not_found' });
+    const parsed = AmendClinicalNoteCommandSchema.safeParse(req.body);
+    if (!parsed.success) return validationError(res, parsed.error);
+    const { clientRequestId, expectedVersion, changeReason, ...content } = parsed.data;
+    const idem = idempotent('note.amend', auth, clientRequestId, { noteId, ...parsed.data });
+    if (replayOr(res, idem)) return;
+
+    return withKeyLock(`case:${found.caseId}`, async () => {
+      if (replayOr(res, idem)) return;
+      const enc = writableEncounter(req, res, found.encounterId, 'note.write', 'note.amend');
+      if (!enc) return;
+      const note = clinicalStore.getNote(noteId)!;
+      const result = amendNote(note, expectedVersion, content, changeReason, metaFor(auth, enc));
+      if (!result.ok) return rejected(res, result, note.current.version);
+      const next = result.record;
+      await commit(n => clinicalStore.putNote(n), () => clinicalStore.putNote(note), next, auth, noteEvent(auth, next));
+      audit(auth, 'note.amend', 'ALLOWED', target(enc, 'NOTE', noteId));
+      const body = { status: 'recorded', note: projectNote(next, authorLookup) };
       idem.remember(200, body);
       return res.status(200).json(body);
     });

@@ -18,6 +18,10 @@ export function ambulanceCase(ambulanceId?: string): string | undefined {
   return ambulanceId ? ambulancesStore.get(ambulanceId)?.assignedPatient : undefined;
 }
 
+/** Authorization facts of every encounter of a case. */
+export const caseEncounterFacts = (caseId: string) =>
+  clinicalStore.listEncountersByCase(caseId).map(e => clinicalStore.encounterFacts(e.encounterId)!).filter(Boolean);
+
 /** Cases of encounters assigned to this clinician at their own hospital. */
 function clinicianCases(auth: AuthContext): Set<string> {
   const cases = new Set<string>();
@@ -118,7 +122,7 @@ export function canReceiveEvent(auth: AuthContext, event: AnyEvent): boolean {
   // Encounter and clinical-record events have their own default-deny rules (no management/admin access
   // to clinical events). Checked before the privileged shortcut below.
   if (isClinicalDomainEvent(event.eventType)) {
-    return canReceiveClinicalDomainEvent(auth, event as never, id => clinicalStore.encounterFacts(id));
+    return canReceiveClinicalDomainEvent(auth, event as never, id => clinicalStore.encounterFacts(id), caseEncounterFacts);
   }
   if (isPrivileged(auth)) return true;
   const p: any = (event as any).payload || {};

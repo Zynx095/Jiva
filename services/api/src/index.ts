@@ -10,6 +10,7 @@ import { clinicalRecordsRouter } from './routes/clinicalRecords';
 import { documentRouter, resetDocuments } from './routes/documents';
 import { vitalsRouter } from './routes/vitals';
 import { catalogueRouter } from './routes/catalogue';
+import { prehospitalRouter } from './routes/prehospital';
 import { initialiseCatalogues } from './catalogue';
 import { demoClientAllowed, provenanceReport, runtimeMode } from './mode';
 import { auditRouter } from './routes/audit';
@@ -305,6 +306,8 @@ app.use('/api', vitalsRouter());
 app.use('/api', auditRouter());
 // Clinical catalogue: sample documents (demo only) and medication metadata; administrators import/export.
 app.use('/api', catalogueRouter());
+// Pre-hospital record: the attending crew's vital signs and symptom narrative, read by the assigned clinician.
+app.use('/api', prehospitalRouter());
 
 app.post('/api/demo/reset', requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
   // Demo reset wipes state: it does not exist in operational mode.

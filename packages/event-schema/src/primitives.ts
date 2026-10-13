@@ -44,7 +44,10 @@ export const ActorSchema = z.object({
 export const DiagnosticCategorySchema = z.enum(['LABORATORY', 'IMAGING', 'ECG', 'PROCEDURE', 'OTHER']);
 export const MedicationRouteSchema = z.enum(['ORAL', 'IV', 'IM', 'SC', 'INHALED', 'TOPICAL', 'SUBLINGUAL', 'RECTAL', 'OTHER']);
 export const DocumentContentTypeSchema = z.enum(['application/pdf', 'image/png', 'image/jpeg', 'application/dicom']);
-export const TelemetrySourceSchema = z.enum(['MANUAL_CLINICIAN', 'DEVICE_SIMULATED', 'MEDICAL_DEVICE']);
+export const TelemetrySourceSchema = z.enum(['MANUAL_CLINICIAN', 'MANUAL_CREW', 'DEVICE_SIMULATED', 'MEDICAL_DEVICE']);
+export const ObservationQualitySchema = z.enum(['RELIABLE', 'QUESTIONABLE']);
+export const ObservationUnavailableReasonSchema = z.enum(['NOT_MEASURED', 'EQUIPMENT_UNAVAILABLE', 'UNABLE_TO_OBTAIN']);
+export const ClinicalNoteTypeSchema = z.enum(['PROGRESS', 'ASSESSMENT', 'PROCEDURE', 'HANDOVER', 'OTHER']);
 export const MeasurementTypeSchema = z.enum(['HEART_RATE', 'SPO2', 'BLOOD_PRESSURE', 'TEMPERATURE', 'RESPIRATORY_RATE']);
 export const DoctorAssignmentReasonSchema = z.enum(['INITIAL_ASSIGNMENT', 'REASSIGNMENT', 'SHIFT_HANDOVER', 'SPECIALTY_REFERRAL']);
 
