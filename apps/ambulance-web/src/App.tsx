@@ -36,8 +36,8 @@ import {
   hospitalShortName,
   humanizeReason,
   minutesFromSeconds,
+  positionUpdateText,
   severityStatus,
-  timeAgo,
   timeUntil,
   capacityLine,
   referralDetail,
@@ -58,6 +58,7 @@ import { API_URL, PERSONA, apiGet } from './api';
 import { useCrew } from './useCrew';
 import { EmergencyIntake, type DraftLocation } from './EmergencyIntake';
 import { PrehospitalCard } from './Vitals';
+import { PositionCard, sendManualPosition } from './Position';
 
 const PERSONAS = [
   { value: 'demo-amb-1', label: 'AMB-BLR-001 (demo-amb-1)' },
@@ -152,6 +153,8 @@ export default function App() {
   // Emergency intake: open while the unit is free; the draft location can be picked on the map.
   const [intakeOpen, setIntakeOpen] = useState(false);
   const [draftLocation, setDraftLocation] = useState<DraftLocation | null>(null);
+  // "Set on the map": the next tap on the map sets this unit's position (recorded as set by the crew).
+  const [pickPosition, setPickPosition] = useState(false);
   const [pendingCase, setPendingCase] = useState<{ caseId: string; at: number; assignedHere: boolean; timedOut: boolean } | null>(null);
   // Facility directory layer (off by default to keep the crew map clean).
   const [showDirectory, setShowDirectory] = useState(false);
@@ -295,7 +298,7 @@ export default function App() {
           <>
             <PersonaSelect value={PERSONA} options={PERSONAS} />
             <ConnectionPill state={crew.connection} lastSync={crew.lastSync} />
-            <ModeBadge apiUrl={API_URL} detail="Synthetic GPS, simulated hospital responses and mock routes. Not real capacity." />
+            <ModeBadge apiUrl={API_URL} detail="Synthetic positions, simulated hospital responses and mock routes. No GPS receiver is connected. Not real capacity." />
           </>
         }
       />
@@ -366,13 +369,34 @@ export default function App() {
             focus={focus}
             bottomLeft={<MapLegend showEmergency showDirectory={showDirectory} />}
             onBackgroundClick={() => setDirSelected(null)}
-            onPick={showIntake && !pendingCase ? (p) => setDraftLocation({ latitude: p.lat, longitude: p.lng, method: 'MAP_PIN', source: 'Map pin' }) : undefined}
+            onPick={
+              showIntake && !pendingCase
+                ? (p) => setDraftLocation({ latitude: p.lat, longitude: p.lng, method: 'MAP_PIN', source: 'Map pin' })
+                : pickPosition && ambulance
+                  ? (p) => {
+                      setPickPosition(false);
+                      void sendManualPosition(ambulance.ambulanceId, { latitude: p.lat, longitude: p.lng }).then((err) =>
+                        toast.show(
+                          err
+                            ? { title: 'Position not sent', description: err, tone: 'danger', icon: 'alertCircle', groupKey: 'position' }
+                            : { title: 'Position set', description: 'Recorded as set by the crew.', tone: 'ok', icon: 'pin', groupKey: 'position' },
+                        ),
+                      );
+                    }
+                  : undefined
+            }
             topLeft={
               <>
                 {showIntake && !pendingCase && (
                   <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/95 px-2.5 py-1.5 text-xs font-semibold text-ink-800 shadow-sm ring-1 ring-ink-200">
                     <Icon name="crosshair" size={13} />
                     Tap the map where the patient is
+                  </span>
+                )}
+                {pickPosition && !showIntake && (
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/95 px-2.5 py-1.5 text-xs font-semibold text-ink-800 shadow-sm ring-1 ring-ink-200">
+                    <Icon name="crosshair" size={13} />
+                    Tap the map where your ambulance is
                   </span>
                 )}
                 <span className="rounded-lg bg-white/95 p-1 shadow-sm ring-1 ring-ink-200">
@@ -459,6 +483,10 @@ export default function App() {
               </JivaCard>
 
               {reroute && <RerouteCard r={reroute} name={name} onDismiss={() => setReroute(null)} />}
+
+              {ambulance && ambulance.status !== 'UNAVAILABLE' && !showIntake && (
+                <PositionCard ambulance={ambulance} scene={patient?.currentLocation} destination={destination} picking={pickPosition} onPickToggle={setPickPosition} now={now} />
+              )}
 
               {lost && !destination && (
                 <JivaCard accent="danger" role="alert">
@@ -567,9 +595,9 @@ export default function App() {
                       </span>
                     </Row>
                     <Row label="Calculated">{formatClock(route.calculatedAt)}</Row>
-                    <Row label="GPS">{ambulance?.locationAsOf ? timeAgo(ambulance.locationAsOf, now) : 'No fix yet'}</Row>
+                    <Row label="Position">{positionUpdateText(ambulance, now)}</Row>
                     <Row label="Starts from">
-                      <span className={originStale ? 'text-warn-700' : undefined}>{originStale ? 'Last known position (no GPS fix since the report)' : 'Latest GPS fix'}</span>
+                      <span className={originStale ? 'text-warn-700' : undefined}>{originStale ? 'Last known position (not updated since the report)' : 'Latest position update'}</span>
                     </Row>
                   </dl>
                 </JivaCard>
@@ -698,7 +726,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 function nextAction({ ambulance, destinationName, lost, arrived, confirmed, destStatus }: { ambulance: AmbulanceState | null; destinationName?: string; lost: boolean; arrived: boolean; confirmed: boolean; destStatus?: string }): { title: string; detail?: string; tone: Tone } {
   if (!ambulance) return { title: 'Connecting to JIVA…', tone: 'neutral' };
   if (arrived && confirmed) return { title: `Hand over at ${destinationName ?? 'the hospital'}`, detail: 'The hospital recorded your arrival. Your unit is released when the hospital records the handover.', tone: 'ok' };
-  if (arrived) return { title: `At ${destinationName ?? 'the hospital'}`, detail: 'GPS places you at the hospital. Hand over to the emergency team; the hospital records the arrival and the handover.', tone: 'ok' };
+  if (arrived) return { title: `At ${destinationName ?? 'the hospital'}`, detail: 'Your position is at the hospital. Hand over to the emergency team; the hospital records the arrival and the handover.', tone: 'ok' };
   if (!ambulance.assignedPatient) return { title: 'Available', detail: 'Waiting for dispatch.', tone: 'neutral' };
   // A unit transporting its patient whose destination was withdrawn: the live event sets `lost`, and after a
   // reload the state alone says it (en route to a hospital without one) — never "proceed to the patient".

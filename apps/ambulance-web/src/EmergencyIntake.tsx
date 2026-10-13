@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AmbulanceState, HospitalState } from '@jiva/domain-models';
-import { CardHeader, Icon, JivaButton, JivaCard, Spinner, capabilityLabel, cx, formatDateTime, fromDateTimeLocal, timeAgo, toDateTimeLocal, useNow } from '@jiva/ui/src';
+import { CardHeader, Icon, JivaButton, JivaCard, Spinner, capabilityLabel, cx, formatDateTime, fromDateTimeLocal, positionSource, timeAgo, toDateTimeLocal, useNow } from '@jiva/ui/src';
 import { postCommand } from './api';
 import { VitalsFields } from './Vitals';
 import { emptyVitals, vitalsPayload, vitalsProblems, vitalsSummary, type VitalsDraft } from './vitalsDraft';
@@ -130,10 +130,12 @@ export function EmergencyIntake({ ambulance, hospitals, location, onLocation, on
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
     );
   };
-  const useAmbulanceGps = () => {
+  const useAmbulancePosition = () => {
     const loc = ambulance?.currentLocation;
     if (!loc) return;
-    onLocation({ latitude: loc.latitude, longitude: loc.longitude, method: 'DEVICE_GPS', source: `Ambulance GPS${ambulance?.locationAsOf ? ` · fix ${timeAgo(ambulance.locationAsOf)}` : ''}` });
+    // The unit's last known position is GPS only if it came from a GPS device; otherwise it counts as entered.
+    const gps = ambulance?.locationSource === 'DEVICE_GPS';
+    onLocation({ latitude: loc.latitude, longitude: loc.longitude, method: gps ? 'DEVICE_GPS' : 'MANUAL_ENTRY', source: `Ambulance position (${positionSource(ambulance?.locationSource).label.toLowerCase()})${ambulance?.locationAsOf ? ` · ${timeAgo(ambulance.locationAsOf)}` : ''}` });
   };
   const applyManual = () => {
     if (!manual) return;
@@ -268,7 +270,7 @@ export function EmergencyIntake({ ambulance, hospitals, location, onLocation, on
           <legend className="text-sm font-semibold text-ink-900">Where is the patient?</legend>
           <div className="flex flex-wrap gap-2">
             <JivaButton size="sm" icon="crosshair" loading={geo.busy} onClick={useDevice}>This device's location</JivaButton>
-            <JivaButton size="sm" icon="ambulance" disabled={!ambulance?.currentLocation} onClick={useAmbulanceGps}>Ambulance GPS</JivaButton>
+            <JivaButton size="sm" icon="ambulance" disabled={!ambulance?.currentLocation} onClick={useAmbulancePosition}>Ambulance position</JivaButton>
             <JivaButton size="sm" icon="pin" variant="ghost" onClick={() => setManual(manual ? null : { lat: '', lng: '' })} aria-expanded={!!manual}>Enter coordinates</JivaButton>
           </div>
           <p className="text-xs text-ink-500">Or tap the map to drop a pin where the patient is.</p>
