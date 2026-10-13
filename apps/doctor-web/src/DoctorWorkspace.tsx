@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import type { PatientState } from '@jiva/domain-models';
 import {
   AppHeader,
@@ -141,7 +141,9 @@ export function DoctorWorkspace() {
 
         <div className="min-w-0 space-y-4">
           {selected ? (
-            <>
+            // Keyed by the encounter: switching patients remounts every panel, so a half-filled form
+            // (vital signs, prescription, note, report, upload) can never be submitted to the next patient.
+            <Fragment key={selected.encounterId}>
               <EncounterHeader e={selected} patient={patientOf(selected.caseId)} now={now} />
               <JivaTabs items={tabs} value={tab} onChange={setTab} label="Encounter sections" idPrefix="enc" className="overflow-y-hidden" />
               <TabPanel idPrefix="enc" id="overview" className={cx('space-y-4', tab !== 'overview' && 'hidden')}>
@@ -164,7 +166,7 @@ export function DoctorWorkspace() {
               <TabPanel idPrefix="enc" id="documents" className={cx(tab !== 'documents' && 'hidden')}>
                 <DocumentsPanel encounterId={selected.encounterId} list={r ? r.documents : undefined} onChanged={c.reloadRecords} />
               </TabPanel>
-            </>
+            </Fragment>
           ) : (
             c.loaded && (
               <JivaCard className="border-dashed">
