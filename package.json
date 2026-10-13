@@ -37,6 +37,7 @@
     "data:validate": "tsx scripts/data-validate.ts",
     "data:build": "npm run data:fetch && npm run data:normalize && npm run data:validate",
     "directory:build": "tsx scripts/directory-build.ts",
+    "catalogue:assets": "tsx scripts/catalogue-assets.ts",
     "start:prod": "node scripts/dev-all.mjs --prod",
     "demo:reset": "tsx scripts/demo-reset.ts",
     "typecheck:tests": "tsc -p tests/tsconfig.json",

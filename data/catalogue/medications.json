@@ -1,0 +1,348 @@
+{
+  "schemaVersion": 1,
+  "kind": "medications",
+  "catalogueVersion": 1,
+  "notice": "Illustrative selection of commonly stocked generic medicines for demonstrating prescription entry in JIVA. Not a formulary, not complete, and not a source of dosing, indication or interaction information. Verify every prescription against your local formulary and guidelines.",
+  "entries": [
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-PARACETAMOL-500-TAB",
+      "status": "ACTIVE",
+      "name": "Paracetamol",
+      "strength": "500 mg",
+      "formulation": "TABLET",
+      "routes": [
+        "ORAL"
+      ],
+      "atcCode": "N02BE01",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-PARACETAMOL-1G-INF",
+      "status": "ACTIVE",
+      "name": "Paracetamol",
+      "strength": "1 g/100 mL",
+      "formulation": "INFUSION",
+      "routes": [
+        "IV"
+      ],
+      "atcCode": "N02BE01",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-IBUPROFEN-400-TAB",
+      "status": "ACTIVE",
+      "name": "Ibuprofen",
+      "strength": "400 mg",
+      "formulation": "TABLET",
+      "routes": [
+        "ORAL"
+      ],
+      "atcCode": "M01AE01",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-ASPIRIN-300-TAB",
+      "status": "ACTIVE",
+      "name": "Acetylsalicylic acid (aspirin)",
+      "strength": "300 mg",
+      "formulation": "TABLET",
+      "routes": [
+        "ORAL"
+      ],
+      "atcCode": "B01AC06",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-CLOPIDOGREL-75-TAB",
+      "status": "ACTIVE",
+      "name": "Clopidogrel",
+      "strength": "75 mg",
+      "formulation": "TABLET",
+      "routes": [
+        "ORAL"
+      ],
+      "atcCode": "B01AC04",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-ATORVASTATIN-40-TAB",
+      "status": "ACTIVE",
+      "name": "Atorvastatin",
+      "strength": "40 mg",
+      "formulation": "TABLET",
+      "routes": [
+        "ORAL"
+      ],
+      "atcCode": "C10AA05",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-GTN-400-SPRAY",
+      "status": "ACTIVE",
+      "name": "Glyceryl trinitrate",
+      "strength": "400 micrograms/dose",
+      "formulation": "SPRAY",
+      "routes": [
+        "SUBLINGUAL"
+      ],
+      "atcCode": "C01DA02",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-ONDANSETRON-4-INJ",
+      "status": "ACTIVE",
+      "name": "Ondansetron",
+      "strength": "4 mg/2 mL",
+      "formulation": "INJECTION",
+      "routes": [
+        "IV",
+        "IM"
+      ],
+      "atcCode": "A04AA01",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-ONDANSETRON-4-TAB",
+      "status": "ACTIVE",
+      "name": "Ondansetron",
+      "strength": "4 mg",
+      "formulation": "TABLET",
+      "routes": [
+        "ORAL"
+      ],
+      "atcCode": "A04AA01",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-CEFTRIAXONE-1G-INJ",
+      "status": "ACTIVE",
+      "name": "Ceftriaxone",
+      "strength": "1 g",
+      "formulation": "INJECTION",
+      "routes": [
+        "IV",
+        "IM"
+      ],
+      "atcCode": "J01DD04",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-AMOXICILLIN-500-CAP",
+      "status": "ACTIVE",
+      "name": "Amoxicillin",
+      "strength": "500 mg",
+      "formulation": "CAPSULE",
+      "routes": [
+        "ORAL"
+      ],
+      "atcCode": "J01CA04",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-SALBUTAMOL-100-INH",
+      "status": "ACTIVE",
+      "name": "Salbutamol",
+      "strength": "100 micrograms/dose",
+      "formulation": "INHALER",
+      "routes": [
+        "INHALED"
+      ],
+      "atcCode": "R03AC02",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-PANTOPRAZOLE-40-TAB",
+      "status": "ACTIVE",
+      "name": "Pantoprazole",
+      "strength": "40 mg",
+      "formulation": "TABLET",
+      "routes": [
+        "ORAL"
+      ],
+      "atcCode": "A02BC02",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-PANTOPRAZOLE-40-INJ",
+      "status": "ACTIVE",
+      "name": "Pantoprazole",
+      "strength": "40 mg",
+      "formulation": "INJECTION",
+      "routes": [
+        "IV"
+      ],
+      "atcCode": "A02BC02",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-METOPROLOL-25-TAB",
+      "status": "ACTIVE",
+      "name": "Metoprolol tartrate",
+      "strength": "25 mg",
+      "formulation": "TABLET",
+      "routes": [
+        "ORAL"
+      ],
+      "atcCode": "C07AB02",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-ENOXAPARIN-40-INJ",
+      "status": "ACTIVE",
+      "name": "Enoxaparin",
+      "strength": "40 mg/0.4 mL",
+      "formulation": "INJECTION",
+      "routes": [
+        "SC"
+      ],
+      "atcCode": "B01AB05",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-TRANEXAMIC-1G-INJ",
+      "status": "ACTIVE",
+      "name": "Tranexamic acid",
+      "strength": "1 g/10 mL",
+      "formulation": "INJECTION",
+      "routes": [
+        "IV"
+      ],
+      "atcCode": "B02AA02",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-SODIUM-CHLORIDE-0.9-INF",
+      "status": "ACTIVE",
+      "name": "Sodium chloride",
+      "strength": "0.9% (500 mL)",
+      "formulation": "INFUSION",
+      "routes": [
+        "IV"
+      ],
+      "atcCode": "B05BB01",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-INSULIN-HUMAN-100-INJ",
+      "status": "ACTIVE",
+      "name": "Insulin human (soluble)",
+      "strength": "100 units/mL",
+      "formulation": "INJECTION",
+      "routes": [
+        "SC",
+        "IV"
+      ],
+      "atcCode": "A10AB01",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-ADRENALINE-1MG-INJ",
+      "status": "ACTIVE",
+      "name": "Adrenaline (epinephrine)",
+      "strength": "1 mg/mL",
+      "formulation": "INJECTION",
+      "routes": [
+        "IM",
+        "IV"
+      ],
+      "atcCode": "C01CA24",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "medicationId": "MED-FUROSEMIDE-40-TAB",
+      "status": "ACTIVE",
+      "name": "Furosemide",
+      "strength": "40 mg",
+      "formulation": "TABLET",
+      "routes": [
+        "ORAL"
+      ],
+      "atcCode": "C03CA01",
+      "provenance": {
+        "source": "Generic name, strength, dosage form and routes of a commonly stocked medicine; ATC code from the WHO ATC index",
+        "licence": "Project file; factual product metadata, no dosing or indication"
+      }
+    }
+  ]
+}
