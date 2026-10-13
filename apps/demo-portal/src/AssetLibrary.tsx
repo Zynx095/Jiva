@@ -80,7 +80,7 @@ function SampleCard({ entry, attachAs, encounterId, share, onAttached }: { entry
   }, [preview]);
   const image = entry.contentType.startsWith('image/');
   return (
-    <div className="h-full rounded-xl bg-white p-3 ring-1 ring-inset ring-ink-200">
+    <div className="h-full rounded-xl bg-surface p-3 ring-1 ring-inset ring-ink-200">
       <p className="text-xs font-semibold text-ink-500">
         {DOCUMENT_KIND_TEXT[entry.documentType] ?? entry.documentType} · {entry.contentType === 'application/pdf' ? 'PDF' : 'PNG'} · {formatBytes(entry.sizeBytes)} · rev {entry.revision}
       </p>

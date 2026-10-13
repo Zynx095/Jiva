@@ -41,7 +41,7 @@ export function SystemView({ live }: { live: LiveState }) {
         <CardHeader title="The operational apps" icon="eye" subtitle="Each opens in a new tab as a demo persona; they show the same server state the scenarios change" />
         <ul className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {APPS.map((a) => (
-            <li key={a.app} className="rounded-xl bg-white p-3 ring-1 ring-inset ring-ink-200">
+            <li key={a.app} className="rounded-xl bg-surface p-3 ring-1 ring-inset ring-ink-200">
               <p className="text-sm font-semibold text-ink-900">{a.title}</p>
               <ul className="mt-1 space-y-1">
                 {a.personas.map(([persona, label]) => (

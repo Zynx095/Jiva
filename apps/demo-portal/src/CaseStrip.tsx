@@ -21,7 +21,7 @@ export function CaseStrip({ live }: { live: LiveState }) {
   const a = live.ambulance;
   const e = live.encounter;
   return (
-    <JivaCard className="bg-white">
+    <JivaCard className="bg-surface">
       <dl className="grid gap-x-6 gap-y-2 text-[13px] sm:grid-cols-2 xl:grid-cols-4">
         <Fact label={`Case ${DEMO.caseId}`}>{live.caseState ? live.caseState.currentStatus.replace(/_/g, ' ').toLowerCase() : 'no open case'}</Fact>
         <Fact label={`Ambulance ${a?.ambulanceId ?? DEMO.crew.ambulanceId}`}>

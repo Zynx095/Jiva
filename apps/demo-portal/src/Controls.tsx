@@ -149,7 +149,7 @@ export function Controls({ live }: { live: LiveState }) {
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <select
               aria-label="Clinician to assign"
-              className="h-9 rounded-lg bg-white px-2.5 text-sm ring-1 ring-inset ring-ink-200"
+              className="h-9 rounded-lg bg-surface px-2.5 text-sm ring-1 ring-inset ring-ink-200"
               value={doctor}
               onChange={(e) => setDoctor(e.target.value)}
               disabled={!encounter || encounter.status !== 'IN_CARE'}

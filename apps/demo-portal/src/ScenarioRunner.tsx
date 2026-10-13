@@ -98,7 +98,7 @@ export function ScenarioRunner({ live }: { live: LiveState }) {
                 onClick={() => choose(s)}
                 aria-pressed={selected.id === s.id}
                 disabled={running && selected.id !== s.id}
-                className={cx('w-full rounded-xl bg-white p-3 text-left ring-1 transition-shadow hover:shadow-sm disabled:opacity-50', selected.id === s.id ? 'ring-2 ring-warn-600' : 'ring-ink-200')}
+                className={cx('w-full rounded-xl bg-surface p-3 text-left ring-1 transition-shadow hover:shadow-sm disabled:opacity-50', selected.id === s.id ? 'ring-2 ring-brand-500 shadow-e3' : 'ring-ink-200 hover:ring-ink-300')}
               >
                 <span className="block text-sm font-semibold text-ink-900">
                   {i + 1}. {s.title}
@@ -152,10 +152,10 @@ export function ScenarioRunner({ live }: { live: LiveState }) {
             {selected.steps.map((s, i) => {
               const st = states[i];
               return (
-                <li key={`${s.id}-${i}`} className={cx('rounded-xl p-3 ring-1 ring-inset', st.state === 'failed' ? 'bg-danger-50/60 ring-danger-200' : st.state === 'done' ? 'bg-white ring-brand-200' : 'bg-white ring-ink-200')}>
+                <li key={`${s.id}-${i}`} className={cx('rounded-xl p-3 ring-1 ring-inset', st.state === 'failed' ? 'bg-danger-50/60 ring-danger-200' : st.state === 'done' ? 'bg-surface ring-brand-200' : 'bg-surface ring-ink-200')}>
                   <div className="flex items-start gap-3">
                     <span className="mt-0.5 shrink-0">
-                      {st.state === 'running' ? <Spinner size={18} className="text-warn-700" />
+                      {st.state === 'running' ? <Spinner size={18} className="text-brand-600" />
                         : st.state === 'done' ? <Icon name="checkCircle" size={18} className="text-brand-700" />
                           : st.state === 'failed' ? <Icon name="xCircle" size={18} className="text-danger-700" />
                             : <span className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-ink-100 text-[11px] font-bold text-ink-600">{i + 1}</span>}
@@ -163,7 +163,7 @@ export function ScenarioRunner({ live }: { live: LiveState }) {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-ink-900">{s.title}</p>
                       <p className="text-xs text-ink-600">{s.description}</p>
-                      <p className="mt-1 text-[11px] font-semibold text-warn-900">
+                      <p className="mt-1 text-[11px] font-semibold text-ink-600">
                         Acts as {s.actor} · persona {s.persona}
                       </p>
                       {st.detail && (
@@ -183,7 +183,7 @@ export function ScenarioRunner({ live }: { live: LiveState }) {
           <CardHeader title="Watch it in the operational apps" icon="eye" subtitle="Each opens in a new tab as the persona the scenario acts for" />
           <div className="mt-3 flex flex-wrap gap-2">
             {WATCH.map((w) => (
-              <a key={w.app} href={jivaAppUrl(w.app, w.persona)} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white px-3 text-[13px] font-semibold text-ink-800 ring-1 ring-inset ring-ink-200 hover:bg-ink-50">
+              <a key={w.app} href={jivaAppUrl(w.app, w.persona)} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-surface px-3 text-[13px] font-semibold text-ink-800 ring-1 ring-inset ring-ink-200 hover:bg-ink-50">
                 <Icon name="arrowRight" size={13} />
                 {w.label}
               </a>

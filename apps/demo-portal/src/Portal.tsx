@@ -42,21 +42,21 @@ export default function Portal() {
   };
 
   return (
-    <div className="min-h-dvh bg-canvas">
-      {/* A quiet but unmistakable edge: this is the demonstration portal, not an operational screen. */}
-      <div aria-hidden="true" className="h-1.5 bg-[repeating-linear-gradient(135deg,var(--color-warn-400)_0_12px,var(--color-warn-100)_12px_24px)]" />
-      <header className="sticky top-0 z-30 border-b border-warn-200 bg-warn-50">
+    <div className="min-h-dvh bg-canvas text-ink-900">
+      {/* The portal's own identity (OLED theme, set on <html>): a thin gradient edge, never an operational screen. */}
+      <div aria-hidden="true" className="h-[3px] jiva-gradient-brand" />
+      <header className="sticky top-0 z-30 border-b border-ink-200 bg-canvas/90 supports-[backdrop-filter]:backdrop-blur-md">
         <div className="flex min-h-14 flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 lg:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <JivaLogo />
-            <span className="hidden h-6 w-px bg-warn-200 sm:block" aria-hidden="true" />
+            <span className="hidden h-6 w-px bg-ink-200 sm:block" aria-hidden="true" />
             <div className="min-w-0 leading-tight">
               <h1 className="truncate text-[15px] font-semibold tracking-[-0.01em] text-ink-900">Demonstration portal</h1>
-              <div className="truncate text-xs text-warn-800">Synthetic data only · not an operational interface</div>
+              <div className="truncate text-xs text-ink-500">Synthetic data only · not an operational interface</div>
             </div>
           </div>
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-warn-700 px-2.5 text-xs font-semibold text-white">
+            <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-warn-50 px-2.5 text-xs font-semibold text-warn-800 ring-1 ring-inset ring-warn-200">
               <Icon name="info" size={13} /> Demo mode · synthetic data
             </span>
             <ConnectionPill state={live.connection} />
@@ -72,7 +72,7 @@ export default function Portal() {
               onClick={() => go(n.id)}
               className={cx(
                 '-mb-px flex h-10 shrink-0 items-center gap-1.5 border-b-2 px-3 text-sm font-semibold transition-colors duration-150',
-                view === n.id ? 'border-warn-700 text-ink-900' : 'border-transparent text-ink-600 hover:border-warn-300 hover:text-ink-900',
+                view === n.id ? 'border-brand-500 text-ink-900' : 'border-transparent text-ink-500 hover:border-ink-300 hover:text-ink-900',
               )}
             >
               <Icon name={n.icon} size={15} />
