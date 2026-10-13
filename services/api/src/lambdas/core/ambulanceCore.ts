@@ -46,7 +46,7 @@ export function createAmbulanceHandler(d: LambdaDeps) {
         }
       }
     } else if (jivaEvent.eventType === 'ambulance.location.updated') {
-      const { ambulanceId, coordinates, heading, speedKmh } = jivaEvent.payload;
+      const { ambulanceId, coordinates, heading, speedKmh, source } = jivaEvent.payload;
       const existing = await d.store.getAmbulance(ambulanceId);
 
       if (existing) {
@@ -55,6 +55,7 @@ export function createAmbulanceHandler(d: LambdaDeps) {
           currentLocation: coordinates,
           heading,
           speedKmh,
+          locationSource: source,
           lastUpdated: new Date().toISOString(),
         });
       }

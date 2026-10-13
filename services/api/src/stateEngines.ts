@@ -539,7 +539,7 @@ eventBus.on('ambulance.dispatched', async (event: AmbulanceDispatched) => {
 });
 
 eventBus.on('ambulance.location.updated', async (event: AmbulanceLocationUpdated) => {
-  const { ambulanceId, coordinates, heading, speedKmh } = event.payload;
+  const { ambulanceId, coordinates, heading, speedKmh, source } = event.payload;
   const existing = ambulancesStore.get(ambulanceId);
   if (!existing) return;
   // GPS must never move backwards in time. Location updates do NOT trigger route recalculation.
@@ -553,6 +553,8 @@ eventBus.on('ambulance.location.updated', async (event: AmbulanceLocationUpdated
     heading,
     speedKmh,
     locationAsOf: event.timestamp,
+    // The source of THIS position (an unstated source is not carried over from an earlier one).
+    locationSource: source,
     lastUpdated: event.timestamp,
   };
   ambulancesStore.set(ambulanceId, updated);

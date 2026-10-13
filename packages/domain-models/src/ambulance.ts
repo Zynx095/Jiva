@@ -11,8 +11,10 @@ export interface AmbulanceState {
   destinationHospital?: string;
   requiredCapabilities: string[];
   lastUpdated: string;
-  /** Timestamp of the GPS fix currently applied (event time, not receive time). */
+  /** Timestamp of the position currently applied (event time, not receive time). */
   locationAsOf?: string;
+  /** Where that position came from (see ambulance.location.updated); absent = not stated. */
+  locationSource?: 'DEVICE_GPS' | 'MANUAL' | 'SIMULATED';
   /** Last route computed for the current destination, including provider provenance. */
   activeRoute?: {
     hospitalId: string;
