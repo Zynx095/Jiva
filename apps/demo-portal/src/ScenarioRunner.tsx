@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import {
   CardHeader,
   Icon,
@@ -114,6 +114,18 @@ export function ScenarioRunner({ live }: { live: LiveState }) {
         <CaseStrip live={live} />
         <JivaCard>
           <CardHeader title={selected.title} icon="activity" subtitle={selected.summary} />
+          <dl className="mt-4 grid gap-x-6 gap-y-3 rounded-xl bg-surface-sunken p-4 ring-1 ring-inset ring-ink-200 sm:grid-cols-2">
+            <About label="What it shows">{selected.demonstrates}</About>
+            <About label="Roles involved">{selected.roles.join(' · ')}</About>
+            <About label="What you do">
+              {selected.operator}
+              {selected.resets && ' The first step resets the demo for everyone — you will be asked to confirm.'}
+            </About>
+            <About label="Expected outcome">{selected.outcome}</About>
+            <About label="Data used" wide>
+              {selected.data}
+            </About>
+          </dl>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <JivaButton
               variant="primary"
@@ -217,6 +229,15 @@ export function ScenarioRunner({ live }: { live: LiveState }) {
           </>
         }
       />
+    </div>
+  );
+}
+
+function About({ label, wide, children }: { label: string; wide?: boolean; children: ReactNode }) {
+  return (
+    <div className={wide ? 'sm:col-span-2' : undefined}>
+      <dt className="text-xs font-semibold text-ink-500">{label}</dt>
+      <dd className="mt-0.5 text-[13px] leading-5 text-ink-800">{children}</dd>
     </div>
   );
 }
