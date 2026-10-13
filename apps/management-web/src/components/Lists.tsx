@@ -26,7 +26,7 @@ import {
 import { gpsFreshness, hospitalFreshness, isAwaiting, isOpenCase } from '../derive';
 import { useModel } from '../model';
 import type { HospitalState, PatientState } from '../types';
-import { CapabilityChips, EventDetails, RouteFacts } from './bits';
+import { CapabilityChips, DestinationAnswer, EventDetails, RouteFacts } from './bits';
 import { STATUS_FILTERS, statusBucket } from './NetworkMap';
 
 const rowButton =
@@ -130,7 +130,7 @@ function CaseCard({ p }: { p: PatientState }) {
         ) : (
           <span className="flex-1 text-warn-700">No ambulance assigned</span>
         )}
-        {dest && <JivaStatus meta={acceptanceStatus(dest.operationalState.acceptance)} />}
+        {dest && <DestinationAnswer caseId={p.patientId} hospital={dest} now={m.now} />}
       </div>
       {amb && <RouteFacts ambulance={amb} className="mt-1 block pl-6" />}
       {responses.length > 0 && (

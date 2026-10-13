@@ -36,7 +36,7 @@ import {
 import { apiGet } from '../api';
 import { eventsForCase, gpsFreshness, hospitalFreshness } from '../derive';
 import { useModel } from '../model';
-import { CandidateTrace, CapabilityChips, EntityLink, EventDetails, ResponseRow, RouteFacts } from './bits';
+import { CandidateTrace, CapabilityChips, DestinationAnswer, EntityLink, EventDetails, ResponseRow, RouteFacts } from './bits';
 
 function Block({ title, children, count, action }: { title: string; children: ReactNode; count?: number; action?: ReactNode }) {
   return (
@@ -106,7 +106,7 @@ export function CaseDetail({ id }: { id: string }) {
             {dest ? (
               <span className="inline-flex flex-wrap items-center justify-end gap-1.5">
                 <EntityLink onClick={() => m.select({ kind: 'hospital', id: dest.hospitalId })}>{m.name(dest.hospitalId) ?? dest.displayName}</EntityLink>
-                <JivaStatus meta={acceptanceStatus(dest.operationalState.acceptance)} />
+                <DestinationAnswer caseId={id} hospital={dest} now={m.now} />
               </span>
             ) : (
               <span className="text-warn-700">{amb ? 'Waiting for a hospital to accept' : '—'}</span>
@@ -347,7 +347,7 @@ export function AmbulanceDetail({ id }: { id: string }) {
             {dest ? (
               <span className="inline-flex flex-wrap items-center justify-end gap-1.5">
                 <EntityLink onClick={() => m.select({ kind: 'hospital', id: dest.hospitalId })}>{m.name(dest.hospitalId) ?? dest.displayName}</EntityLink>
-                <JivaStatus meta={acceptanceStatus(dest.operationalState.acceptance)} />
+                <DestinationAnswer caseId={a.assignedPatient} hospital={dest} now={m.now} />
               </span>
             ) : a.assignedPatient ? (
               <span className="text-warn-700">Waiting for a hospital to accept</span>

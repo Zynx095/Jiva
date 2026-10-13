@@ -20,7 +20,7 @@ import {
   type JivaEvent,
 } from '@jiva/ui/src';
 import { useModel } from '../model';
-import type { AmbulanceState, CandidateSummary, CaseResponse } from '../types';
+import type { AmbulanceState, CandidateSummary, CaseResponse, HospitalState } from '../types';
 
 export function CapabilityChips({ codes, className }: { codes: string[]; className?: string }) {
   if (codes.length === 0) return <span className="text-[13px] text-ink-500">Not assessed yet</span>;
@@ -65,6 +65,20 @@ export function responseMeta(r: CaseResponse, now: number) {
     return parts.filter(Boolean).join(' · ');
   })();
   return { meta, detail };
+}
+
+/**
+ * The destination hospital's answer FOR THIS CASE. A hospital's operational state holds only its latest
+ * answer to any case, so it is used only when it names this case; otherwise the case's own response
+ * (from the referral events) is shown, and without either the answer is unknown — never another
+ * patient's answer.
+ */
+export function DestinationAnswer({ caseId, hospital, now }: { caseId?: string; hospital: HospitalState; now: number }) {
+  const m = useModel();
+  const response = caseId ? m.responses.get(caseId)?.get(hospital.hospitalId) : undefined;
+  if (response) return <JivaStatus meta={responseMeta(response, now).meta} />;
+  const op = hospital.operationalState;
+  return <JivaStatus meta={acceptanceStatus(caseId && op.acceptanceCaseId === caseId ? op.acceptance : 'UNKNOWN')} />;
 }
 
 /** One row: who, when asked, their answer — with the answer's context on its own line so nothing collides. */
