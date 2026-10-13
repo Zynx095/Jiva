@@ -169,6 +169,22 @@ export default function App() {
     return error;
   };
 
+  /** Report one service's status by hand; the other services keep their current values. */
+  const reportServiceStatus = async (key: ServiceKey, status: CapacityValue) => {
+    const op = hs.hospital?.operationalState;
+    const value = (k: ServiceKey) => (k === key ? status : ((op?.[k] as CapacityValue | undefined) ?? 'UNKNOWN'));
+    const error = await sendEvent({
+      eventId: crypto.randomUUID(),
+      eventType: 'hospital.capacity.updated',
+      timestamp: new Date().toISOString(),
+      source: { type: 'hospital', id: hs.hospitalId },
+      version: '1.0',
+      payload: { hospitalId: hs.hospitalId, emergencyStatus: value('emergency'), traumaStatus: value('trauma'), icuStatus: value('icu'), ventilatorStatus: value('ventilator') },
+    });
+    if (!error) void hs.refresh();
+    return error;
+  };
+
   const short = hs.hospital ? hospitalShortName(hs.hospital.displayName, hs.hospital.address?.locality) : '';
   const visibleConfirmations = confirmations.filter((c) => now - Date.parse(c.at) < 45_000);
 
@@ -301,7 +317,7 @@ export default function App() {
         </div>
 
         <aside className="min-w-0 space-y-6" aria-label="Hospital status and briefs">
-          <FacilityPanel hospital={hs.hospital} />
+          <FacilityPanel hospital={hs.hospital} onReport={reportServiceStatus} />
           <HandoffPanel handoffs={handoffs} onTheWay={new Set(incoming.map((a) => a.assignedPatient ?? ''))} />
           <ActivityPanel events={hs.events} name={name} />
         </aside>
@@ -625,8 +641,20 @@ const SERVICES = [
   { key: 'ventilator', label: 'Ventilators' },
 ] as const;
 
-function FacilityPanel({ hospital }: { hospital: HospitalState | null }) {
+/** Services whose status a coordinator can report through JIVA (the capacity event carries these four). */
+type ServiceKey = 'emergency' | 'icu' | 'trauma' | 'ventilator';
+type CapacityValue = 'AVAILABLE' | 'LIMITED' | 'UNAVAILABLE' | 'UNKNOWN';
+const REPORTABLE: ReadonlySet<string> = new Set<ServiceKey>(['emergency', 'icu', 'trauma', 'ventilator']);
+const CAPACITY_CHOICES: Array<{ value: CapacityValue; label: string }> = [
+  { value: 'AVAILABLE', label: 'Available' },
+  { value: 'LIMITED', label: 'Limited' },
+  { value: 'UNAVAILABLE', label: 'Unavailable' },
+  { value: 'UNKNOWN', label: 'Unknown' },
+];
+
+function FacilityPanel({ hospital, onReport }: { hospital: HospitalState | null; onReport: (key: ServiceKey, status: CapacityValue) => Promise<string | null> }) {
   const [service, setService] = useState<(typeof SERVICES)[number] | null>(null);
+  const [choice, setChoice] = useState<CapacityValue | null>(null);
   if (!hospital) {
     return (
       <JivaCard>
@@ -660,6 +688,49 @@ function FacilityPanel({ hospital }: { hospital: HospitalState | null }) {
               <dd className="font-medium text-ink-900">{op.capacityAsOf ? formatClock(op.capacityAsOf) : 'Seed value'}</dd>
             </div>
           </dl>
+          {REPORTABLE.has(service.key) ? (
+            <fieldset className="space-y-2">
+              <legend className="text-xs font-semibold text-ink-700">Report the current status (entered manually — JIVA has no live bed feed)</legend>
+              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={`${service.label} status`}>
+                {CAPACITY_CHOICES.map((c) => {
+                  const current = (choice ?? op[service.key]) === c.value;
+                  return (
+                    <button
+                      key={c.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={current}
+                      onClick={() => setChoice(c.value)}
+                      className={cx(
+                        'inline-flex h-8 items-center rounded-full px-3 text-[13px] font-semibold ring-1 ring-inset transition-colors duration-150',
+                        current ? 'bg-ink-900 text-white ring-ink-900' : 'bg-white text-ink-700 ring-ink-300 hover:bg-ink-50',
+                      )}
+                    >
+                      {c.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <AsyncButton
+                size="sm"
+                variant="primary"
+                icon="check"
+                disabled={!choice || choice === op[service.key]}
+                pendingText="Reporting…"
+                successText="Reported"
+                onAction={async () => {
+                  const err = choice ? await onReport(service.key as ServiceKey, choice) : null;
+                  if (!err) setChoice(null);
+                  return err;
+                }}
+              >
+                Report {service.label.toLowerCase()} status
+              </AsyncButton>
+              <p className="text-xs text-ink-500">Other services keep their current status. An unavailable emergency department reroutes ambulances heading here.</p>
+            </fieldset>
+          ) : (
+            <p className="text-xs text-ink-500">This service's status cannot be reported through JIVA yet.</p>
+          )}
           <p className="rounded-lg bg-ink-50 p-3 text-xs text-ink-600 ring-1 ring-inset ring-ink-200">
             Wards, rooms and beds stay inside your hospital systems. JIVA only receives service-level flags and your answers to requests — by design.
           </p>
@@ -671,7 +742,14 @@ function FacilityPanel({ hospital }: { hospital: HospitalState | null }) {
         <ul className="mt-3 divide-y divide-ink-100">
           {SERVICES.map((s) => (
             <li key={s.key}>
-              <button type="button" onClick={() => setService(s)} className="flex w-full items-center justify-between gap-3 py-2.5 text-left hover:bg-ink-25">
+              <button
+                type="button"
+                onClick={() => {
+                  setService(s);
+                  setChoice(null);
+                }}
+                className="flex w-full items-center justify-between gap-3 py-2.5 text-left hover:bg-ink-25"
+              >
                 <span className="min-w-0">
                   <span className="block text-[13px] font-semibold text-ink-900">{s.label}</span>
                   <span className="block text-xs text-ink-500">{hospital.capabilities?.[s.key] ? 'Listed' : 'Not listed'}</span>
