@@ -1,7 +1,7 @@
 import type { IconName } from '../components/Icon';
 import type { Tone } from './status';
 import { capabilityStatus } from './status';
-import { capabilityLabel, joinList, SEVERITY_TEXT } from './labels';
+import { capabilityLabel, joinList, plainCapabilities, SEVERITY_TEXT } from './labels';
 import { formatClock, formatKm, minutesFromSeconds } from './time';
 
 /** Structural view of a canonical event (see packages/event-schema). Payload fields are read defensively. */
@@ -296,7 +296,7 @@ export function describeEvent(e: JivaEvent, name: NameResolver, audience: Audien
     case 'ai.anomaly.explained':
       return { ...base, title: 'Disruption explained', detail: str(p, 'explanation'), tone: 'neutral', icon: 'brief', category: 'ai' };
     case 'ai.summary.generated':
-      return { ...base, title: patient ? 'A summary of your journey is ready' : 'Case summary ready', detail: str(p, 'briefSummary'), tone: 'neutral', icon: 'brief', category: 'ai' };
+      return { ...base, title: patient ? 'A summary of your journey is ready' : 'Case summary ready', detail: patient ? plainCapabilities(str(p, 'briefSummary') ?? '') || undefined : str(p, 'briefSummary'), tone: 'neutral', icon: 'brief', category: 'ai' };
     case 'feasibility.trace.recorded': {
       const outcome = str(p, 'outcome');
       return { ...base, title: 'Shadow engine evaluated hospitals', detail: dotJoin([outcome && outcome.toLowerCase().replace(/_/g, ' '), 'observation only, no decision authority']), tone: 'neutral', icon: 'shield', category: 'decision', quiet: true };

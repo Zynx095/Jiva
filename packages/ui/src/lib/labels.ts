@@ -35,6 +35,11 @@ export function capabilityLabel(code: string, mode: 'short' | 'plain' = 'short')
   return CAPABILITIES[code]?.[mode] ?? titleCase(code);
 }
 
+/** Replaces capability codes in a sentence with their plain names (for patients): "EMERGENCY, ICU" → "emergency care, intensive care". */
+export function plainCapabilities(text: string): string {
+  return text.replace(/\b[A-Z][A-Z_]{1,}\b/g, (code) => (CAPABILITIES[code] ? CAPABILITIES[code].plain.toLowerCase() : code));
+}
+
 /** "A", "A and B", "A, B and C". */
 export function joinList(items: string[]): string {
   if (items.length <= 1) return items[0] ?? '';

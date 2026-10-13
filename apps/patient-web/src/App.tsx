@@ -17,6 +17,7 @@ import {
   formatClock,
   hospitalShortName,
   joinList,
+  plainCapabilities,
   minutesFromSeconds,
   timeAgo,
   useNow,
@@ -47,6 +48,7 @@ const SOURCE_TEXT: Record<string, string> = {
 export default function App() {
   const toast = useToast();
   const [notice, setNotice] = useState<string | null>(null);
+  const [allActivity, setAllActivity] = useState(false);
   const nameRef = useRef<(id: string) => string | undefined>(() => undefined);
 
   const onLive = useCallback(
@@ -279,7 +281,7 @@ export default function App() {
                     <Icon name={acceptance === 'ACCEPTED' ? 'checkCircle' : acceptance === 'LIMITED' ? 'half' : 'clock'} size={16} />
                     {acceptance === 'ACCEPTED' ? 'Confirmed it can receive you' : acceptance === 'LIMITED' ? 'Can receive you, with some limits' : 'Waiting for the hospital to confirm'}
                   </p>
-                  {hospital.operationalState?.lastConfirmedAt && (
+                  {hospital.operationalState?.lastConfirmedAt && op?.acceptanceCaseId === patient.patientId && (
                     <p className="mt-2 border-t border-ink-100 pt-2 text-xs text-ink-500">
                       Confirmed at {formatClock(hospital.operationalState.lastConfirmedAt)} · {timeAgo(hospital.operationalState.lastConfirmedAt, now)}
                     </p>
@@ -293,41 +295,10 @@ export default function App() {
 
           {patient && <WhatNext patientCare={patient.careRequirements} hospitalName={hospital?.displayName} confirmed={confirmed} arrived={arrived} inCare={inCare} hasAmbulance={!!ambulance} eta={eta} />}
 
-          {summary && (
-            <JivaCard as="section" aria-labelledby="summary-title">
-              <p id="summary-title" className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-500">
-                <Icon name="brief" size={14} />
-                Summary · AI-generated, for information only
-              </p>
-              <p className="mt-1.5 text-sm text-ink-800">{String(summary.payload.briefSummary ?? '')}</p>
-            </JivaCard>
-          )}
-
           <SosCard inHospital={arrivalConfirmed} />
         </div>
 
         <div className="min-w-0 space-y-5">
-          <JivaCard as="section" aria-labelledby="activity-title">
-            <h2 id="activity-title" className="text-[15px] font-semibold text-ink-900">
-              Recent activity
-            </h2>
-            <p className="text-[13px] text-ink-500">Tap an entry to see where it came from.</p>
-            <div className="mt-4">
-              {pt.load === 'loading' ? (
-                <div className="space-y-3">
-                  <JivaSkeleton className="h-10" />
-                  <JivaSkeleton className="h-10" />
-                </div>
-              ) : (
-                <JivaTimeline
-                  items={timeline}
-                  detailsLabel="Details"
-                  empty={<EmptyState compact icon="activity" title="Nothing yet" description="Updates about your care appear here as they happen." />}
-                />
-              )}
-            </div>
-          </JivaCard>
-
           {inCare && encounter ? (
             <>
               <VitalsCard vitals={records?.encounterId === encounter.encounterId ? records.vitals : undefined} now={now} />
@@ -338,6 +309,44 @@ export default function App() {
           ) : (
             patient && <RecordsNotYet />
           )}
+
+          {summary && (
+            <JivaCard as="section" aria-labelledby="summary-title">
+              <p id="summary-title" className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-500">
+                <Icon name="brief" size={14} />
+                Summary · AI-generated, for information only
+              </p>
+              <p className="mt-1.5 text-sm text-ink-800">{plainCapabilities(String(summary.payload.briefSummary ?? ''))}</p>
+            </JivaCard>
+          )}
+
+          <JivaCard as="section" aria-labelledby="activity-title">
+            <h2 id="activity-title" className="text-[15px] font-semibold text-ink-900">
+              Recent activity
+            </h2>
+            <p className="text-[13px] text-ink-500">What happened so far, newest first. Tap an entry to see where it came from.</p>
+            <div className="mt-4">
+              {pt.load === 'loading' ? (
+                <div className="space-y-3">
+                  <JivaSkeleton className="h-10" />
+                  <JivaSkeleton className="h-10" />
+                </div>
+              ) : (
+                <>
+                  <JivaTimeline
+                    items={allActivity ? timeline : timeline.slice(0, 5)}
+                    detailsLabel="Details"
+                    empty={<EmptyState compact icon="activity" title="Nothing yet" description="Updates about your care appear here as they happen." />}
+                  />
+                  {timeline.length > 5 && (
+                    <JivaButton size="sm" variant="tertiary" icon={allActivity ? 'chevronUp' : 'chevronDown'} onClick={() => setAllActivity((v) => !v)}>
+                      {allActivity ? 'Show the latest only' : `Show all ${timeline.length} updates`}
+                    </JivaButton>
+                  )}
+                </>
+              )}
+            </div>
+          </JivaCard>
 
           <p className="px-1 text-center text-xs text-ink-500">
             {pt.syncedAt ? `Updated ${timeAgo(pt.syncedAt, now)}` : ''} · signed in as demo persona {PERSONA}
