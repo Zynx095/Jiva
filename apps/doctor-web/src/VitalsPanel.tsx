@@ -20,6 +20,7 @@ import {
   type VitalsResponse,
 } from '@jiva/ui/src';
 import { CommandError, Field, inputClass, sendCommand, useIdempotencyKey } from './ui';
+import { useUnsaved } from './unsaved';
 
 const path = (encounterId: string) => `/api/encounters/${encodeURIComponent(encounterId)}/vitals`;
 
@@ -51,8 +52,8 @@ export function VitalsPanel({ encounterId, vitals, onChanged, now }: { encounter
         actions={
           !entering && (
             <div className="flex flex-wrap gap-1.5">
-              <JivaButton size="sm" icon="plus" onClick={() => setEntering(true)}>
-                Enter values
+              <JivaButton size="sm" variant="primary" icon="plus" onClick={() => setEntering(true)}>
+                Record vital signs
               </JivaButton>
               {vitals?.sources.simulationAvailable && (
                 <AsyncButton
@@ -141,6 +142,7 @@ function VitalsForm({ encounterId, onSaved, onCancel }: { encounterId: string; o
   // Upper bound for the picker, fixed when the form opens (the server re-checks the time anyway).
   const [latest] = useState(() => toDateTimeLocal(Date.now() + 60_000));
   const keyFor = useIdempotencyKey();
+  useUnsaved([d.hr, d.spo2, d.sys, d.dia, d.temp, d.rr].some((v) => v.trim() !== '') || questionable, 'vital signs');
   const id = (k: string) => `vit-${encounterId}-${k}`;
   const set = (k: keyof Draft) => (e: { target: { value: string } }) => setD((prev) => ({ ...prev, [k]: e.target.value }));
   const observedAt = fromDateTimeLocal(d.at);
@@ -205,7 +207,7 @@ function VitalsForm({ encounterId, onSaved, onCancel }: { encounterId: string; o
             return r.error;
           }}
         >
-          Record
+          Save vital signs
         </AsyncButton>
         <JivaButton variant="ghost" onClick={onCancel}>
           Cancel

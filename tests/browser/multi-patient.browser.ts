@@ -3,9 +3,9 @@
  * Microsoft Edge or Google Chrome (playwright-core; no browser is downloaded). It covers defects that the
  * API-level suites cannot see because they live in the screens:
  *
- *  - doctor workspace: three patients are listed and open independently; a half-filled form is never
- *    carried to (and submitted for) the next patient; an update reaches only the intended patient and
- *    survives a reload;
+ *  - doctor workspace: three patients are listed and open independently; switching with unsaved edits
+ *    asks first, and a half-filled form is never carried to (and submitted for) the next patient; an
+ *    update reaches only the intended patient and survives a reload;
  *  - management: the destination badge shows the hospital's answer FOR THAT CASE, not its latest answer
  *    to another case;
  *  - patient: "hospital confirmed" and the headline are about the patient's own case.
@@ -174,19 +174,27 @@ async function main() {
       check(`doctor: ${p.caseId} opens with its own record`, h === p.caseId && scene.includes(p.symptom) && patients.filter(o => o !== p).every(o => !scene.includes(o.symptom)), `${h}`);
     }
 
-    // A half-filled form for patient 1 must not survive the switch to patient 2.
+    // A half-filled form for patient 1: switching asks first, and never carries the edits to patient 2.
     await row(p1.caseId).click();
     await page.getByRole('tab', { name: /Vital signs/ }).click();
-    await panel(page).getByRole('button', { name: 'Enter values' }).click();
+    await panel(page).getByRole('button', { name: 'Record vital signs' }).click();
     await panel(page).getByLabel(/Heart rate/).fill('55');
     await row(p2.caseId).click();
+    const dialog = page.getByRole('dialog', { name: 'Discard unsaved changes?' });
+    const asked = await dialog.waitFor({ timeout: 5000 }).then(() => true, () => false);
+    const dialogText = asked ? (await dialog.innerText()).replace(/\s+/g, ' ') : '';
+    check('doctor: switching with unsaved vital signs asks first and names both patients', asked && dialogText.includes(p1.caseId) && dialogText.includes(p2.caseId) && dialogText.includes('vital signs'), dialogText.slice(0, 200));
+    await dialog.getByRole('button', { name: `Keep editing ${p1.caseId}` }).click();
+    check('doctor: "Keep editing" stays on patient 1 with the typed value', (await header()) === p1.caseId && (await panel(page).getByLabel(/Heart rate/).inputValue()) === '55');
+    await row(p2.caseId).click();
+    await dialog.getByRole('button', { name: `Discard and open ${p2.caseId}` }).click();
     await page.waitForTimeout(500);
-    check('doctor: a half-filled vital-signs form for patient 1 is gone after switching to patient 2', (await header()) === p2.caseId && (await panel(page).getByLabel(/Heart rate/).count()) === 0);
+    check('doctor: after "Discard", patient 2 opens without patient 1\'s half-filled form', (await header()) === p2.caseId && (await panel(page).getByLabel(/Heart rate/).count()) === 0);
 
     // Update patient 2 only, through the screen.
-    await panel(page).getByRole('button', { name: 'Enter values' }).click();
+    await panel(page).getByRole('button', { name: 'Record vital signs' }).click();
     await panel(page).getByLabel(/Heart rate/).fill('87');
-    await panel(page).getByRole('button', { name: 'Record', exact: true }).click();
+    await panel(page).getByRole('button', { name: 'Save vital signs' }).click();
     check('doctor: the recorded value appears for patient 2', await visible(page, 'Entered by clinician'));
     const counts = async () => Promise.all(patients.map(async p => ((await api.get(DOCTOR.persona, `/api/encounters/${p.encounterId}/vitals`)).json?.measurements ?? []).filter((m: any) => m.source !== 'AMBULANCE_CREW').length));
     const [c1, c2, c3] = await counts();

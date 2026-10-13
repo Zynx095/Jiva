@@ -124,6 +124,10 @@
 }
 
 @layer base {
+  :root {
+    /* Height of the sticky app header; AppHeader keeps it current. */
+    --jiva-header-h: 57px;
+  }
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

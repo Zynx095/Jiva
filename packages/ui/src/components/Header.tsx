@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import { useRuntimeMode } from '../lib/mode';
 import { cx } from '../lib/cx';
 import { timeAgo, useNow } from '../lib/time';
@@ -32,8 +32,20 @@ export interface AppHeaderProps {
 }
 
 export function AppHeader({ app, context, center, actions, mainId = 'main' }: AppHeaderProps) {
+  // Publish the header's height (it wraps on narrow screens) so sticky page sections sit right below it.
+  const ref = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const apply = () => document.documentElement.style.setProperty('--jiva-header-h', `${Math.round(el.getBoundingClientRect().height)}px`);
+    apply();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   return (
-    <header className="sticky top-0 z-30 border-b border-ink-200 bg-white">
+    <header ref={ref} className="sticky top-0 z-30 border-b border-ink-200 bg-white">
       <a
         href={`#${mainId}`}
         className="sr-only z-50 rounded-lg bg-brand-700 px-3 py-2 text-sm font-semibold text-white focus:not-sr-only focus:absolute focus:left-3 focus:top-2"

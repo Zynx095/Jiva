@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { EmptyState, JivaButton, JivaCard, JivaLogo, JivaSkeleton, jivaAppUrl } from '@jiva/ui/src';
 import { apiGet, PERSONA } from './api';
 import { DoctorWorkspace } from './DoctorWorkspace';
+import { UnsavedProvider } from './unsaved';
 
 /**
  * The doctor workspace serves clinicians only (the role comes from the server). Anyone else is pointed to
@@ -26,7 +27,12 @@ export default function Root() {
     };
   }, []);
 
-  if (role === 'CLINICIAN') return <DoctorWorkspace />;
+  if (role === 'CLINICIAN')
+    return (
+      <UnsavedProvider>
+        <DoctorWorkspace />
+      </UnsavedProvider>
+    );
   return (
     <div className="mx-auto max-w-md px-4 py-16">
       <JivaLogo className="mb-6" />

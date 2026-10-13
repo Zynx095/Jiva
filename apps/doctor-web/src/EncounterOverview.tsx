@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { HospitalState, PatientState } from '@jiva/domain-models';
 import {
   ASSIGNMENT_REASON_TEXT,
   CardHeader,
+  JivaButton,
   JivaCard,
   JivaTimeline,
   SkeletonRows,
@@ -86,8 +87,11 @@ export function HandoverCard({ e, now }: { e: EncounterRecord; now: number }) {
   );
 }
 
-/** The encounter's recorded history as this clinician may see it: real events, content-free. */
+const HISTORY_PREVIEW = 6;
+
+/** The encounter's recorded history as this clinician may see it: real events, content-free (latest first, older on request). */
 export function EncounterHistory({ events, hospital }: { events: JivaEvent[] | null | undefined; hospital: HospitalState | null }) {
+  const [all, setAll] = useState(false);
   const name = (id: string) => (hospital && id === hospital.hospitalId ? hospital.displayName : undefined);
   const items: TimelineItem[] = (events ?? [])
     .filter((e) => e.eventType !== 'ambulance.location.updated')
@@ -105,7 +109,14 @@ export function EncounterHistory({ events, hospital }: { events: JivaEvent[] | n
       ) : events === null ? (
         <p className="mt-3 text-sm text-danger-700">The history could not be loaded. It will be retried automatically.</p>
       ) : (
-        <JivaTimeline items={items} dense className="mt-3" empty={<p className="mt-3 text-sm text-ink-500">No recorded events yet.</p>} />
+        <>
+          <JivaTimeline items={all ? items : items.slice(0, HISTORY_PREVIEW)} dense className="mt-3" empty={<p className="mt-3 text-sm text-ink-500">No recorded events yet.</p>} />
+          {items.length > HISTORY_PREVIEW && (
+            <JivaButton size="sm" variant="tertiary" icon={all ? 'chevronUp' : 'chevronDown'} onClick={() => setAll((v) => !v)}>
+              {all ? 'Show the latest only' : `Show all ${items.length} events`}
+            </JivaButton>
+          )}
+        </>
       )}
     </JivaCard>
   );
