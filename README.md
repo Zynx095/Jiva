@@ -67,7 +67,7 @@ Requires Node.js 20+.
 
 ```bash
 npm install
-npm run dev                # API :4000 + all four apps
+npm run dev                # API :4000 + all six apps
 npm run simulate:full:blr  # flagship scenario: request → accept → reroute → arrival
 ```
 
@@ -76,14 +76,16 @@ npm run simulate:full:blr  # flagship scenario: request → accept → reroute �
 | API | `:4000` | `:4000` |
 | Management | `:5173` | `:4173` |
 | Ambulance | `:5174` | `:4174` |
-| Hospital | `:5175` | `:4175` |
+| Hospital (coordination) | `:5175` | `:4175` |
 | Patient | `:5176` | `:4176` |
+| Doctor workspace | `:5177` | `:4177` |
+| Demo portal (separate, not operational) | `:5178` | `:4178` |
 
-`npm run start:prod` serves the production builds. Both refuse to start if a port is still in use and print `READY` once the API and all four apps answer.
+`npm run start:prod` serves the production builds. Both refuse to start if a port is still in use and print `READY` once the API and all six apps answer. The demo portal runs scripted scenarios through the real workflows and shows the recorded timeline; see [`docs/clinical-workspace.md`](docs/clinical-workspace.md).
 
 The demo API accepts requests only from the machine it runs on (demo personas are not authentication). To demo across a network on purpose, set `JIVA_DEMO_ALLOW_REMOTE=true` — then anyone on that network can act as any persona.
 
-Personas are chosen with `?as=` (e.g. `http://localhost:5175/?as=demo-doc-3` opens the hospital app as a clinician):
+Personas are chosen with `?as=` (e.g. `http://localhost:5177/?as=demo-doc-3` opens the doctor workspace as Dr. Ravi Kumar):
 crews `demo-amb-1…3`, hospital coordinators `demo-hosp-1…4`, clinicians `demo-doc-1…5`, patients
 `demo-patient-1/2` (cases `CASE-BLR-876/877`), `demo-mgmt-1`, `demo-admin`.
 
@@ -94,7 +96,8 @@ crews `demo-amb-1…3`, hospital coordinators `demo-hosp-1…4`, clinicians `dem
 | `npm test` | Unit and integration suites |
 | `npm run typecheck` | Build all workspaces and typecheck the tests |
 | `npm run demo:reset` | Reset demo state |
-| `npm run demo:check` | Verify demo readiness, including Lambda bundle loading |
+| `npm run demo:check` | Verify demo readiness, including Lambda bundle loading and the clinical catalogue |
+| `npm run catalogue:validate` | Validate the bundled clinical catalogue (schemas, sample files' size, hash and type) |
 | `npm run simulate:emergency` | Emit a Bengaluru emergency event sequence |
 | `npm run canary:soak` | Run the authority canary soak |
 | `npm run data:build` | Fetch, normalize, and validate the public dataset |
@@ -144,7 +147,7 @@ jiva/
 | Dynamic re-routing | ✅ | On reject, unavailable, or expiry; flagship scenario is deterministic |
 | RBAC and realtime filtering | ✅ | Per-role event filtering, verified reconnect resync |
 | Demo reset | ✅ | Admin-only, with an epoch guard for in-flight work |
-| Four role apps | ✅ | Verified in browser, dev and prod |
+| Role apps | ✅ | Ambulance, hospital, doctor, patient, management + a separate demo portal; verified in browser |
 | Crew emergency intake | ✅ | `POST /api/emergencies`; symptoms and suspected cause kept apart; idempotent |
 | Public facility directory | ✅ | 466 Bengaluru facilities, OSM-verified locations where possible; never a destination |
 | Referral-bound answers | ✅ | An answer must name its referral; case-scoped expiry; referral evidence per hospital |
@@ -156,6 +159,11 @@ jiva/
 | Patient in-hospital dashboard | ✅ | Switches on the hospital's handover record, never on GPS or timers |
 | Operational vs demo mode | ✅ | One switch (`JIVA_ENVIRONMENT`); nothing synthetic in operational mode; provenance in `/api/health` |
 | Audit trail | ✅ | Content-free, administrators only; in memory locally |
+| Doctor workspace | ✅ | Assigned encounters only: crew record, handover, history, vital signs, prescriptions, reports, notes, documents |
+| Prescription drafts and authorisation | ✅ | Drafts never reach the patient; explicit, attested authorisation; catalogue agreement checked; no dosing advice |
+| Ambulance vital signs and symptom details | ✅ | Time, source, quality flag, reasons for missing values; to the receiving doctor only; **no device integration** |
+| Clinical catalogue | ✅ | Versioned JSON with CSV/JSON import preview/apply and export; synthetic sample documents (demo only); **illustrative, not a formulary** |
+| Demo portal | ✅ | Ten scenarios through real workflows, manual controls, recorded timeline, asset library; disabled in operational mode |
 
 ### Intelligence and data
 
@@ -226,6 +234,13 @@ provenance → the patient's in-hospital view, with an operational/demo switch, 
 review. Implemented and tested in the **local API**; see [`docs/emergency-to-care.md`](docs/emergency-to-care.md)
 and [`IMPLEMENTATION_PROGRESS.md`](IMPLEMENTATION_PROGRESS.md).
 
+### ✅ Doctor workspace, ambulance intake, catalogue and demo portal (branch `feat/jiva-doctor-clinical-workspace`)
+
+A dedicated doctor workspace; prescription drafts with explicit authorisation; internal clinical notes; typed and
+versioned documents with labelled synthetic samples; ambulance vital signs and symptom details that follow the
+patient to the assigned doctor; a validated, versioned clinical catalogue; and a separate demo portal. Local API
+only, in memory; see [`docs/clinical-workspace.md`](docs/clinical-workspace.md).
+
 ### 🔜 Next: production prerequisites
 
 Not started; each needs an explicit go-ahead.
@@ -268,6 +283,7 @@ These are directional, not committed.
 | Read | For |
 |---|---|
 | [`docs/emergency-to-care.md`](docs/emergency-to-care.md) | The emergency-to-care journey: contracts, APIs, authorization, provenance, limits |
+| [`docs/clinical-workspace.md`](docs/clinical-workspace.md) | Doctor workspace, ambulance intake, clinical catalogue and the demo portal |
 | [`IMPLEMENTATION_PROGRESS.md`](IMPLEMENTATION_PROGRESS.md) | Phase-by-phase record with audits, decisions, tests and commits |
 | [`docs/security-review.md`](docs/security-review.md) | Enforced protections, audit trail, release-readiness findings and remaining gaps |
 | [`docs/production-readiness.md`](docs/production-readiness.md) | What is verified, unvalidated, missing, externally dependent or untested in deployment |

@@ -75,3 +75,34 @@ another user's response) and replays happen only after authorization; upload tic
 hash-stored; JWT failure logs contain header fields and verifier messages, never the token; clinical events
 on the bus are content-free; per-recipient event copies apply on every delivery path; reassignment removes a
 clinician's access immediately (REST and realtime).
+
+## 6. Review of the doctor workspace, ambulance intake, catalogue and demo portal (2026-10-13)
+
+Branch `feat/jiva-doctor-clinical-workspace` (reference: [`clinical-workspace.md`](clinical-workspace.md)). The
+protections of §1–§5 are unchanged; this section covers the new surfaces.
+
+| Surface | What is enforced | Tests |
+|---|---|---|
+| Pre-hospital record (crew vital signs, narrative) | Written only by the crew **attending** the case (re-checked under the case lock; the handover releases it → 404); read by that crew, the clinician assigned to the case's encounter and the patient; coordinators, management and admins 403, everyone else 404. Strict bodies: a client cannot claim a source, a device or provenance; plausible ranges and times; bounded entries. Stored in the clinical store, **never** on the operational bus; the event carries counts, types and times only. | `prehospital-and-notes` (matrix, delivery), `doctor-workspace` §A–B |
+| Clinical notes | Assigned clinician only; patients 403 (`INTERNAL_NOTES`); versioned and append-only; the event is never patient-visible (contract literal). | `prehospital-and-notes`, `doctor-workspace` §E |
+| Prescription drafts and authorisation | A draft is never in force, never listed for the patient and its event is not delivered to them; only the assigned clinician authorises, naming the reviewed version with `attestation: true` (absent/false → 400; stale → 409). A catalogue reference must agree with the entry (422). Nothing authorises automatically. | `prescription-workflow`, `doctor-workspace` §C |
+| Clinical catalogue | Read: clinicians and admins; import/export: admins (403 otherwise, audited). Preview changes nothing; apply only the same admin's unexpired preview of an unchanged catalogue; invalid or duplicated records block the import; changes need confirmation; no deletion. Asset references are bare file names resolved inside the asset store, regular files only (no links/directories), ≤ 5 MB, size + sha256 + file signature verified. CSV export guards against spreadsheet formulas. Payload ≤ 90,000 characters, ≤ 500 records. | `clinical-catalogue`, `doctor-workspace` §H, browser check |
+| Synthetic samples | Exist only in DEMO mode (all sample routes 404 in operational mode, so a sample can never reach a real encounter); attached only by the assigned clinician; the file is re-verified and re-hashed while copied; stored as `CATALOGUE_SAMPLE`, `SYNTHETIC_DEMO` and labelled as a sample for clinician and patient. | `operational-isolation`, `doctor-workspace` §D |
+| Document versions | A new version may replace only a verified, not yet replaced document of the same encounter and category; a race with another replacement is rejected at upload and nothing is stored. | `doctor-workspace` §D |
+| Realtime fault injection | `POST /api/demo/realtime-interruption`: demo administrator only, DEMO mode only (404 otherwise), 5–60 s, audited. Refuses transport handshakes so clients keep retrying. | `doctor-workspace` §G, `demo-portal-scenarios`, `operational-isolation` |
+| Demo portal | Uses only demo personas through the normal API (no special access); refuses to run against an operational API; the API keeps serving demo personas to this machine only. | `demo-portal-scenarios`, browser check |
+| Logs and audit | New log lines carry identifiers and counts only (asset ids, problem counts); audit entries name actions and ids, never medication names, note text, values or narratives (checked in `doctor-workspace` §H). | `doctor-workspace` |
+
+### Findings
+
+| # | Severity | Component | Finding | Status |
+|---|---|---|---|---|
+| D1 | Medium (reliability, unchanged from R4) | All clinical state | The new records (drafts, notes, pre-hospital entries, document versions, samples) and catalogue imports are in memory like everything else; a restart loses them. | Open — [`persistence-plan.md`](persistence-plan.md) §0 explains why the durable store was not shipped in this branch. |
+| D2 | Low | Intake with a clinical part | If recording the pre-hospital entry failed after the emergency was published, the crew would get a 500 while the case exists; a retry without a case reference could open a second case. Reachable only through a server defect (all inputs are validated before anything is published). | Open; documented. A unit of work (persistence plan §4 step 1) removes it. |
+| D3 | Low | Operational catalogue | In operational mode the medication catalogue starts empty and an administrator's import lives in memory; after a restart prescribers can still write prescriptions without a catalogue reference. | Open; durable catalogue in the persistence plan. |
+| D4 | Info | Realtime fault injection | Interrupts every client of the demo API at once (by design). Demo administrator only, DEMO mode only, local machine only. | Accepted. |
+| D5 | Info | Audit volume | Reading the audit log is itself audited on every read; the demo portal limits its reads to when recorded events change. | Accepted (pre-existing behaviour). |
+| D6 | Info | Crew narrative | Free text written by the crew is readable by the patient (it is their record). Operational guidance for crews is needed before real use. | Open; governance item. |
+
+Not changed and still open: R5 (patient linking by case reference), R7 (hospital shared answer slot), the
+production prerequisites of [`production-readiness.md`](production-readiness.md).

@@ -3,7 +3,8 @@
 **JIVA is not production-ready.** It is a reliable, locally verified demonstration with production-minded
 foundations. A passing local test suite says nothing about real hospitals, real devices, real identities or a
 deployed cloud stack — none of which exist here. Related: [`emergency-to-care.md`](emergency-to-care.md),
-[`security-review.md`](security-review.md), [`persistence-plan.md`](persistence-plan.md).
+[`clinical-workspace.md`](clinical-workspace.md), [`security-review.md`](security-review.md),
+[`persistence-plan.md`](persistence-plan.md).
 
 ## A. Implemented and locally verified
 
@@ -25,6 +26,15 @@ production builds.
 | Screens survive API outage and recover by themselves | browser outage check (5 apps/roles, 25/25) |
 | Launcher refuses busy ports and reports readiness | bounded launcher run |
 | Public facility directory (OSM-matched where verifiable) | unit + journey |
+| Doctor workspace (assigned encounters only; overview with the crew's record, handover and history) | doctor-workspace suite + browser (desktop and 390 px) |
+| Prescription drafts and explicit, attested authorisation; catalogue agreement; patient sees authorised prescriptions only | unit + doctor-workspace suite + browser |
+| Clinical notes (internal, versioned) | unit + doctor-workspace suite + browser |
+| Ambulance pre-hospital record (vital signs with time, source, quality, unavailable reasons; narrative) reaching only the assigned clinician and the patient | unit + doctor-workspace suite + browser |
+| Versioned clinical catalogue with CSV/JSON import preview/apply and export; synthetic sample documents verified by size, hash and type | unit + doctor-workspace suite + browser (catalogue administration) |
+| Document types and versions; demo-only synthetic samples labelled as samples for clinician and patient | unit + doctor-workspace suite + browser |
+| Demo portal: ten scenarios through real workflows; SHADOW authority unchanged | demo-portal-scenarios suite + browser |
+| Nothing synthetic in operational mode (no samples, no simulators, no fault injection, no bundled medication list) | operational-isolation unit suite + browser (portal disabled) |
+| Realtime interruption and automatic recovery of the screens | doctor-workspace + demo-portal-scenarios suites + browser |
 
 ## B. Implemented but not validated against real external systems
 
@@ -49,6 +59,10 @@ production builds.
 | Rate limiting / WAF, upload quotas, tamper-evident audit, consent and data-subject workflows | Not built |
 | Expiry engine on AWS (scheduler) | Exists only locally |
 | Monitoring, alerting and dashboards for the clinical paths | Not built (CloudWatch resources exist only for the operational mesh in CDK) |
+| A unit of work for clinical commands (record + event + audit + idempotency in one transaction) and a split of the encounter projector | Prerequisite of durable storage; designed in `persistence-plan.md` §0/§4 |
+| Durable catalogue imports; an operational catalogue-administration UI | Imports are in memory; administration is API-only outside the demo portal |
+| Patient view of the crew's pre-hospital record | API exists; no patient screen |
+| Clinical decision support (dose checks, interactions, allergies), e-prescribing, discharge | Not built — and nothing in JIVA may present catalogue data as advice |
 
 ## D. Requires external integration, credentials or authoritative data
 
@@ -57,7 +71,9 @@ production builds.
 | Hospital acceptance/capacity feeds | Answers come from the hospital app; no hospital system is connected |
 | Hospital staff directory | Synthetic demo roster only |
 | EHR / FHIR exchange | None |
-| Medical devices | Ingestion contract only; no endpoint, no device |
+| Medical devices (bedside and ambulance monitors) | Ingestion contract only; no endpoint, no device; crew and clinician values are typed in |
+| Authoritative medication database / hospital formulary | Only an illustrative 21-product list in demo mode; operational mode starts empty |
+| Imaging (PACS/DICOM) and laboratory systems (LIS) | None; documents are uploaded files or demo samples; no DICOM viewer |
 | Authoritative hospital data (capabilities, beds) | Public listings only; capacity unknown unless a hospital reports it |
 | Identity provider accounts (crews, staff, clinicians, patients) | None |
 | Live traffic routing | None |
@@ -72,10 +88,12 @@ production builds.
 | Backup (PITR, S3 versioning) and **restore drill** | Not done |
 | Security review by an independent party; penetration test | Not done |
 | Clinical safety review and governance before any change to decision authority | Not done |
+| Clinical safety case and usability testing of the prescribing workflow (drafts, attestation, catalogue) with clinicians | Not done |
+| Crew workflow review (what may be written in the pre-hospital narrative, device-free vital-sign entry under time pressure) | Not done |
 | Lambda runtime upgrade (`nodejs20.x` deprecated) | Not done |
 
 ## Recommended next implementation step
 
-`SqliteClinicalStore` with transactional command writes (persistence plan §4 step 1): it removes the largest
-demo and production risk (losing encounters and records on restart) without new infrastructure, behind the
-existing `IClinicalStore` interface.
+The unit of work for clinical commands and the encounter-projector split (persistence plan §4 step 1), then the
+opt-in `SqliteClinicalStore` that must pass `tests/unit/clinical-store-contract.test.ts` (step 2), then the
+state store (step 3) so that a restart is coherent for operational and clinical data alike.

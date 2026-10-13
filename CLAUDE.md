@@ -45,15 +45,16 @@ jiva/
 - Event simulator `npm run simulate:emergency` implemented.
 - AWS CDK skeleton written.
 - Emergency-to-care journey (branch `feat/emergency-to-care-journey`, local API): crew intake, public facility directory, referral-bound hospital answers, hospital-recorded arrival/handover and encounters, doctor assignment, versioned prescriptions and reports, verified diagnostic documents, vital signs with provenance, the patient's in-hospital view, an operational/demo switch and an admin audit trail. Record: `IMPLEMENTATION_PROGRESS.md`; reference: `docs/emergency-to-care.md`; security: `docs/security-review.md`.
+- Doctor workspace and demo portal (branch `feat/jiva-doctor-clinical-workspace`): `apps/doctor-web` (clinicians), ambulance vital signs and symptom details, prescription drafts with explicit authorisation, clinical notes, typed/versioned documents with labelled synthetic samples, a versioned clinical catalogue (`data/catalogue`, CSV/JSON import preview/apply), and the separate `apps/demo-portal`. Reference: `docs/clinical-workspace.md`. Still in memory — see `docs/persistence-plan.md` §0.
 
 ## 6. How to Run Locally
 From the project root:
 1. `npm install`
-2. `npm run dev` — starts the API (:4000) and all four apps (management :5173, ambulance :5174, hospital :5175, patient :5176). `npm run start:prod` serves production builds on :4173–:4176.
+2. `npm run dev` — starts the API (:4000) and six apps (management :5173, ambulance :5174, hospital :5175, patient :5176, doctor workspace :5177, demo portal :5178). `npm run start:prod` serves production builds on :4173–:4178.
 3. `npm run simulate:full:blr` — deterministic, self-verifying flagship scenario (reset → accept → reroute → arrival).
 4. `npm run demo:reset` — reset demo state.
 
-Auth is DEMO-only: clients send `x-jiva-demo-user: <persona>` (see `packages/auth/src/demoAuth.ts`); the server enforces role scope. Personas via `?as=`: crews `demo-amb-1…3`, coordinators `demo-hosp-1…4`, clinicians `demo-doc-1…5` (the hospital app becomes the clinician workspace), patients `demo-patient-1/2`, `demo-mgmt-1`, `demo-admin`. `JIVA_ENVIRONMENT=production` switches the API to operational mode (no demo personas, no synthetic data). Tests: `npm run test:unit`, `npm run test:integration` (incl. `clinical-journey`, `operational-mode`, `e2e-journey`). Status: `docs/opus-final-system-status.md` (before the emergency-to-care work) and `IMPLEMENTATION_PROGRESS.md`.
+Auth is DEMO-only: clients send `x-jiva-demo-user: <persona>` (see `packages/auth/src/demoAuth.ts`); the server enforces role scope. Personas via `?as=`: crews `demo-amb-1…3`, coordinators `demo-hosp-1…4`, clinicians `demo-doc-1…5` (doctor workspace, :5177), patients `demo-patient-1/2`, `demo-mgmt-1`, `demo-admin`. `JIVA_ENVIRONMENT=production` switches the API to operational mode (no demo personas, no synthetic data). Tests: `npm run test:unit`, `npm run test:integration` (incl. `clinical-journey`, `operational-mode`, `e2e-journey`, `doctor-workspace`, `demo-portal-scenarios`). Status: `docs/opus-final-system-status.md` (before the emergency-to-care work) and `IMPLEMENTATION_PROGRESS.md`.
 
 ## 7. Roadmap for Claude
 The emergency-to-care roadmap (phases 0–14) is complete in the local API; production prerequisites that remain are listed in `docs/emergency-to-care.md` §9. Older roadmap items:

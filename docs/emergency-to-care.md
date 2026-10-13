@@ -4,6 +4,11 @@ Branch `feat/emergency-to-care-journey`. The phase-by-phase record (audits, deci
 [`IMPLEMENTATION_PROGRESS.md`](../IMPLEMENTATION_PROGRESS.md); the security review is
 [`security-review.md`](security-review.md). This document describes the result as it stands.
 
+> Continued on `feat/jiva-doctor-clinical-workspace`: the clinician screens moved to the dedicated doctor
+> workspace (`apps/doctor-web`), and prescription drafts, clinical notes, ambulance vital signs, the clinical
+> catalogue, document versions and samples, and the demo portal were added — see
+> [`clinical-workspace.md`](clinical-workspace.md).
+
 > JIVA is a research and demonstration platform. It is not a medical device. Everything in demo mode is
 > synthetic; no live hospital, device or staff-directory integration exists (see §9).
 
