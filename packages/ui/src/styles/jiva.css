@@ -42,6 +42,15 @@
   /* The page: warm white. Panels are pure white on it. */
   --color-canvas: #faf9f6;
 
+  /*
+   * Surfaces (dimensional layering). Level 0 is the canvas; 1 panels; 2 cards and wells inside panels;
+   * 3 selected / focused controls; 4 dialogs, menus and toasts. Components use these, never a literal white,
+   * so a theme (e.g. the demo portal's OLED theme) can re-skin them.
+   */
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #f7f5f0;
+
   /* Amber: waiting, pending response, limited, stale — needs attention, not alarm. Text uses 700/800. */
   --color-warn-50: #fbf5e8;
   --color-warn-100: #f6e9cc;
@@ -81,6 +90,12 @@
   --shadow-sm: 0 1px 3px rgb(32 40 32 / 0.08), 0 1px 2px rgb(32 40 32 / 0.04);
   --shadow-md: 0 6px 16px -4px rgb(32 40 32 / 0.12), 0 2px 4px -2px rgb(32 40 32 / 0.06);
   --shadow-lg: 0 16px 40px -12px rgb(32 40 32 / 0.22), 0 4px 10px -4px rgb(32 40 32 / 0.08);
+
+  /* Elevation by level: hairline lift (1), card on a panel (2), selected / hovered control (3), overlay (4). */
+  --shadow-e1: 0 1px 2px rgb(32 40 32 / 0.04), 0 1px 1px rgb(32 40 32 / 0.02);
+  --shadow-e2: 0 1px 3px rgb(32 40 32 / 0.06), 0 6px 16px -10px rgb(32 40 32 / 0.12);
+  --shadow-e3: 0 2px 6px -1px rgb(32 40 32 / 0.08), 0 12px 28px -14px rgb(32 40 32 / 0.22);
+  --shadow-e4: 0 24px 56px -16px rgb(32 40 32 / 0.28), 0 6px 14px -6px rgb(32 40 32 / 0.10);
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
@@ -123,6 +138,62 @@
   }
 }
 
+/*
+ * Fills: the few places colour is applied as a surface with text on it (primary, danger and critical actions,
+ * inverse chips, accent gradients). Gradients are vertical and subtle in the operational apps — depth, not
+ * decoration. Themes override these variables; components use the utilities below.
+ */
+:root {
+  --fill-primary: linear-gradient(180deg, #2b7b57 0%, #236b4b 100%);
+  --fill-primary-hover: linear-gradient(180deg, #236b4b 0%, #1b573c 100%);
+  --on-primary: #ffffff;
+  --fill-danger: linear-gradient(180deg, #cb4b4b 0%, #c43d3d 100%);
+  --fill-danger-hover: linear-gradient(180deg, #c43d3d 0%, #a82f32 100%);
+  --fill-critical: linear-gradient(180deg, #b93a3c 0%, #a82f32 55%, #962a2d 100%);
+  --fill-critical-hover: linear-gradient(180deg, #a82f32 0%, #8b272a 100%);
+  --on-danger: #ffffff;
+  --fill-inverse: #202820;
+  --on-inverse: #ffffff;
+  /* Accent gradients for the one hero element of a screen (current care, next action). */
+  --gradient-brand: linear-gradient(135deg, #1f6a4a 0%, #236b4b 45%, #2c7f6a 100%);
+  --gradient-critical: linear-gradient(135deg, #a82f32 0%, #c43d3d 60%, #c9524a 100%);
+  --gradient-sheen: linear-gradient(180deg, rgb(255 255 255 / 0.9) 0%, rgb(255 255 255 / 0) 100%);
+  --logo-fill: #236b4b;
+  --ring-focus: #2c7a57;
+}
+
+@utility jiva-fill-primary {
+  background: var(--fill-primary);
+  color: var(--on-primary);
+}
+@utility jiva-fill-primary-hover {
+  background: var(--fill-primary-hover);
+}
+@utility jiva-fill-danger {
+  background: var(--fill-danger);
+  color: var(--on-danger);
+}
+@utility jiva-fill-danger-hover {
+  background: var(--fill-danger-hover);
+}
+@utility jiva-fill-critical {
+  background: var(--fill-critical);
+  color: var(--on-danger);
+}
+@utility jiva-fill-critical-hover {
+  background: var(--fill-critical-hover);
+}
+@utility jiva-fill-inverse {
+  background: var(--fill-inverse);
+  color: var(--on-inverse);
+}
+@utility jiva-gradient-brand {
+  background-image: var(--gradient-brand);
+}
+@utility jiva-gradient-critical {
+  background-image: var(--gradient-critical);
+}
+
 @layer base {
   :root {
     /* Height of the sticky app header; AppHeader keeps it current. */
@@ -152,7 +223,7 @@
     color: var(--color-brand-900);
   }
   :focus-visible {
-    outline: 2px solid var(--color-brand-600);
+    outline: 2px solid var(--ring-focus);
     outline-offset: 2px;
   }
   button, [role="button"], summary {
