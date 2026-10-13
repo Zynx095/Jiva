@@ -658,3 +658,20 @@ The long-running dev stack (`npm run dev`) was stopped by the environment for lo
 - All phases 0–14 are complete on `feat/emergency-to-care-journey`; `main` is untouched; `start-jiva.bat` remains untracked (not ours).
 - Re-verify: `npm run typecheck && npm run test:unit && npm run test:integration && npm run build:lambdas`, then `npx cdk synth --quiet` in `infrastructure/aws` (never deploy without authorization).
 - Next concrete task (needs an explicit go-ahead): production identity and durable encrypted storage for the clinical domain, then the AWS clinical routes (see `docs/emergency-to-care.md` §9).
+
+---
+
+## Release hardening (2026-10-13, after phase 14)
+
+Starting point verified: branch `feat/emergency-to-care-journey` at `38cda98`, 29 commits ahead of `main` (`main` still at `b0be67c`), working tree clean except the untracked `start-jiva.bat` (not ours; not modified, not committed).
+
+| Commit | Change |
+|---|---|
+| `ac5a180` | **fix(security)** demo mode serves only the local machine (finding R1, high): demo personas are not authentication and the API listened on every interface |
+| `b189e1d` | **fix(documents)** per-port default document directory (R2): the runtime test API wiped a running demo's uploads |
+| `cc27f6b` | **feat(dev)** launcher refuses busy ports and reports `READY` / `NOT READY` (R3) |
+| (docs) | `docs/security-review.md` §5 (findings R1–R9), `docs/persistence-plan.md`, `docs/production-readiness.md`, README and runbook notes |
+
+Verification on the final code: `typecheck` ✅; `test:unit` 36 suites ✅; `test:integration` ✅ (runtime 124/0, journey 304/0, operational mode 14/0, e2e 39/0); `build:lambdas` ✅; `data:validate` ✅; `cdk synth --quiet` ✅ (no deploy); lint ✅ ×4; `demo:check` READY; flagship scenario complete (shadow: 0 disagreements); browser journey on production builds 27/27; browser API-outage/recovery check 25/25; launcher busy-port and READY checks.
+
+Open risks: in-memory state (R4, plan written), patient linking (R5), unbounded indexes over long runs (R6), cosmetic hospital answer slot (R7), no upload quota (R8), AWS clinical domain absent (R9). Recommended next step: `SqliteClinicalStore` with transactional command writes (`docs/persistence-plan.md` §4.1).
