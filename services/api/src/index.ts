@@ -395,6 +395,12 @@ io.on('connection', (socket) => {
 });
 
 ready.then(() => {
+  httpServer.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`[API] Fatal: port ${config.port} is already in use by another process. Stop it before restarting JIVA.`);
+      process.exit(1);
+    }
+  });
   httpServer.listen(config.port, () => {
     console.log(`[API] Server running on http://localhost:${config.port} in ${config.environment.toUpperCase()} config, ${runtimeMode()} mode${runtimeMode() === 'DEMO' ? ' (DEMO personas — not authentication)' : ''}`);
     if (runtimeMode() === 'DEMO' && process.env.JIVA_DEMO_ALLOW_REMOTE === 'true') console.warn('[API] WARNING: JIVA_DEMO_ALLOW_REMOTE=true — any device on this network can act as any demo persona, including admin.');

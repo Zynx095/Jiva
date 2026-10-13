@@ -12,6 +12,7 @@ import { spawn, execSync } from 'node:child_process';
 import net from 'node:net';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import fs from 'node:fs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const prod = process.argv.includes('--prod');
@@ -28,10 +29,16 @@ const apps = [
 
 // A port still held by an earlier run is the most common demo failure: say so before starting anything.
 const portFree = (port) => new Promise((resolve) => {
-  const srv = net.createServer();
-  srv.once('error', () => resolve(false));
-  srv.once('listening', () => srv.close(() => resolve(true)));
-  srv.listen(port, '127.0.0.1');
+  const check = (host) => new Promise((res) => {
+    const srv = net.createServer();
+    srv.once('error', (err) => {
+      if (err.code === 'EADDRNOTAVAIL' || err.code === 'EINVAL') res(true);
+      else res(false);
+    });
+    srv.once('listening', () => srv.close(() => res(true)));
+    srv.listen(port, host);
+  });
+  Promise.all([check('127.0.0.1'), check('::1')]).then(([ipv4, ipv6]) => resolve(ipv4 && ipv6));
 });
 const ports = [4000, ...apps.map(([, , d, p]) => (prod ? p : d))];
 const busy = [];
@@ -42,9 +49,20 @@ if (busy.length) {
   process.exit(1);
 }
 
+const sharedPackages = [
+  'config', 'event-schema', 'domain-models', 'auth', 'feasibility',
+  'intelligence', 'mapping', 'realtime', 'ui'
+];
+const missingDist = sharedPackages.filter(pkg => !fs.existsSync(path.join(ROOT, 'packages', pkg, 'dist', 'index.js')));
+
 if (prod) {
   console.log('[dev-all] Building all workspaces for production…');
   execSync('npm run build', { cwd: ROOT, stdio: 'inherit' });
+} else if (missingDist.length > 0) {
+  console.log(`[dev-all] Missing compiled shared packages (${missingDist.join(', ')}). Building shared packages first…`);
+  for (const pkg of sharedPackages) {
+    execSync(`npm run build --workspace=packages/${pkg}`, { cwd: ROOT, stdio: 'inherit' });
+  }
 }
 
 const services = [
@@ -59,7 +77,13 @@ const children = services.map(([name, cmd], i) => {
   const pipe = stream => stream.on('data', d => String(d).split(/\r?\n/).filter(Boolean).forEach(l => console.log(tag + l)));
   pipe(child.stdout);
   pipe(child.stderr);
-  child.on('exit', code => console.log(`${tag}exited (${code})`));
+  child.on('exit', code => {
+    console.log(`${tag}exited (${code})`);
+    if (code !== 0 && code !== null && !stopping && name === 'api') {
+      console.error(`\n[dev-all] FATAL: API process terminated unexpectedly (code ${code}). Stopping all servers…`);
+      stop();
+    }
+  });
   return child;
 });
 

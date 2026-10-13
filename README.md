@@ -63,13 +63,29 @@ flowchart LR
 
 ## Quick Start
 
-Requires Node.js 20+.
+### Prerequisites
+- **Node.js**: v20 or newer (`node -v` >= 20.0.0, Node 20 or 22 LTS recommended)
+- **npm**: v10 or newer (comes bundled with Node.js 20+)
+
+### Setup & Run
+From the repository root:
 
 ```bash
+# 1. Install dependencies for all monorepo workspaces
 npm install
-npm run dev                # API :4000 + all six apps
-npm run simulate:full:blr  # flagship scenario: request → accept → reroute → arrival
+
+# 2. Build shared packages & apps (required on initial setup)
+npm run build
+
+# 3. Start API (:4000) and all six apps (:5173-:5178)
+npm run dev
+
+# 4. In a separate terminal, trigger the flagship scenario
+npm run simulate:full:blr
 ```
+
+*Windows users can also simply run `start-jiva.bat` from Command Prompt, which verifies Node.js, installs dependencies, compiles packages, and launches all servers automatically.*
+
 
 | Service | Dev | Production build |
 |---|---|---|
