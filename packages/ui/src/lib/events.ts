@@ -281,9 +281,15 @@ export function describeEvent(e: JivaEvent, name: NameResolver, audience: Audien
     case 'clinical.telemetry.recorded': {
       const simulated = str(p, 'source') === 'DEVICE_SIMULATED';
       const n = num(p, 'measurementCount') ?? 0;
+      const action = str(p, 'action');
+      if (action === 'CORRECTED' || action === 'WITHDRAWN') {
+        return patient
+          ? { ...base, title: action === 'CORRECTED' ? 'A vital sign was corrected' : 'A vital sign entry was withdrawn', detail: 'Your care team corrected an entry. See your vital signs.', tone: 'neutral', icon: 'heart', category: 'case' }
+          : { ...base, title: `Vital sign ${action === 'CORRECTED' ? 'corrected' : 'withdrawn as entered in error'}${caseId ? ` · ${caseId}` : ''}`, detail: 'The original entry is kept in the history', tone: 'neutral', icon: 'heart', category: 'case' };
+      }
       return patient
         ? { ...base, title: simulated ? 'Simulated vital signs added (demo)' : 'New vital signs recorded', detail: 'See your vital signs.', tone: simulated ? 'warn' : 'ok', icon: 'heart', category: 'case', notable: !simulated }
-        : { ...base, title: `${n} vital sign${n === 1 ? '' : 's'} recorded${caseId ? ` · ${caseId}` : ''}`, detail: simulated ? 'Simulated monitor — demo data' : 'Entered by a clinician', tone: simulated ? 'warn' : 'ok', icon: 'heart', category: 'case' };
+        : { ...base, title: `${n} vital sign${n === 1 ? '' : 's'} recorded${caseId ? ` · ${caseId}` : ''}`, detail: simulated ? 'Simulated monitor — demo data' : 'Entered manually by the care team', tone: simulated ? 'warn' : 'ok', icon: 'heart', category: 'case' };
     }
     case 'clinical.document.stored': {
       const sample = str(p, 'origin') === 'CATALOGUE_SAMPLE';

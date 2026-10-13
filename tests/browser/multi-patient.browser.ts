@@ -195,7 +195,7 @@ async function main() {
     await panel(page).getByRole('button', { name: 'Record vital signs' }).click();
     await panel(page).getByRole('textbox', { name: /Heart rate/ }).fill('87');
     await panel(page).getByRole('button', { name: 'Save vital signs' }).click();
-    check('doctor: the recorded value appears for patient 2', await visible(page, 'Entered by clinician'));
+    check('doctor: the recorded value appears for patient 2', await visible(page, 'Entered manually · care team'));
     const counts = async () => Promise.all(patients.map(async p => ((await api.get(DOCTOR.persona, `/api/encounters/${p.encounterId}/vitals`)).json?.measurements ?? []).filter((m: any) => m.source !== 'AMBULANCE_CREW').length));
     const [c1, c2, c3] = await counts();
     check('doctor: the update reached patient 2 only (server records)', c1 === 0 && c2 === 1 && c3 === 0, `${c1}/${c2}/${c3}`);
@@ -223,7 +223,7 @@ async function main() {
     await row(p3.caseId).click();
     await page.getByRole('tab', { name: /Prescriptions/ }).click();
     const r3 = await panel(page).innerText();
-    check('doctor (after reload): patient 2 keeps its value, patient 1 has none, patient 3 keeps its draft', v2.includes('Entered by clinician') && !v1.includes('Entered by clinician') && r3.includes('Synthetic test medication'));
+    check('doctor (after reload): patient 2 keeps its value, patient 1 has none, patient 3 keeps its draft', v2.includes('Entered manually · care team') && !v1.includes('Entered manually · care team') && r3.includes('Synthetic test medication'));
 
     check('no uncaught page errors', pageErrors.length === 0, pageErrors.join('; '));
   } catch (err) {
