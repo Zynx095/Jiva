@@ -22,6 +22,7 @@ export interface ProvenanceReport {
     mapping: { active: string; synthetic: boolean };
     ai: { provider: string; synthetic: boolean };
     telemetry: { simulator: boolean; medicalDevices: boolean };
+    positions?: { manual: boolean; simulator: boolean; deviceGps: boolean };
   };
   liveIntegrations: Record<string, boolean>;
 }
