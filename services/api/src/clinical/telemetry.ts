@@ -63,10 +63,11 @@ export function measurementsFromInputs(inputs: MeasurementInput[], ctx: BatchCon
   }));
 }
 
-/** The most recent observation of each type, with its age. */
+/** The most recent observation of each type, with its age. A withdrawn value (corrected or entered in error) never counts. */
 export function latestByType(list: TelemetryMeasurement[], now: number): Partial<Record<MeasurementType, TelemetryMeasurement & { ageSeconds: number; freshness: Freshness }>> {
   const out: Partial<Record<MeasurementType, TelemetryMeasurement & { ageSeconds: number; freshness: Freshness }>> = {};
   for (const m of list) {
+    if (m.withdrawn) continue;
     const cur = out[m.type];
     if (!cur || Date.parse(m.observedAt) > Date.parse(cur.observedAt)) out[m.type] = { ...m, ...freshnessOf(m.observedAt, now) };
   }
@@ -81,6 +82,32 @@ export function observationTimeProblem(inputs: MeasurementInput[], now: number):
     if (t < now - 24 * 3600_000) return 'observedAt is more than 24 hours ago';
   }
   return undefined;
+}
+
+// ------------------------------------------------------------------ corrections
+
+export type CorrectionRefusal = 'NOT_CORRECTABLE' | 'ALREADY_WITHDRAWN';
+
+/**
+ * Only a value the care team entered by hand can be corrected or withdrawn, and only once: simulated
+ * readings and (future) device data are never edited, and a withdrawn value stays withdrawn.
+ */
+export function correctionRefusal(m: TelemetryMeasurement): CorrectionRefusal | undefined {
+  if (m.source !== 'MANUAL_CLINICIAN') return 'NOT_CORRECTABLE';
+  if (m.withdrawn) return 'ALREADY_WITHDRAWN';
+  return undefined;
+}
+
+/** The corrected value as a measurement input of the same type and time (validated by the caller against the rules). */
+export function replacementInput(original: TelemetryMeasurement, replacement: { value: number; secondaryValue?: number }): Record<string, unknown> {
+  return {
+    type: original.type,
+    value: replacement.value,
+    ...(original.type === 'BLOOD_PRESSURE' ? { secondaryValue: replacement.secondaryValue } : {}),
+    unit: original.unit,
+    observedAt: original.observedAt,
+    ...(original.quality ? { quality: original.quality } : {}),
+  };
 }
 
 // ------------------------------------------------------------------ demo simulation
