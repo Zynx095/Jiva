@@ -53,3 +53,17 @@ export function provenanceReport(i: ProvenanceInputs) {
     liveIntegrations: { hospitalCapacityFeeds: false, hospitalStaffDirectory: false, medicalDevices: false, documentObjectStorage: false },
   };
 }
+
+const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+
+/**
+ * Demo personas are unauthenticated by design (anyone can claim `demo-admin`), so in DEMO mode the API
+ * only serves this machine: on a shared network (a hackathon venue, a café) another device must not be able
+ * to read the synthetic clinical data, act as an administrator or reset the demo. A LAN demo on purpose
+ * (e.g. phones on the same Wi-Fi) needs JIVA_DEMO_ALLOW_REMOTE=true, which the API announces at start-up.
+ * Operational mode is unaffected (it requires verified JWTs).
+ */
+export function demoClientAllowed(remoteAddress: string | undefined, mode: RuntimeMode = runtimeMode(), allowRemote = process.env.JIVA_DEMO_ALLOW_REMOTE === 'true'): boolean {
+  if (mode !== 'DEMO' || allowRemote) return true;
+  return !!remoteAddress && LOOPBACK.has(remoteAddress);
+}

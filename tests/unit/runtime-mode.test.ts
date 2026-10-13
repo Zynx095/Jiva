@@ -4,7 +4,7 @@
  */
 import { randomUUID } from 'crypto';
 import { LocalStateStore } from '../../services/api/src/infrastructure/stateStore/LocalStateStore';
-import { provenanceReport, runtimeMode } from '../../services/api/src/mode';
+import { demoClientAllowed, provenanceReport, runtimeMode } from '../../services/api/src/mode';
 import { loadRoster } from '../../services/api/src/clinical/roster';
 import { patientFromEmergency, type DerivedRequirement } from '../../services/api/src/intake';
 import { simulationAllowed } from '../../services/api/src/clinical/telemetry';
@@ -86,6 +86,13 @@ run('Phase 11 — operational vs demo mode', async () => {
   await check('cases are marked as demo cases in demo mode only', () => {
     eq(withEnv(DEMO, () => patientFromEmergency(emergency, 'CASE-1', requirement).dataStatus), 'SYNTHETIC_DEMO', 'demo');
     eq(withEnv(OPERATIONAL, () => patientFromEmergency(emergency, 'CASE-1', requirement).dataStatus), undefined, 'operational');
+  });
+
+  await check('demo mode serves this machine only, unless remote demo access is switched on explicitly', () => {
+    ok(demoClientAllowed('127.0.0.1', 'DEMO', false) && demoClientAllowed('::1', 'DEMO', false) && demoClientAllowed('::ffff:127.0.0.1', 'DEMO', false), 'loopback');
+    ok(!demoClientAllowed('192.168.1.23', 'DEMO', false) && !demoClientAllowed('::ffff:10.0.0.5', 'DEMO', false) && !demoClientAllowed(undefined, 'DEMO', false), 'network clients refused');
+    ok(demoClientAllowed('192.168.1.23', 'DEMO', true), 'explicit opt-in');
+    ok(demoClientAllowed('192.168.1.23', 'OPERATIONAL', false), 'operational mode relies on verified JWTs instead');
   });
 
   await check('the provenance report states what is synthetic and that no live integration exists', () => {

@@ -9,7 +9,7 @@ import { encounterRouter } from './routes/encounters';
 import { clinicalRecordsRouter } from './routes/clinicalRecords';
 import { documentRouter, resetDocuments } from './routes/documents';
 import { vitalsRouter } from './routes/vitals';
-import { provenanceReport, runtimeMode } from './mode';
+import { demoClientAllowed, provenanceReport, runtimeMode } from './mode';
 import { auditRouter } from './routes/audit';
 import { resetAccessAudit } from './commands/support';
 import { initializeEncounterEngine, resetEncounterEngine } from './clinical/encounters';
@@ -165,6 +165,13 @@ app.get('/api/health', async (_req, res) => {
 app.use('/api', (_req, res, next) => {
   res.set('Cache-Control', 'no-store');
   res.set('X-Content-Type-Options', 'nosniff');
+  next();
+});
+// Demo mode serves this machine only (demo personas are not authentication); see mode.ts.
+app.use('/api', (req, res, next) => {
+  if (!demoClientAllowed(req.socket.remoteAddress)) {
+    return res.status(403).json({ error: 'demo_local_only', message: 'This JIVA demo only accepts requests from the machine it runs on. Set JIVA_DEMO_ALLOW_REMOTE=true to demo across a network.' });
+  }
   next();
 });
 app.use('/api', requireAuth);
@@ -329,6 +336,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 // ------------------------------------------------------------------ realtime
 
 io.use(async (socket, next) => {
+  if (!demoClientAllowed(socket.handshake.address)) return next(new Error('demo_local_only'));
   const handshake = socket.handshake.auth || {};
   // Same production boundary as authenticateRequest() above: a demo handshake must never authenticate
   // this process when it is (mis)configured as PRODUCTION.
@@ -352,6 +360,7 @@ io.on('connection', (socket) => {
 
 ready.then(() => {
   httpServer.listen(config.port, () => {
-    console.log(`[API] Server running on http://localhost:${config.port} in ${config.environment.toUpperCase()} mode (DEMO AUTH)`);
+    console.log(`[API] Server running on http://localhost:${config.port} in ${config.environment.toUpperCase()} config, ${runtimeMode()} mode${runtimeMode() === 'DEMO' ? ' (DEMO personas — not authentication)' : ''}`);
+    if (runtimeMode() === 'DEMO' && process.env.JIVA_DEMO_ALLOW_REMOTE === 'true') console.warn('[API] WARNING: JIVA_DEMO_ALLOW_REMOTE=true — any device on this network can act as any demo persona, including admin.');
   });
 });

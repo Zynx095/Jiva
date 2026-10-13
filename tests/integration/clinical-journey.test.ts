@@ -751,6 +751,16 @@ async function securityAndAudit(api: Api, ctx: { caseId: string; encounterId: st
   const bad = await api.req('POST', `/api/encounters/${encounterId}/prescriptions`, P.doc3, undefined, { raw: '{"medication":' });
   check('malformed JSON → 400 without internals', bad.status === 400 && bad.text === '{"error":"malformed_json"}', bad.text);
 
+  // demo personas are not authentication: another device on the network is refused (HTTP and realtime)
+  const lan = Object.values(os.networkInterfaces()).flat().find(i => i && i.family === 'IPv4' && !i.internal)?.address;
+  if (lan) {
+    const remote = await fetch(`http://${lan}:4101/api/patients`, { headers: { 'x-jiva-demo-user': P.admin } }).catch(() => undefined);
+    check('demo mode: a request from another network address is refused (403 demo_local_only)', remote?.status === 403 && (await remote.json()).error === 'demo_local_only', `${remote?.status}`);
+    check('…the health check stays reachable for readiness probes', (await fetch(`http://${lan}:4101/api/health`).catch(() => undefined))?.status === 200);
+  } else {
+    console.log('  (no non-loopback IPv4 interface: remote-client check skipped)');
+  }
+
   // audit log
   for (const [name, persona] of [['management', P.mgmt], ['the coordinator', P.h1], ['the doctor', P.doc3], ['the patient', P.pat1], ['a crew', P.a1]] as const) {
     check(`${name} cannot read the audit log → 403`, (await api.get(persona, '/api/audit')).status === 403);
