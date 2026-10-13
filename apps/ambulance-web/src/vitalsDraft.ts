@@ -1,6 +1,9 @@
 import {
+  MEASUREMENT_LIMITS,
   MEASUREMENT_ORDER,
   MEASUREMENT_TEXT,
+  enteredValueProblem,
+  parseEntered,
   UNAVAILABLE_REASONS,
   UNAVAILABLE_REASON_TEXT,
   fromDateTimeLocal,
@@ -25,14 +28,12 @@ export interface VitalsDraft {
   rows: Record<MeasurementTypeCode, VitalRow>;
 }
 
-const UNIT: Record<MeasurementTypeCode, string> = { HEART_RATE: 'bpm', SPO2: '%', BLOOD_PRESSURE: 'mmHg', TEMPERATURE: 'degC', RESPIRATORY_RATE: 'breaths/min', BLOOD_GLUCOSE: 'mg/dL' };
-// Plausibility bounds (mirroring the server's input checks — entry errors, not clinical thresholds).
-const RANGE: Record<MeasurementTypeCode, [number, number]> = { HEART_RATE: [20, 300], SPO2: [50, 100], BLOOD_PRESSURE: [40, 300], TEMPERATURE: [25, 45], RESPIRATORY_RATE: [2, 80], BLOOD_GLUCOSE: [10, 900] };
+const UNIT = (t: MeasurementTypeCode) => MEASUREMENT_LIMITS[t].unit;
 
 const row = (): VitalRow => ({ value: '', secondary: '', questionable: false, unavailable: '' });
 export const emptyVitals = (): VitalsDraft => ({ at: toDateTimeLocal(Date.now()), rows: { HEART_RATE: row(), SPO2: row(), BLOOD_PRESSURE: row(), TEMPERATURE: row(), RESPIRATORY_RATE: row(), BLOOD_GLUCOSE: row() } });
 
-const num = (s: string) => (s.trim() === '' ? undefined : Number(s.replace(',', '.')));
+const num = parseEntered;
 
 /** Problems a crew member can fix before sending (the server checks everything again). */
 export function vitalsProblems(d: VitalsDraft): string[] {
@@ -40,18 +41,8 @@ export function vitalsProblems(d: VitalsDraft): string[] {
   const any = MEASUREMENT_ORDER.some((t) => d.rows[t].value.trim() || d.rows[t].secondary.trim());
   if (any && !fromDateTimeLocal(d.at)) out.push('Set the time the vital signs were measured.');
   for (const t of MEASUREMENT_ORDER) {
-    const r = d.rows[t];
-    const v = num(r.value);
-    const [lo, hi] = RANGE[t];
-    if (t === 'BLOOD_PRESSURE') {
-      const dia = num(r.secondary);
-      if (r.value.trim() || r.secondary.trim()) {
-        if (v === undefined || dia === undefined || !Number.isFinite(v) || !Number.isFinite(dia)) out.push('Blood pressure needs both systolic and diastolic values.');
-        else if (v < lo || v > hi || dia < 20 || dia > 200 || v <= dia) out.push('Blood pressure looks implausible (systolic 40–300 above diastolic 20–200).');
-      }
-      continue;
-    }
-    if (r.value.trim() && (v === undefined || !Number.isFinite(v) || v < lo || v > hi)) out.push(`${MEASUREMENT_TEXT[t].label} must be between ${lo} and ${hi}.`);
+    const problem = enteredValueProblem(t, d.rows[t].value, d.rows[t].secondary);
+    if (problem) out.push(problem);
   }
   return out;
 }
@@ -65,8 +56,8 @@ export function vitalsPayload(d: VitalsDraft) {
     const r = d.rows[t];
     const v = num(r.value);
     const quality = r.questionable ? { quality: 'QUESTIONABLE' } : {};
-    if (t === 'BLOOD_PRESSURE' && v !== undefined && num(r.secondary) !== undefined) measurements.push({ type: t, value: v, secondaryValue: num(r.secondary), unit: UNIT[t], observedAt, ...quality });
-    else if (t !== 'BLOOD_PRESSURE' && v !== undefined) measurements.push({ type: t, value: v, unit: UNIT[t], observedAt, ...quality });
+    if (t === 'BLOOD_PRESSURE' && v !== undefined && num(r.secondary) !== undefined) measurements.push({ type: t, value: v, secondaryValue: num(r.secondary), unit: UNIT(t), observedAt, ...quality });
+    else if (t !== 'BLOOD_PRESSURE' && v !== undefined) measurements.push({ type: t, value: v, unit: UNIT(t), observedAt, ...quality });
     else if (r.unavailable) unavailable.push({ type: t, reason: r.unavailable });
   }
   return { measurements, unavailable };

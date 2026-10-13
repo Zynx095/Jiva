@@ -44,6 +44,42 @@ export const MEASUREMENT_TEXT: Record<MeasurementTypeCode, { label: string; unit
   BLOOD_GLUCOSE: { label: 'Blood glucose', unit: 'mg/dL' },
 };
 
+/**
+ * Entry-plausibility limits (mirroring the server's MEASUREMENT_RULES): values outside them are typing
+ * errors, refused before sending. They are NOT clinical thresholds and nothing is flagged as abnormal.
+ * `unit` is the API unit; the label's unit (MEASUREMENT_TEXT) is the display form.
+ */
+export const MEASUREMENT_LIMITS: Record<MeasurementTypeCode, { unit: string; min: number; max: number; secondaryMin?: number; secondaryMax?: number }> = {
+  HEART_RATE: { unit: 'bpm', min: 20, max: 300 },
+  SPO2: { unit: '%', min: 50, max: 100 },
+  BLOOD_PRESSURE: { unit: 'mmHg', min: 40, max: 300, secondaryMin: 20, secondaryMax: 200 },
+  TEMPERATURE: { unit: 'degC', min: 25, max: 45 },
+  RESPIRATORY_RATE: { unit: 'breaths/min', min: 2, max: 80 },
+  BLOOD_GLUCOSE: { unit: 'mg/dL', min: 10, max: 900 },
+};
+
+/** A number typed by a person ("37,2" is accepted as 37.2); empty → undefined; garbage → NaN. */
+export const parseEntered = (s: string): number | undefined => (s.trim() === '' ? undefined : Number(s.trim().replace(',', '.')));
+
+/** One sentence about a single typed value, or null when it is empty or plausible. */
+export function enteredValueProblem(type: MeasurementTypeCode, value: string, secondary?: string): string | null {
+  const lim = MEASUREMENT_LIMITS[type];
+  const v = parseEntered(value);
+  const label = MEASUREMENT_TEXT[type].label;
+  if (type === 'BLOOD_PRESSURE') {
+    const d = parseEntered(secondary ?? '');
+    if (v === undefined && d === undefined) return null;
+    if (v === undefined || d === undefined || !Number.isFinite(v) || !Number.isFinite(d)) return 'Blood pressure needs both systolic and diastolic values.';
+    if (v < lim.min || v > lim.max || d < (lim.secondaryMin ?? 0) || d > (lim.secondaryMax ?? Infinity)) return `Blood pressure looks like a typing error (systolic ${lim.min}–${lim.max}, diastolic ${lim.secondaryMin}–${lim.secondaryMax}).`;
+    if (v <= d) return 'Systolic must be higher than diastolic.';
+    return null;
+  }
+  if (v === undefined) return null;
+  if (!Number.isFinite(v)) return `${label}: enter a number.`;
+  if (v < lim.min || v > lim.max) return `${label} must be between ${lim.min} and ${lim.max} ${MEASUREMENT_TEXT[type].unit} — check for a typing error.`;
+  return null;
+}
+
 /** "128/84", "96", "37.2". */
 export function formatMeasurementValue(m: Pick<MeasurementView, 'type' | 'value' | 'secondaryValue'>): string {
   if (m.type === 'BLOOD_PRESSURE' && m.secondaryValue !== undefined) return `${m.value}/${m.secondaryValue}`;
