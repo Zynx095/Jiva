@@ -92,7 +92,7 @@ async function runAcceptanceScenario(fullResponse = true) {
       timestamp: new Date().toISOString(),
       source: { type: 'ambulance', id: a.ambulanceId },
       version: '1.0',
-      payload: {
+      payload: { source: 'SIMULATED',
         ambulanceId: a.ambulanceId,
         coordinates: a.currentLocation
       }

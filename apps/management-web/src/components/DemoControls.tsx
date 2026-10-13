@@ -87,9 +87,9 @@ export function DemoControls({ advanceAmbulance }: { advanceAmbulance: () => Pro
               Hebbal (001) ED unavailable
             </AsyncButton>
           </Group>
-          <Group title="Telemetry">
+          <Group title="Simulated position">
             <AsyncButton size="sm" icon="navigation" onAction={advanceAmbulance} onSettled={setError}>
-              Advance ambulance (GPS)
+              Advance ambulance (simulated)
             </AsyncButton>
           </Group>
         </div>

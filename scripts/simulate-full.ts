@@ -101,7 +101,7 @@ async function drive(points: [number, number][], steps: number, fraction = 1) {
     await send(PERSONA[AMB], {
       eventType: 'ambulance.location.updated',
       source: { type: 'ambulance', id: AMB },
-      payload: { ambulanceId: AMB, coordinates: { latitude: lat, longitude: lng }, speedKmh: 42, heading: 180 },
+      payload: { source: 'SIMULATED', ambulanceId: AMB, coordinates: { latitude: lat, longitude: lng }, speedKmh: 42, heading: 180 },
     });
     await sleep(STEP / 2);
   }

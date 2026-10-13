@@ -217,18 +217,18 @@ export const steps = {
   }),
 
   gpsArrival: (hospitalId: string): Step => ({
-    id: `gps-${hospitalId}`, title: `The ambulance reaches ${hospitalName(hospitalId)} (GPS)`, persona: DEMO.crew.persona, actor: `Ambulance crew ${DEMO.crew.ambulanceId}`,
-    description: 'One GPS fix at the hospital. The geofence marks the ambulance as arrived — it never records the hospital arrival or the handover.',
+    id: `gps-${hospitalId}`, title: `The ambulance reaches ${hospitalName(hospitalId)} (simulated position)`, persona: DEMO.crew.persona, actor: `Ambulance crew ${DEMO.crew.ambulanceId}`,
+    description: 'One simulated position update at the hospital (no GPS receiver is connected to JIVA). The arrival geofence marks the ambulance as arrived — it never records the hospital arrival or the handover.',
     run: async (_ctx, deps) => {
       const h = ((await deps.call(DEMO.management, 'GET', '/api/hospitals')).body as Array<{ hospitalId: string; location: { latitude: number; longitude: number } }>).find((x) => x.hospitalId === hospitalId);
       if (!h) throw new StepFailed(`${hospitalId} is not in the network`);
       const uuid = deps.uuid ?? defaultUuid;
       must(await deps.call(DEMO.crew.persona, 'POST', '/api/events', {
         eventId: uuid(), eventType: 'ambulance.location.updated', timestamp: new Date().toISOString(), version: '1.0', source: { type: 'ambulance', id: DEMO.crew.ambulanceId },
-        payload: { ambulanceId: DEMO.crew.ambulanceId, coordinates: { latitude: h.location.latitude, longitude: h.location.longitude }, speedKmh: 5, heading: 0 },
-      }), [202], 'GPS update');
+        payload: { source: 'SIMULATED', ambulanceId: DEMO.crew.ambulanceId, coordinates: { latitude: h.location.latitude, longitude: h.location.longitude }, speedKmh: 5, heading: 0 },
+      }), [202], 'Simulated position update');
       await waitFor(deps, 'the geofence arrival', async () => (await ambulance(deps))?.status === 'ARRIVED');
-      return `${DEMO.crew.ambulanceId} is at ${hospitalName(hospitalId)} (GPS geofence; awaiting the hospital's record).`;
+      return `${DEMO.crew.ambulanceId} is at ${hospitalName(hospitalId)} (arrival geofence from a simulated position; awaiting the hospital's record).`;
     },
   }),
 
