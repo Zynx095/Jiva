@@ -92,8 +92,14 @@ export default function App() {
   }, [name]);
 
   const route = ambulance?.activeRoute && ambulance.activeRoute.hospitalId === ambulance.destinationHospital ? ambulance.activeRoute : undefined;
-  const acceptance = hospital?.operationalState?.acceptance;
-  const confirmed = acceptance === 'ACCEPTED' || acceptance === 'LIMITED';
+  // The hospital's operational state holds its latest answer to ANY case: count it only when it names this
+  // patient's case. JIVA routes an ambulance only to a hospital that accepted the case, so the ambulance's
+  // destination is this patient's confirmation too.
+  const op = hospital?.operationalState;
+  const confirmed =
+    (!!hospital && !!ambulance?.destinationHospital && ambulance.destinationHospital === hospital.hospitalId) ||
+    (!!patient && op?.acceptanceCaseId === patient.patientId && (op.acceptance === 'ACCEPTED' || op.acceptance === 'LIMITED'));
+  const acceptance = patient && op?.acceptanceCaseId === patient.patientId ? op.acceptance : confirmed ? 'ACCEPTED' : undefined;
   // Only the hospital's own records move the patient into hospital care: the arrival record opens the
   // encounter and the handover record puts the patient in the hospital's care. GPS alone never does.
   const arrivalConfirmed = !!encounter;
