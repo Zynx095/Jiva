@@ -11,6 +11,7 @@ import { documentRouter, resetDocuments } from './routes/documents';
 import { vitalsRouter } from './routes/vitals';
 import { catalogueRouter } from './routes/catalogue';
 import { prehospitalRouter } from './routes/prehospital';
+import { demoRouter, realtimeInterrupted, registerRealtimeConnections, resetDemoFaults } from './routes/demo';
 import { initialiseCatalogues } from './catalogue';
 import { demoClientAllowed, provenanceReport, runtimeMode } from './mode';
 import { auditRouter } from './routes/audit';
@@ -308,6 +309,8 @@ app.use('/api', auditRouter());
 app.use('/api', catalogueRouter());
 // Pre-hospital record: the attending crew's vital signs and symptom narrative, read by the assigned clinician.
 app.use('/api', prehospitalRouter());
+// Demo tooling (DEMO mode only): realtime fault injection for the outage-and-recovery demonstration.
+app.use('/api', demoRouter());
 
 app.post('/api/demo/reset', requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
   // Demo reset wipes state: it does not exist in operational mode.
@@ -319,6 +322,7 @@ app.post('/api/demo/reset', requireRole('ADMIN'), async (req: AuthenticatedReque
   initialiseCatalogues();
   resetEncounterEngine();
   resetAccessAudit();
+  resetDemoFaults();
   await resetDocuments();
   await localStoreInstance.reset();
   await eventBus.publish({
@@ -346,6 +350,8 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 
 io.use(async (socket, next) => {
   if (!demoClientAllowed(socket.handshake.address)) return next(new Error('demo_local_only'));
+  // Demo fault injection: while realtime is interrupted, new connections are refused (clients retry).
+  if (realtimeInterrupted()) return next(new Error('realtime_interrupted'));
   const handshake = socket.handshake.auth || {};
   // Same production boundary as authenticateRequest() above: a demo handshake must never authenticate
   // this process when it is (mis)configured as PRODUCTION.
@@ -355,6 +361,16 @@ io.use(async (socket, next) => {
   if (!auth) return next(new Error('unauthenticated'));
   socket.data.auth = auth;
   next();
+});
+
+// Closing the transport (not a server-side "disconnect") lets clients reconnect by themselves afterwards.
+registerRealtimeConnections(() => {
+  let n = 0;
+  for (const s of io.sockets.sockets.values()) {
+    s.conn.close();
+    n++;
+  }
+  return n;
 });
 
 io.on('connection', (socket) => {
