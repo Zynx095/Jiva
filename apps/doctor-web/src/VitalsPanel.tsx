@@ -5,9 +5,12 @@ import {
   JivaButton,
   JivaCard,
   JivaStatus,
+  MEASUREMENT_LIMITS,
   MEASUREMENT_ORDER,
   MEASUREMENT_TEXT,
   SkeletonRows,
+  enteredValueProblem,
+  parseEntered,
   cx,
   formatDateTime,
   formatMeasurementValue,
@@ -17,6 +20,7 @@ import {
   measurementSource,
   timeAgo,
   toDateTimeLocal,
+  type MeasurementTypeCode,
   type VitalsResponse,
 } from '@jiva/ui/src';
 import { CommandError, Field, inputClass, sendCommand, useIdempotencyKey } from './ui';
@@ -24,17 +28,14 @@ import { useUnsaved } from './unsaved';
 
 const path = (encounterId: string) => `/api/encounters/${encodeURIComponent(encounterId)}/vitals`;
 
-interface Draft {
-  hr: string;
-  spo2: string;
-  sys: string;
-  dia: string;
-  temp: string;
-  rr: string;
-  at: string;
-}
+/** One typed value per measurement type (blood pressure also has the diastolic value). Empty = not recorded. */
+type Values = Record<MeasurementTypeCode, { value: string; secondary: string }>;
+const emptyValues = (): Values => Object.fromEntries(MEASUREMENT_ORDER.map((t) => [t, { value: '', secondary: '' }])) as Values;
 
-const num = (s: string) => (s.trim() === '' ? undefined : Number(s));
+/** Which keyboard to offer for a field. */
+const INPUT_MODE: Record<MeasurementTypeCode, 'numeric' | 'decimal'> = {
+  HEART_RATE: 'numeric', SPO2: 'numeric', BLOOD_PRESSURE: 'numeric', TEMPERATURE: 'decimal', RESPIRATORY_RATE: 'numeric', BLOOD_GLUCOSE: 'numeric',
+};
 
 /**
  * Vital signs of one encounter: latest value per type with its source and age, the entries over time,
@@ -135,69 +136,95 @@ export function VitalsPanel({ encounterId, vitals, onChanged, now }: { encounter
   );
 }
 
+/**
+ * Values the care team measured, typed in (no device is connected). Every field is optional: an empty field
+ * is not recorded, never given a default. Typing errors are explained next to the field before anything is
+ * sent; the server checks everything again. One time applies to the whole entry.
+ */
 function VitalsForm({ encounterId, onSaved, onCancel }: { encounterId: string; onSaved: () => void; onCancel: () => void }) {
-  const [d, setD] = useState<Draft>(() => ({ hr: '', spo2: '', sys: '', dia: '', temp: '', rr: '', at: toDateTimeLocal(Date.now()) }));
+  const [values, setValues] = useState<Values>(emptyValues);
+  const [at, setAt] = useState(() => toDateTimeLocal(Date.now()));
   const [error, setError] = useState<string | null>(null);
   const [questionable, setQuestionable] = useState(false);
   // Upper bound for the picker, fixed when the form opens (the server re-checks the time anyway).
   const [latest] = useState(() => toDateTimeLocal(Date.now() + 60_000));
   const keyFor = useIdempotencyKey();
-  useUnsaved([d.hr, d.spo2, d.sys, d.dia, d.temp, d.rr].some((v) => v.trim() !== '') || questionable, 'vital signs');
+  const filled = MEASUREMENT_ORDER.filter((t) => values[t].value.trim() !== '' || values[t].secondary.trim() !== '');
+  useUnsaved(filled.length > 0 || questionable, 'vital signs');
   const id = (k: string) => `vit-${encounterId}-${k}`;
-  const set = (k: keyof Draft) => (e: { target: { value: string } }) => setD((prev) => ({ ...prev, [k]: e.target.value }));
-  const observedAt = fromDateTimeLocal(d.at);
+  const setValue = (t: MeasurementTypeCode, patch: Partial<Values[MeasurementTypeCode]>) => setValues((prev) => ({ ...prev, [t]: { ...prev[t], ...patch } }));
+  const observedAt = fromDateTimeLocal(at);
+  const problems = Object.fromEntries(MEASUREMENT_ORDER.map((t) => [t, enteredValueProblem(t, values[t].value, values[t].secondary)])) as Record<MeasurementTypeCode, string | null>;
+  const hasProblem = MEASUREMENT_ORDER.some((t) => problems[t]);
 
-  const measurements = () => {
-    const list: Array<Record<string, unknown>> = [];
-    const add = (type: string, value: number | undefined, unit: string, extra: Record<string, unknown> = {}) => {
-      if (value !== undefined && Number.isFinite(value)) list.push({ type, value, unit, observedAt, ...extra, ...(questionable ? { quality: 'QUESTIONABLE' } : {}) });
-    };
-    add('HEART_RATE', num(d.hr), 'bpm');
-    add('SPO2', num(d.spo2), '%');
-    if (num(d.sys) !== undefined || num(d.dia) !== undefined) add('BLOOD_PRESSURE', num(d.sys), 'mmHg', { secondaryValue: num(d.dia) });
-    add('TEMPERATURE', num(d.temp), 'degC');
-    add('RESPIRATORY_RATE', num(d.rr), 'breaths/min');
-    return list;
-  };
-  const ready = !!observedAt && measurements().length > 0;
+  const measurements = () =>
+    filled.map((t) => ({
+      type: t,
+      value: parseEntered(values[t].value),
+      ...(t === 'BLOOD_PRESSURE' ? { secondaryValue: parseEntered(values[t].secondary) } : {}),
+      unit: MEASUREMENT_LIMITS[t].unit,
+      observedAt,
+      ...(questionable ? { quality: 'QUESTIONABLE' } : {}),
+    }));
+  const ready = !!observedAt && filled.length > 0 && !hasProblem;
+  const why = !observedAt ? 'Set the time the values were measured.' : filled.length === 0 ? 'Enter at least one measured value.' : hasProblem ? 'Correct the highlighted values first.' : null;
 
   return (
-    <div className="mt-3 animate-fade space-y-3 rounded-xl bg-ink-25 p-3 ring-1 ring-inset ring-ink-200">
-      <p className="text-sm font-semibold text-ink-900">Enter measured values</p>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Field label="Heart rate (bpm)" htmlFor={id('hr')}>
-          <input id={id('hr')} inputMode="numeric" className={cx(inputClass, 'h-9')} value={d.hr} onChange={set('hr')} />
-        </Field>
-        <Field label="SpO₂ (%)" htmlFor={id('spo2')}>
-          <input id={id('spo2')} inputMode="numeric" className={cx(inputClass, 'h-9')} value={d.spo2} onChange={set('spo2')} />
-        </Field>
-        <Field label="Breathing rate (/min)" htmlFor={id('rr')}>
-          <input id={id('rr')} inputMode="numeric" className={cx(inputClass, 'h-9')} value={d.rr} onChange={set('rr')} />
-        </Field>
-        <Field label="Blood pressure (mmHg)" htmlFor={id('sys')}>
-          <div className="flex items-center gap-1.5">
-            <input id={id('sys')} aria-label="Systolic" inputMode="numeric" placeholder="sys" className={cx(inputClass, 'h-9')} value={d.sys} onChange={set('sys')} />
-            <span className="text-ink-500">/</span>
-            <input aria-label="Diastolic" inputMode="numeric" placeholder="dia" className={cx(inputClass, 'h-9')} value={d.dia} onChange={set('dia')} />
-          </div>
-        </Field>
-        <Field label="Temperature (°C)" htmlFor={id('temp')}>
-          <input id={id('temp')} inputMode="decimal" className={cx(inputClass, 'h-9')} value={d.temp} onChange={set('temp')} />
-        </Field>
+    <div className="mt-3 animate-fade space-y-3 rounded-xl bg-ink-25 p-3 ring-1 ring-inset ring-ink-200 sm:p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-sm font-semibold text-ink-900">Enter measured values</p>
+        <p className="text-xs text-ink-500">Entered manually · no monitoring device is connected</p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {MEASUREMENT_ORDER.map((t) => {
+          const text = MEASUREMENT_TEXT[t];
+          const problem = problems[t];
+          const errId = id(`${t}-error`);
+          const field = cx(inputClass, 'h-9 pr-14 tabular-nums', problem && 'ring-2 ring-danger-400 hover:ring-danger-500');
+          return (
+            <Field key={t} label={`${text.label} (${text.unit})`} htmlFor={id(t)}>
+              {t === 'BLOOD_PRESSURE' ? (
+                <div className="flex items-center gap-1.5">
+                  <input id={id(t)} aria-label="Systolic" aria-describedby={problem ? errId : undefined} aria-invalid={!!problem} inputMode="numeric" placeholder="systolic" className={cx(inputClass, 'h-9 tabular-nums', problem && 'ring-2 ring-danger-400')} value={values[t].value} onChange={(e) => setValue(t, { value: e.target.value })} />
+                  <span className="text-ink-500" aria-hidden="true">/</span>
+                  <input aria-label="Diastolic" aria-describedby={problem ? errId : undefined} aria-invalid={!!problem} inputMode="numeric" placeholder="diastolic" className={cx(inputClass, 'h-9 tabular-nums', problem && 'ring-2 ring-danger-400')} value={values[t].secondary} onChange={(e) => setValue(t, { secondary: e.target.value })} />
+                </div>
+              ) : (
+                <div className="relative">
+                  <input id={id(t)} aria-describedby={problem ? errId : undefined} aria-invalid={!!problem} inputMode={INPUT_MODE[t]} className={field} value={values[t].value} onChange={(e) => setValue(t, { value: e.target.value })} />
+                  <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs font-medium text-ink-500">
+                    {text.unit}
+                  </span>
+                </div>
+              )}
+              {problem && (
+                <p id={errId} className="text-xs text-danger-700">
+                  {problem}
+                </p>
+              )}
+            </Field>
+          );
+        })}
         <Field label="Measured at" htmlFor={id('at')} required>
-          <input id={id('at')} type="datetime-local" className={cx(inputClass, 'h-9')} value={d.at} max={latest} onChange={set('at')} />
+          <div className="flex items-center gap-1.5">
+            <input id={id('at')} type="datetime-local" className={cx(inputClass, 'h-9')} value={at} max={latest} onChange={(e) => setAt(e.target.value)} />
+            <JivaButton size="sm" variant="ghost" icon="clock" onClick={() => setAt(toDateTimeLocal(Date.now()))}>
+              Now
+            </JivaButton>
+          </div>
         </Field>
       </div>
       <label className="flex items-center gap-2 text-[13px] text-ink-800">
         <input type="checkbox" className="h-4 w-4 accent-brand-700" checked={questionable} onChange={(e) => setQuestionable(e.target.checked)} />
         Flag these values as questionable (movement, poor signal …)
       </label>
-      <p className="text-xs text-ink-500">Fill in what you measured; empty fields are not recorded. Implausible values are refused by the server.</p>
-      <div className="flex flex-wrap gap-2">
+      <p className="text-xs text-ink-500">Fill in only what you measured — empty fields are not recorded. The limits only catch typing errors; JIVA does not judge whether a value is normal.</p>
+      <div className="flex flex-wrap items-center gap-2">
         <AsyncButton
           variant="primary"
           icon="check"
           disabled={!ready}
+          title={why ?? undefined}
           pendingText="Saving…"
           onAction={async () => {
             const body = { measurements: measurements() };
@@ -212,6 +239,7 @@ function VitalsForm({ encounterId, onSaved, onCancel }: { encounterId: string; o
         <JivaButton variant="ghost" onClick={onCancel}>
           Cancel
         </JivaButton>
+        {why && filled.length > 0 && <span className="text-xs text-ink-500">{why}</span>}
       </div>
       {error && <CommandError message={error} />}
     </div>
