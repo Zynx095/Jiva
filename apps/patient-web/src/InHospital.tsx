@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import {
   AsyncButton,
   CATEGORY_TEXT,
+  DOCUMENT_KIND_TEXT,
   DOCUMENT_TYPES,
   EmptyState,
   Icon,
@@ -13,6 +14,7 @@ import {
   cx,
   dataStatus,
   formatBytes,
+  sampleLabel,
   formatDateTime,
   formatMeasurementValue,
   measurementFreshness,
@@ -223,9 +225,14 @@ function DocumentRow({ encounterId, d, compact }: { encounterId: string; d: Docu
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-ink-900">{d.title}</p>
+          {sampleLabel(d) && (
+            <p className="mt-0.5 inline-flex rounded-full bg-warn-50 px-2 py-0.5 text-xs font-semibold text-warn-800 ring-1 ring-inset ring-warn-200">
+              {d.sample?.designation === 'EDUCATIONAL' ? 'Educational' : 'Synthetic'} sample — not your own result
+            </p>
+          )}
           {!compact && (
             <p className="text-xs text-ink-500">
-              {CATEGORY_TEXT[d.category] ?? d.category} · {DOCUMENT_TYPES[d.contentType]?.label ?? d.contentType} · {formatBytes(d.sizeBytes)}
+              {(d.documentType && DOCUMENT_KIND_TEXT[d.documentType]) || (CATEGORY_TEXT[d.category] ?? d.category)} · {DOCUMENT_TYPES[d.contentType]?.label ?? d.contentType} · {formatBytes(d.sizeBytes)}
               {d.uploadedAt ? ` · ${formatDateTime(d.uploadedAt)}` : ''}
             </p>
           )}
