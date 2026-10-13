@@ -71,7 +71,13 @@ app.use(cors({ origin: allowedOrigins }));
 app.use(express.json({ limit: '100kb' }));
 
 const httpServer = createServer(app);
-const io = new Server(httpServer, { cors: { origin: allowedOrigins } });
+const io = new Server(httpServer, {
+  cors: { origin: allowedOrigins },
+  // Demo fault injection: while realtime is interrupted, transport handshakes are refused, which clients treat
+  // like an unreachable server and keep retrying with backoff (a refusal from a Socket.IO middleware would
+  // stop their automatic reconnection instead).
+  allowRequest: (_req, callback) => callback(realtimeInterrupted() ? 'realtime_interrupted' : null, !realtimeInterrupted()),
+});
 const realtimeAdapter = new LocalSocketIoAdapter(io);
 
 initializeStateEngines();
@@ -351,8 +357,6 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 
 io.use(async (socket, next) => {
   if (!demoClientAllowed(socket.handshake.address)) return next(new Error('demo_local_only'));
-  // Demo fault injection: while realtime is interrupted, new connections are refused (clients retry).
-  if (realtimeInterrupted()) return next(new Error('realtime_interrupted'));
   const handshake = socket.handshake.auth || {};
   // Same production boundary as authenticateRequest() above: a demo handshake must never authenticate
   // this process when it is (mis)configured as PRODUCTION.

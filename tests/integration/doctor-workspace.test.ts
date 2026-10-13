@@ -275,8 +275,9 @@ async function main() {
     const cut = await api.post(P.admin, '/api/demo/realtime-interruption', { seconds: 5 });
     await sleep(500);
     const refused = await api.socket(P.pat1);
-    check('only the demo administrator interrupts (403), within bounds (400); live connections are closed and new ones refused',
-      notAdmin.status === 403 && tooLong.status === 400 && cut.status === 200 && cut.json.closed >= 1 && dropped && refused.error === 'realtime_interrupted', `${notAdmin.status} ${tooLong.status} ${cut.status} ${refused.error}`);
+    const status = (await api.get(P.admin, '/api/demo/realtime-interruption')).json;
+    check('only the demo administrator interrupts (403), within bounds (400); live connections are closed and new handshakes refused',
+      notAdmin.status === 403 && tooLong.status === 400 && cut.status === 200 && cut.json.closed >= 1 && dropped && !!refused.error && status?.interrupted === true, `${notAdmin.status} ${tooLong.status} ${cut.status} ${refused.error} ${JSON.stringify(status)}`);
     refused.s.close();
     check('REST keeps answering during the interruption', (await api.get(P.pat1, '/api/encounters')).status === 200);
     await sleep(5200);

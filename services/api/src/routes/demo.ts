@@ -9,10 +9,11 @@ type AuthedRequest = Request & { auth?: AuthContext };
 /**
  * Realtime fault injection for demonstrations (DEMO mode only).
  *
- * "Interrupt realtime" closes every live Socket.IO connection and refuses new ones for a short window, so
- * the screens show that they lost the live connection, keep their last known state, retry, and recover by
- * themselves when the window ends. It is a real interruption of the real channel, not a simulated screen
- * state. The REST API keeps answering; a full API outage is demonstrated by stopping the API process.
+ * "Interrupt realtime" closes every live Socket.IO transport and refuses new transport handshakes for a short
+ * window (index.ts, `allowRequest`), so the screens show that they lost the live connection, keep their last
+ * known state, retry with backoff, and recover by themselves when the window ends. It is a real interruption
+ * of the real channel, not a simulated screen state. The REST API keeps answering; a full API outage is
+ * demonstrated by stopping the API process.
  */
 let interruptedUntil = 0;
 let closeConnections: (() => number) | undefined;
