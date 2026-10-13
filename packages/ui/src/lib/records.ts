@@ -280,3 +280,76 @@ export function documentStatus(d: Pick<DocumentRecord, 'status' | 'rejectionReas
       return { label: 'Available', tone: 'ok', icon: 'file' };
   }
 }
+
+// ------------------------------------------------------------------ clinical notes (care team only)
+
+export const NOTE_TYPES = ['PROGRESS', 'ASSESSMENT', 'PROCEDURE', 'HANDOVER', 'OTHER'] as const;
+
+export const NOTE_TYPE_TEXT: Record<string, string> = {
+  PROGRESS: 'Progress note',
+  ASSESSMENT: 'Assessment',
+  PROCEDURE: 'Procedure note',
+  HANDOVER: 'Handover note',
+  OTHER: 'Other note',
+};
+
+export interface NoteVersionView {
+  noteType: string;
+  title: string;
+  text: string;
+  version: number;
+  recordedAt: string;
+  recordedBy: EncounterActor;
+  author: RecordAuthor;
+  action: 'CREATED' | 'AMENDED';
+  changeReason?: string;
+  contentHash: string;
+}
+
+export interface ClinicalNoteRecord {
+  noteId: string;
+  encounterId: string;
+  current: NoteVersionView;
+  history: NoteVersionView[];
+  dataStatus: string;
+}
+
+// ------------------------------------------------------------------ clinical catalogue (GET /api/catalogue/…)
+
+interface CatalogueEntryMeta {
+  schemaVersion: number;
+  status: 'ACTIVE' | 'WITHDRAWN';
+  provenance: { source: string; licence: string };
+  revision: number;
+  updatedAt: string;
+}
+
+export interface MedicationCatalogueEntry extends CatalogueEntryMeta {
+  medicationId: string;
+  name: string;
+  strength: string;
+  formulation: string;
+  routes: string[];
+  atcCode?: string;
+}
+
+export interface SampleCatalogueEntry extends CatalogueEntryMeta {
+  assetId: string;
+  category: string;
+  documentType: string;
+  title: string;
+  description?: string;
+  bodySite?: string;
+  assetRef: string;
+  contentType: string;
+  sizeBytes: number;
+  sha256: string;
+  designation: 'SYNTHETIC' | 'EDUCATIONAL';
+}
+
+export interface CatalogueList<E> {
+  kind: string;
+  catalogueVersion: number;
+  notice: string;
+  entries: E[];
+}

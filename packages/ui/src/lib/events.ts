@@ -248,10 +248,29 @@ export function describeEvent(e: JivaEvent, name: NameResolver, audience: Audien
     case 'clinical.prescription.recorded': {
       // Content-free event: the medication itself is read from the records API by those allowed to see it.
       const action = str(p, 'action');
-      const title = patient
-        ? action === 'DISCONTINUED' ? 'A medication was stopped' : action === 'AMENDED' ? 'A prescription was changed' : 'A new prescription was added'
-        : `Prescription ${action === 'DISCONTINUED' ? 'stopped' : action === 'AMENDED' ? 'changed' : 'written'}${caseId ? ` · ${caseId}` : ''}`;
-      return { ...base, title, detail: patient ? 'See your prescriptions for details.' : `Version ${num(p, 'version') ?? '?'}`, tone: action === 'DISCONTINUED' ? 'neutral' : 'ok', icon: 'pill', category: 'case', notable: true };
+      const status = str(p, 'status');
+      if (patient) {
+        const title = action === 'DISCONTINUED' ? 'A medication was stopped' : action === 'AMENDED' ? 'A prescription was changed' : 'A new prescription was added';
+        return { ...base, title, detail: 'See your prescriptions for details.', tone: action === 'DISCONTINUED' ? 'neutral' : 'ok', icon: 'pill', category: 'case', notable: true };
+      }
+      const verb = action === 'AUTHORISED' ? 'authorised' : action === 'CANCELLED' ? 'draft discarded' : action === 'DISCONTINUED' ? 'stopped'
+        : status === 'DRAFT' ? (action === 'AMENDED' ? 'draft edited' : 'draft saved') : action === 'AMENDED' ? 'changed' : 'written and authorised';
+      return {
+        ...base, title: `Prescription ${verb}${caseId ? ` · ${caseId}` : ''}`,
+        detail: dotJoin([`Version ${num(p, 'version') ?? '?'}`, status === 'DRAFT' && 'not in force, not visible to the patient']),
+        tone: action === 'DISCONTINUED' || action === 'CANCELLED' ? 'neutral' : status === 'DRAFT' ? 'warn' : 'ok', icon: 'pill', category: 'case', notable: true,
+      };
+    }
+    case 'clinical.note.recorded':
+      return { ...base, title: `Clinical note ${num(p, 'version') === 1 ? 'written' : 'amended'}${caseId ? ` · ${caseId}` : ''}`, detail: dotJoin([str(p, 'noteType')?.toLowerCase(), 'internal to the care team']), tone: 'neutral', icon: 'file', category: 'case' };
+    case 'clinical.prehospital.recorded': {
+      const n = num(p, 'measurementCount') ?? 0;
+      const missing = num(p, 'unavailableCount') ?? 0;
+      const simulated = str(p, 'source') === 'DEVICE_SIMULATED';
+      const facts = dotJoin([n > 0 && `${n} vital sign${n === 1 ? '' : 's'}`, missing > 0 && `${missing} not available`, p.narrative === true && 'symptom notes', simulated && 'simulated monitor (demo)']);
+      return patient
+        ? { ...base, title: 'The ambulance crew recorded your observations', detail: facts, tone: simulated ? 'warn' : 'ok', icon: 'ambulance', category: 'case', notable: !simulated }
+        : { ...base, title: `Pre-hospital observations recorded${caseId ? ` · ${caseId}` : ''}`, detail: dotJoin([facts, `by ${A}`]), tone: simulated ? 'warn' : 'ok', icon: 'heart', category: 'case', notable: !simulated };
     }
     case 'clinical.report.recorded': {
       const first = num(p, 'version') === 1;
@@ -266,10 +285,12 @@ export function describeEvent(e: JivaEvent, name: NameResolver, audience: Audien
         ? { ...base, title: simulated ? 'Simulated vital signs added (demo)' : 'New vital signs recorded', detail: 'See your vital signs.', tone: simulated ? 'warn' : 'ok', icon: 'heart', category: 'case', notable: !simulated }
         : { ...base, title: `${n} vital sign${n === 1 ? '' : 's'} recorded${caseId ? ` · ${caseId}` : ''}`, detail: simulated ? 'Simulated monitor — demo data' : 'Entered by a clinician', tone: simulated ? 'warn' : 'ok', icon: 'heart', category: 'case' };
     }
-    case 'clinical.document.stored':
+    case 'clinical.document.stored': {
+      const sample = str(p, 'origin') === 'CATALOGUE_SAMPLE';
       return patient
-        ? { ...base, title: 'A document was added to your records', detail: 'See your documents and scans.', tone: 'ok', icon: 'file', category: 'case', notable: true }
-        : { ...base, title: `Document stored${caseId ? ` · ${caseId}` : ''}`, detail: dotJoin([str(p, 'category')?.toLowerCase(), 'checksum and file type verified']), tone: 'ok', icon: 'file', category: 'case', notable: true };
+        ? { ...base, title: sample ? 'A sample document was added (demo)' : 'A document was added to your records', detail: sample ? 'A synthetic sample, not your own result.' : 'See your documents and scans.', tone: sample ? 'warn' : 'ok', icon: 'file', category: 'case', notable: true }
+        : { ...base, title: `${sample ? 'Synthetic sample attached' : 'Document stored'}${caseId ? ` · ${caseId}` : ''}`, detail: dotJoin([str(p, 'documentType')?.toLowerCase().replace(/_/g, ' ') ?? str(p, 'category')?.toLowerCase(), str(p, 'supersedes') && 'new version', sample ? 'catalogue sample — not the patient’s result' : 'checksum and file type verified']), tone: sample ? 'warn' : 'ok', icon: 'file', category: 'case', notable: true };
+    }
     case 'ai.handoff.generated':
       return { ...base, title: `Handoff brief${hospitalId ? ` for ${H(hospitalId)}` : ''}`, detail: str(p, 'summary'), tone: 'neutral', icon: 'brief', category: 'ai' };
     case 'ai.anomaly.explained':
