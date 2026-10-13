@@ -52,3 +52,26 @@ npm run typecheck
 npm run test:unit          # incl. clinical-authorization, clinical-records, diagnostic-documents, medical-telemetry, runtime-mode, realtime-isolation
 npm run test:integration   # incl. clinical-journey (real API, all roles) and operational-mode (real API in production mode)
 ```
+
+## 5. Release-readiness review (2026-10-13, after phase 14)
+
+An independent pass over the implementation (code reading plus targeted reproduction), not a re-reading of
+the test results. Severity is for the **hackathon demo setting** unless marked otherwise.
+
+| # | Severity | Component | Finding | Reproducible | Status |
+|---|---|---|---|---|---|
+| R1 | **High** | API + Socket.IO (demo mode) | Demo personas are not authentication, and the API listened on every network interface: any device on the same network could call it as `demo-admin`, read every synthetic clinical record, upload files or reset the demo. | Yes, from the code: `httpServer.listen(port)` binds all interfaces and demo personas need only a header. The regression test now sends that request to the LAN address and gets 403. | **Fixed** (`ac5a180`): in DEMO mode HTTP and realtime accept only loopback clients (`403 demo_local_only`) unless `JIVA_DEMO_ALLOW_REMOTE=true` is set on purpose (warned at start-up). Health stays reachable. Tests: unit (`runtime-mode`), journey (request from the LAN address). |
+| R2 | **Medium** (data loss) | Local document storage | Every API process cleared the same `data/local/documents` directory at start, so running the runtime test suite during a demo deleted the demo's uploaded scans. | Yes: `api-runtime.test.ts` starts an API without `JIVA_DOCUMENT_DIR`. | **Fixed** (`b189e1d`): default directory is per port. Test: `diagnostic-documents`. |
+| R3 | Medium (reliability) | Launcher | A port held by an earlier, abnormally terminated run made `npm run dev` start half the services; there was no readiness signal. Reproduced while testing (orphaned Vite servers after killing the launcher's process tree). | Yes | **Fixed** (`cc27f6b`): ports checked first (clear message, nothing started), then `READY` / `NOT READY <service>`. |
+| R4 | Medium | All local state | Emergencies, referrals, encounters, clinical records, document metadata, measurements, audit and idempotency results are in memory: a restart loses them (documents on disk become unreachable and are cleared). Screens recover cleanly (verified in the browser: API stopped → "reconnecting / cannot reach", restarted → live again, no errors) but show the reset state. | Yes | **Open — architectural.** Plan: [`persistence-plan.md`](persistence-plan.md). |
+| R5 | Medium (production) | Patient linking | A crew can attach an emergency to any case reference (`caseRef`); the demo patient persona is bound to that reference. There is no verified patient identity or linking flow. | By design in demo | Open; production prerequisite. |
+| R6 | Low | In-memory indexes | `processedEventIds`, expiry bookkeeping and the acceptance ledger grow without bound over a very long run (the event history itself is capped at 10,000). Irrelevant for a demo session. | Code reading | Open; resolved by persistence with TTLs. |
+| R7 | Low | Hospital status strip | The hospital's shared "current answer" slot can still read "Accepted · CASE-…" after that patient arrived (legacy slot semantics, kept deliberately in Phase 4). Case-specific views are correct. | Yes | Open (cosmetic; routing unaffected). |
+| R8 | Low | Uploads | An authorized clinician can declare many 20 MB uploads; there is no per-user quota. | Code reading | Open. |
+| R9 | Info | AWS | Clinical APIs/storage do not exist on AWS; the WebSocket `$connect` is IAM-authorized (fan-out filters per principal). | — | Open; see `production-readiness.md`. |
+
+Confirmed adequate in this pass: idempotency keys are scoped per command **and user** (a key cannot replay
+another user's response) and replays happen only after authorization; upload tickets are user-bound and
+hash-stored; JWT failure logs contain header fields and verifier messages, never the token; clinical events
+on the bus are content-free; per-recipient event copies apply on every delivery path; reassignment removes a
+clinician's access immediately (REST and realtime).

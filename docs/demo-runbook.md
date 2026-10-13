@@ -9,6 +9,18 @@ npm run dev          # API + all four apps (development)
 npm run start:prod   # builds, then serves production bundles (vite preview)
 ```
 
+Wait for `[dev-all] READY — API healthy (DEMO mode) and all four apps answering.` If a port is still held by an
+earlier run, the launcher says so and starts nothing: close the old window (or the process) and start again.
+`npm run demo:check` gives a full readiness report.
+
+The demo API only answers the machine it runs on (`403 demo_local_only` from other devices), because demo
+personas are not authentication. For phones on the same Wi-Fi, start with `JIVA_DEMO_ALLOW_REMOTE=true` — then
+anyone on that network can act as any persona, including admin.
+
+**Restarting the API loses all demo state** (cases, encounters, records, uploads): state is in memory
+(see `docs/persistence-plan.md`). The screens show "reconnecting" while it is down and recover by themselves;
+re-run the scenario after a restart. Clinician screens: `http://localhost:5175/?as=demo-doc-3`.
+
 | Service | Dev URL | Prod-preview URL | Demo persona (DEMO auth only) |
 |---|---|---|---|
 | API (REST + Socket.IO) | http://localhost:4000 (`/api/health`) | same | — |

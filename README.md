@@ -79,7 +79,9 @@ npm run simulate:full:blr  # flagship scenario: request → accept → reroute �
 | Hospital | `:5175` | `:4175` |
 | Patient | `:5176` | `:4176` |
 
-`npm run start:prod` serves the production builds.
+`npm run start:prod` serves the production builds. Both refuse to start if a port is still in use and print `READY` once the API and all four apps answer.
+
+The demo API accepts requests only from the machine it runs on (demo personas are not authentication). To demo across a network on purpose, set `JIVA_DEMO_ALLOW_REMOTE=true` — then anyone on that network can act as any persona.
 
 Personas are chosen with `?as=` (e.g. `http://localhost:5175/?as=demo-doc-3` opens the hospital app as a clinician):
 crews `demo-amb-1…3`, hospital coordinators `demo-hosp-1…4`, clinicians `demo-doc-1…5`, patients
@@ -267,7 +269,9 @@ These are directional, not committed.
 |---|---|
 | [`docs/emergency-to-care.md`](docs/emergency-to-care.md) | The emergency-to-care journey: contracts, APIs, authorization, provenance, limits |
 | [`IMPLEMENTATION_PROGRESS.md`](IMPLEMENTATION_PROGRESS.md) | Phase-by-phase record with audits, decisions, tests and commits |
-| [`docs/security-review.md`](docs/security-review.md) | Enforced protections, audit trail and remaining gaps |
+| [`docs/security-review.md`](docs/security-review.md) | Enforced protections, audit trail, release-readiness findings and remaining gaps |
+| [`docs/production-readiness.md`](docs/production-readiness.md) | What is verified, unvalidated, missing, externally dependent or untested in deployment |
+| [`docs/persistence-plan.md`](docs/persistence-plan.md) | How runtime and clinical state would become durable (local and AWS) |
 | [`docs/opus-final-system-status.md`](docs/opus-final-system-status.md) | Component-by-component status (before the emergency-to-care work) |
 | [`docs/architecture-diagram.md`](docs/architecture-diagram.md) | Full diagrams |
 | [`docs/security.md`](docs/security.md) | Security model |
