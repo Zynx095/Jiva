@@ -11,6 +11,7 @@ import {
   type SampleCatalogueEntry,
 } from '@jiva/ui/src';
 import { blob, call, failure } from './api';
+import { CatalogueAdmin } from './CatalogueAdmin';
 import { DEMO, PRACTITIONER_PERSONA } from './workflows';
 import type { LiveState } from './useLiveState';
 
@@ -22,11 +23,12 @@ import type { LiveState } from './useLiveState';
 export function AssetLibrary({ live }: { live: LiveState }) {
   const [library, setLibrary] = useState<CatalogueList<SampleCatalogueEntry> | null | undefined>(undefined);
   const [share, setShare] = useState(false);
+  const [reload, setReload] = useState(0);
   const encounter = live.encounter;
   const doctorPersona = encounter?.assignedDoctor?.practitionerId ? PRACTITIONER_PERSONA[encounter.assignedDoctor.practitionerId] : undefined;
   useEffect(() => {
     void call<CatalogueList<SampleCatalogueEntry>>(DEMO.admin, 'GET', '/api/catalogue/scan-assets').then((r) => setLibrary(r.ok ? r.body : null)).catch(() => setLibrary(null));
-  }, []);
+  }, [reload]);
 
   return (
     <div className="space-y-4">
@@ -65,6 +67,7 @@ export function AssetLibrary({ live }: { live: LiveState }) {
           </>
         )}
       </JivaCard>
+      <CatalogueAdmin onImported={() => setReload((n) => n + 1)} />
     </div>
   );
 }
