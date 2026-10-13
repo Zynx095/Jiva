@@ -9,6 +9,8 @@ import { encounterRouter } from './routes/encounters';
 import { clinicalRecordsRouter } from './routes/clinicalRecords';
 import { documentRouter, resetDocuments } from './routes/documents';
 import { vitalsRouter } from './routes/vitals';
+import { catalogueRouter } from './routes/catalogue';
+import { initialiseCatalogues } from './catalogue';
 import { demoClientAllowed, provenanceReport, runtimeMode } from './mode';
 import { auditRouter } from './routes/audit';
 import { resetAccessAudit } from './commands/support';
@@ -73,6 +75,7 @@ initializeStateEngines();
 initializeIntelligenceEngine();
 initializeEncounterEngine();
 clinicalStore.setRoster(loadRoster());
+initialiseCatalogues();
 // Local documents are as ephemeral as the in-memory records that reference them.
 void resetDocuments();
 
@@ -300,6 +303,8 @@ app.use('/api', documentRouter());
 app.use('/api', vitalsRouter());
 // Audit log (administrators only; content-free entries).
 app.use('/api', auditRouter());
+// Clinical catalogue: sample documents (demo only) and medication metadata; administrators import/export.
+app.use('/api', catalogueRouter());
 
 app.post('/api/demo/reset', requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
   // Demo reset wipes state: it does not exist in operational mode.
@@ -308,6 +313,7 @@ app.post('/api/demo/reset', requireRole('ADMIN'), async (req: AuthenticatedReque
   resetIntelligence();
   clinicalStore.reset();
   clinicalStore.setRoster(loadRoster());
+  initialiseCatalogues();
   resetEncounterEngine();
   resetAccessAudit();
   await resetDocuments();
