@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Icon, type IconName } from '@jiva/ui/src';
-import { call } from './api';
+import { AsyncButton, Icon, JivaButton, JivaModal, useToast, type IconName } from '@jiva/ui/src';
+import { call, failure } from './api';
 import { DEMO } from './workflows';
 import type { LiveState } from './useLiveState';
 import { RoleCards } from './RoleCards';
@@ -113,7 +113,65 @@ export function Home({ live, onOpenScenarios }: { live: LiveState; onOpenScenari
         </div>
         <RoleCards onOpenScenarios={onOpenScenarios} />
       </section>
+
+      <ResetDemo onDone={live.refresh} />
     </div>
+  );
+}
+
+/**
+ * Clear all demo data (demo administrator, demo mode only). Destructive for everyone watching the demo, so
+ * it says exactly what is cleared and asks for an explicit confirmation first.
+ */
+function ResetDemo({ onDone }: { onDone: () => void }) {
+  const [asking, setAsking] = useState(false);
+  const toast = useToast();
+  return (
+    <section aria-labelledby="reset-title" className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-surface px-6 py-5 ring-1 ring-ink-200">
+      <div className="min-w-0 max-w-2xl">
+        <h2 id="reset-title" className="text-base font-semibold text-ink-900">
+          Reset the demo data
+        </h2>
+        <p className="mt-1 text-[13px] leading-6 text-ink-600">
+          Clears every demo case, encounter, vital sign, prescription, note, report and document, and re-seeds the synthetic hospitals, ambulances and clinicians.
+          It affects everyone using this demo. Only possible in demo mode.
+        </p>
+      </div>
+      <JivaButton variant="danger-soft" icon="refresh" onClick={() => setAsking(true)}>
+        Reset demo data…
+      </JivaButton>
+      <JivaModal
+        open={asking}
+        onClose={() => setAsking(false)}
+        title="Reset all demo data?"
+        icon="alertTriangle"
+        tone="danger"
+        description="Every demo case, encounter and clinical record is deleted for everyone using this demo, and the synthetic network is re-seeded. This cannot be undone."
+        actions={
+          <>
+            <JivaButton variant="ghost" autoFocus onClick={() => setAsking(false)}>
+              Keep the data
+            </JivaButton>
+            <AsyncButton
+              variant="danger"
+              icon="refresh"
+              pendingText="Resetting…"
+              onAction={async () => {
+                const r = await call('demo-admin', 'POST', '/api/demo/reset').catch(() => null);
+                if (!r) return 'Cannot reach the JIVA API.';
+                if (!r.ok) return failure(r);
+                setAsking(false);
+                onDone();
+                toast.show({ title: 'Demo data reset', description: 'All demo records were cleared and the synthetic network re-seeded.', tone: 'ok', icon: 'refresh', groupKey: 'reset' });
+                return null;
+              }}
+            >
+              Reset demo data
+            </AsyncButton>
+          </>
+        }
+      />
+    </section>
   );
 }
 
