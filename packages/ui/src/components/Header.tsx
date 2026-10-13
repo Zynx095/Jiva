@@ -1,5 +1,6 @@
 import React, { useLayoutEffect, useRef } from 'react';
 import { useRuntimeMode } from '../lib/mode';
+import { jivaAppUrl } from '../lib/apps';
 import { cx } from '../lib/cx';
 import { timeAgo, useNow } from '../lib/time';
 import { Spinner } from './Button';
@@ -114,6 +115,27 @@ export function ModeBadge({ apiUrl, detail, className }: { apiUrl: string; detai
   const mode = useRuntimeMode(apiUrl);
   if (mode === 'OPERATIONAL') return null;
   return <DemoBadge detail={detail} className={className} />;
+}
+
+/**
+ * DEMO ONLY: the way back to the demonstration portal. Rendered only once the server confirms DEMO mode —
+ * an operational screen has no portal to return to. A plain link: it grants nothing and keeps no persona.
+ */
+export function DemoPortalLink({ apiUrl, className }: { apiUrl: string; className?: string }) {
+  const mode = useRuntimeMode(apiUrl);
+  if (mode !== 'DEMO') return null;
+  return (
+    <a
+      href={jivaAppUrl('demo')}
+      className={cx(
+        'inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-full bg-surface pl-1.5 pr-2.5 text-xs font-semibold text-ink-700 ring-1 ring-inset ring-ink-200 transition-colors duration-150 hover:text-ink-900 hover:ring-ink-300',
+        className,
+      )}
+    >
+      <Icon name="chevronLeft" size={14} />
+      Demo portal
+    </a>
+  );
 }
 
 export interface PersonaOption {
