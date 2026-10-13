@@ -32,6 +32,7 @@ import {
   caseCandidates,
   caseFacts,
   caseResponses,
+  acceptingHospitals,
   hospitalDisplayStatus,
   isAtHospital,
   isAwaiting,
@@ -175,6 +176,7 @@ export default function App() {
   }, [net.events, net.patients, net.hospitals, net.ambulances]);
 
   const pending = useMemo(() => pendingHospitals(derived.responses, derived.openCases, now), [derived, now]);
+  const accepting = useMemo(() => acceptingHospitals(derived.responses, derived.openCases, now), [derived, now]);
 
   const model: NetworkModel = useMemo(
     () => ({
@@ -185,7 +187,7 @@ export default function App() {
       events: net.events,
       ...derived,
       pending,
-      hospitalStatus: (h) => hospitalDisplayStatus(h, pending),
+      hospitalStatus: (h) => hospitalDisplayStatus(h, pending, accepting),
       ambulanceForCase: (caseId) => net.ambulances.find((a) => a.assignedPatient === caseId),
       selection,
       select,
@@ -198,7 +200,7 @@ export default function App() {
         setFit({ coordinates: coords, key: `${ambulanceId}:${Date.now()}` });
       },
     }),
-    [now, net.patients, net.hospitals, net.ambulances, net.events, derived, pending, selection, select, openTab],
+    [now, net.patients, net.hospitals, net.ambulances, net.events, derived, pending, accepting, selection, select, openTab],
   );
   useEffect(() => {
     latest.current.model = model;
@@ -234,11 +236,11 @@ export default function App() {
       onJob: net.ambulances.filter(isOnJob).length,
       idle: net.ambulances.filter((a) => a.status === 'AVAILABLE').length,
       awaiting,
-      accepted: net.hospitals.filter((h) => hospitalDisplayStatus(h, pending) === 'ACCEPTED').length,
-      limited: net.hospitals.filter((h) => hospitalDisplayStatus(h, pending) === 'LIMITED').length,
+      accepted: net.hospitals.filter((h) => hospitalDisplayStatus(h, pending, accepting) === 'ACCEPTED').length,
+      limited: net.hospitals.filter((h) => hospitalDisplayStatus(h, pending, accepting) === 'LIMITED').length,
       requests: net.events.filter((e) => e.eventType === 'hospital.acceptance.requested').length,
     };
-  }, [derived, net.patients, net.ambulances, net.hospitals, net.events, now, pending]);
+  }, [derived, net.patients, net.ambulances, net.hospitals, net.events, now, pending, accepting]);
 
   const searchItems = useMemo<SearchItem[]>(
     () => [

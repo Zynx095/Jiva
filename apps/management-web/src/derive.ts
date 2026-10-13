@@ -25,14 +25,35 @@ export function pendingHospitals(responses: Map<string, Map<string, CaseResponse
 }
 
 /**
- * The status a hospital shows on the network map and lists. Unknown stays unknown:
- * no response is never rendered as available.
+ * Hospitals holding a current (unexpired) acceptance for a case still being coordinated: ACCEPTED wins
+ * over LIMITED. A hospital's operational state keeps only its LATEST answer to any case, so declining one
+ * patient must not hide that it is still receiving another.
  */
-export function hospitalDisplayStatus(h: HospitalState, pending: Set<string>): string {
+export function acceptingHospitals(responses: Map<string, Map<string, CaseResponse>>, openCases: Set<string>, now: number): Map<string, 'ACCEPTED' | 'LIMITED'> {
+  const out = new Map<string, 'ACCEPTED' | 'LIMITED'>();
+  for (const [caseId, m] of responses) {
+    if (!openCases.has(caseId)) continue;
+    for (const r of m.values()) {
+      if ((r.status !== 'ACCEPTED' && r.status !== 'LIMITED') || (r.validUntil && Date.parse(r.validUntil) <= now)) continue;
+      if (r.status === 'ACCEPTED' || !out.has(r.hospitalId)) out.set(r.hospitalId, r.status);
+    }
+  }
+  return out;
+}
+
+/**
+ * The status a hospital shows on the network map and lists. Unknown stays unknown:
+ * no response is never rendered as available. "Unavailable" (ED or a hospital-wide answer) wins; then a
+ * current acceptance for any open case; then the hospital's latest answer.
+ */
+export function hospitalDisplayStatus(h: HospitalState, pending: Set<string>, accepting: Map<string, 'ACCEPTED' | 'LIMITED'> = new Map()): string {
   const op = h.operationalState;
   if (op?.emergency === 'UNAVAILABLE') return 'UNAVAILABLE';
   const a = op?.acceptance;
-  if (a === 'ACCEPTED' || a === 'LIMITED' || a === 'REJECTED' || a === 'UNAVAILABLE') return a;
+  if (a === 'UNAVAILABLE') return a;
+  const current = accepting.get(h.hospitalId);
+  if (current) return current;
+  if (a === 'ACCEPTED' || a === 'LIMITED' || a === 'REJECTED') return a;
   if (pending.has(h.hospitalId)) return 'PENDING';
   return 'UNKNOWN';
 }
