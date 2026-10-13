@@ -60,12 +60,12 @@ export function HandoverCard({ e, now }: { e: EncounterRecord; now: number }) {
   const history = [...(e.assignmentHistory ?? [])].reverse();
   return (
     <JivaCard>
-      <CardHeader title="Arrival, handover and responsibility" icon="hospital" subtitle="Recorded by hospital staff — a GPS signal alone never records an arrival" />
+      <CardHeader title="Arrival, handover and responsibility" icon="hospital" subtitle="Recorded by hospital staff — an ambulance position alone never records an arrival" />
       <dl className="mt-3 grid gap-x-6 gap-y-2 text-[13px] sm:grid-cols-2 lg:grid-cols-3">
         <Fact label="Arrival recorded">{`${formatDateTime(encounterArrivedAt(e))} (${timeAgo(encounterArrivedAt(e), now)})`}</Fact>
         <Fact label="Handover recorded">{handedOverAt ? formatDateTime(handedOverAt) : 'Not yet'}</Fact>
         <Fact label="Brought by">{e.ambulanceId ?? 'Not by a JIVA ambulance'}</Fact>
-        {e.arrival?.gpsArrivalAt && <Fact label="GPS geofence (evidence only)">{formatDateTime(e.arrival.gpsArrivalAt)}</Fact>}
+        {e.arrival?.gpsArrivalAt && <Fact label="Position at hospital (evidence only)">{formatDateTime(e.arrival.gpsArrivalAt)}</Fact>}
         {e.referral && <Fact label="Referral answer">{e.referral.responseStatus ? `${e.referral.responseStatus.toLowerCase()}${e.referral.respondedAt ? ` at ${formatDateTime(e.referral.respondedAt)}` : ''}` : 'Arrived under referral'}</Fact>}
         <Fact label="Encounter">{e.encounterId}</Fact>
       </dl>

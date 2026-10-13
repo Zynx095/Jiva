@@ -133,7 +133,7 @@ export function Controls({ live }: { live: LiveState }) {
           <CardHeader title="Journey" icon="navigation" subtitle={destination ? `Destination: ${DEMO.hospitals[destination]?.name ?? destination}` : 'No destination yet'} />
           <div className="mt-3 flex flex-wrap gap-2">
             <AsyncButton icon="pin" disabled={!destination} onAction={() => run(steps.gpsArrival(destination!))}>
-              Ambulance reaches the destination (GPS)
+              Ambulance reaches the destination (simulated position)
             </AsyncButton>
             <AsyncButton icon="hospital" disabled={!destination || !!encounter} onAction={() => run(steps.recordArrival(destination!))}>
               Hospital records the arrival

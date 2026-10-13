@@ -110,7 +110,7 @@ export function TimelineView({ live }: { live: LiveState }) {
         </label>
         <label className="inline-flex items-center gap-1.5">
           <input type="checkbox" className="h-4 w-4 accent-warn-700" checked={showGps} onChange={(e) => setShowGps(e.target.checked)} />
-          GPS updates
+          Position updates
         </label>
       </div>
       <p className="mt-2 text-xs text-ink-600">
