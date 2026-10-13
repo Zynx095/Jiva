@@ -4,6 +4,7 @@ import {
   ActorSchema,
   DiagnosticCategorySchema,
   DocumentContentTypeSchema,
+  DocumentTypeSchema,
   DoctorAssignmentReasonSchema,
   MeasurementTypeSchema,
   RecordIdSchema,
@@ -130,6 +131,11 @@ export const ClinicalDocumentStoredSchema = BaseEventSchema.extend({
     documentId: RecordIdSchema,
     ...recordRef,
     category: DiagnosticCategorySchema,
+    documentType: DocumentTypeSchema.optional(),
+    /** CATALOGUE_SAMPLE: a synthetic sample copied from the catalogue (demo only), never the patient's result. */
+    origin: z.enum(['UPLOAD', 'CATALOGUE_SAMPLE']).optional(),
+    /** The earlier version this document replaces. */
+    supersedes: RecordIdSchema.optional(),
     contentType: DocumentContentTypeSchema,
     sizeBytes: z.number().int().positive(),
     sha256: Sha256HexSchema,

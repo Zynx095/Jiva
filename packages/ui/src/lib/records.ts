@@ -204,6 +204,37 @@ export interface DocumentRecord {
   uploader?: RecordAuthor;
   uploadedBy?: RecordAuthor | EncounterActor;
   dataStatus: string;
+  documentType?: string;
+  /** UPLOAD, or CATALOGUE_SAMPLE for a synthetic sample copied from the catalogue (never the patient's result). */
+  origin?: 'UPLOAD' | 'CATALOGUE_SAMPLE';
+  /** Clinician view: the full sample reference; patient view: the designation only. */
+  sample?: { assetId?: string; revision?: number; catalogueVersion?: number; designation: 'SYNTHETIC' | 'EDUCATIONAL' };
+  version?: number;
+  seriesId?: string;
+  supersedes?: string;
+  supersededBy?: string;
+  /** Patient view: a newer version of this document exists. */
+  superseded?: boolean;
+}
+
+/** Document types (finer than the category) and the category each belongs to. */
+export const DOCUMENT_KINDS: Array<{ value: string; label: string; category: string }> = [
+  { value: 'XRAY', label: 'X-ray', category: 'IMAGING' },
+  { value: 'CT', label: 'CT', category: 'IMAGING' },
+  { value: 'MRI', label: 'MRI', category: 'IMAGING' },
+  { value: 'ULTRASOUND', label: 'Ultrasound', category: 'IMAGING' },
+  { value: 'ECG', label: 'ECG', category: 'ECG' },
+  { value: 'LAB_REPORT', label: 'Laboratory report', category: 'LABORATORY' },
+  { value: 'PATHOLOGY_REPORT', label: 'Pathology report', category: 'LABORATORY' },
+  { value: 'OTHER', label: 'Other document', category: 'OTHER' },
+];
+
+export const DOCUMENT_KIND_TEXT: Record<string, string> = Object.fromEntries(DOCUMENT_KINDS.map((k) => [k.value, k.label]));
+
+/** "Synthetic sample" / "Educational sample" for catalogue samples; undefined for uploads. */
+export function sampleLabel(d: Pick<DocumentRecord, 'origin' | 'sample'>): string | undefined {
+  if (d.origin !== 'CATALOGUE_SAMPLE') return undefined;
+  return d.sample?.designation === 'EDUCATIONAL' ? 'Educational sample — not this patient' : 'Synthetic sample — not this patient';
 }
 
 export const DOCUMENT_TYPES: Record<string, { label: string; extensions: string[] }> = {
@@ -234,6 +265,7 @@ const REJECTION_TEXT: Record<string, string> = {
   SIZE_MISMATCH: 'the file size did not match',
   CONTENT_TYPE_MISMATCH: 'the file is not the type it claims to be',
   UPLOAD_EXPIRED: 'the upload was not completed in time',
+  ALREADY_SUPERSEDED: 'the document it was replacing had already been replaced',
 };
 
 export function documentStatus(d: Pick<DocumentRecord, 'status' | 'rejectionReason'>): StatusMeta {

@@ -8,12 +8,14 @@ import {
   DoctorAssignmentReasonSchema,
   LatitudeSchema,
   LongitudeSchema,
+  DocumentTypeSchema,
+  documentTypeFits,
   MedicationFormulationSchema,
   MedicationRouteSchema,
   RecordIdSchema,
   Sha256HexSchema,
 } from './primitives';
-import { MedicationIdSchema } from './catalogue';
+import { MedicationIdSchema, ScanAssetIdSchema } from './catalogue';
 
 /**
  * Request bodies of the command endpoints that produce encounter and clinical events.
@@ -165,15 +167,38 @@ export const AmendReportCommandSchema = z.object({
 /** Largest diagnostic file accepted by the upload workflow (bytes). */
 export const MAX_DOCUMENT_BYTES = 20 * 1024 * 1024;
 
+const typeFitsCategory = (d: { category: z.infer<typeof DiagnosticCategorySchema>; documentType?: z.infer<typeof DocumentTypeSchema> }, ctx: z.RefinementCtx) => {
+  if (d.documentType && !documentTypeFits(d.category, d.documentType)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['documentType'], message: `A ${d.documentType} document cannot be filed under ${d.category}` });
+  }
+};
+
 export const DocumentUploadIntentCommandSchema = z.object({
   clientRequestId: ClientRequestIdSchema,
   category: DiagnosticCategorySchema,
+  /** X-ray, CT, MRI, ultrasound, ECG, lab or pathology report, other — must fit the category. */
+  documentType: DocumentTypeSchema.optional(),
   title: boundedText(120),
   fileName: boundedText(160),
   contentType: DocumentContentTypeSchema,
   sizeBytes: z.number().int().min(1).max(MAX_DOCUMENT_BYTES),
   sha256: Sha256HexSchema,
   patientVisible: z.boolean(),
+  /** A verified document of the same encounter that this upload replaces (it is kept, marked superseded). */
+  supersedesDocumentId: RecordIdSchema.optional(),
+}).strict().superRefine(typeFitsCategory);
+
+/**
+ * DEMO ONLY: attach a synthetic sample from the clinical catalogue to an encounter. The server copies the
+ * verified sample file and labels the document as a catalogue sample (never the patient's own result).
+ */
+export const AttachCatalogueSampleCommandSchema = z.object({
+  clientRequestId: ClientRequestIdSchema,
+  assetId: ScanAssetIdSchema,
+  /** Defaults to the catalogue title. */
+  title: boundedText(120).optional(),
+  patientVisible: z.boolean(),
+  supersedesDocumentId: RecordIdSchema.optional(),
 }).strict();
 
 // ------------------------------------------------------------------ medical telemetry
@@ -252,6 +277,7 @@ export type DiscardPrescriptionDraftCommand = z.infer<typeof DiscardPrescription
 export type CreateReportCommand = z.infer<typeof CreateReportCommandSchema>;
 export type AmendReportCommand = z.infer<typeof AmendReportCommandSchema>;
 export type DocumentUploadIntentCommand = z.infer<typeof DocumentUploadIntentCommandSchema>;
+export type AttachCatalogueSampleCommand = z.infer<typeof AttachCatalogueSampleCommandSchema>;
 export type MeasurementInput = z.infer<typeof MeasurementInputSchema>;
 export type RecordTelemetryCommand = z.infer<typeof RecordTelemetryCommandSchema>;
 export type DeviceObservationBatch = z.infer<typeof DeviceObservationBatchSchema>;

@@ -199,6 +199,14 @@ export interface DiagnosticReport {
 
 export type DocumentContentType = 'application/pdf' | 'image/png' | 'image/jpeg' | 'application/dicom';
 export type DocumentStatus = 'PENDING_UPLOAD' | 'AVAILABLE' | 'REJECTED';
+/** What kind of document it is, finer than its category (an X-ray is always IMAGING). */
+export type DiagnosticDocumentType = 'XRAY' | 'CT' | 'MRI' | 'ULTRASOUND' | 'ECG' | 'LAB_REPORT' | 'PATHOLOGY_REPORT' | 'OTHER';
+/**
+ * UPLOAD           — a file a clinician uploaded (verified on upload).
+ * CATALOGUE_SAMPLE — a synthetic or educational sample copied from the clinical catalogue (DEMO mode only).
+ *                    Never this patient's result, and always labelled as a sample.
+ */
+export type DocumentOrigin = 'UPLOAD' | 'CATALOGUE_SAMPLE';
 
 /** Metadata of an uploaded diagnostic file (X-ray, ECG trace, lab PDF…). The bytes live in document storage. */
 export interface DiagnosticDocument {
@@ -221,6 +229,20 @@ export interface DiagnosticDocument {
   uploadedAt?: string;
   rejectionReason?: string;
   dataStatus: DataStatus;
+  /** Absent on documents recorded before document types existed. */
+  documentType?: DiagnosticDocumentType;
+  /** Absent means UPLOAD (documents recorded before origins existed). */
+  origin?: DocumentOrigin;
+  /** The catalogue sample this document was copied from (CATALOGUE_SAMPLE only). */
+  sample?: { assetId: string; revision: number; catalogueVersion: number; designation: 'SYNTHETIC' | 'EDUCATIONAL' };
+  /**
+   * Versions of a document: a new document may replace an earlier verified one of the same encounter
+   * (`supersedes`); the earlier one is kept and marked `supersededBy`. `seriesId` is the first version's id.
+   */
+  version?: number;
+  seriesId?: string;
+  supersedes?: string;
+  supersededBy?: string;
 }
 
 // ------------------------------------------------------------------ medical telemetry

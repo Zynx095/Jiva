@@ -54,6 +54,8 @@ export interface IClinicalStore {
   getDocument(id: string): DiagnosticDocument | undefined;
   listDocuments(encounterId: string): DiagnosticDocument[];
   putDocument(d: DiagnosticDocument): void;
+  /** Only to roll back a document whose canonical event could not be recorded. */
+  removeDocument(id: string): void;
   addMeasurements(list: TelemetryMeasurement[]): void;
   listMeasurements(encounterId: string): TelemetryMeasurement[];
   /** Only to roll back a batch whose canonical event could not be recorded. */
@@ -144,6 +146,7 @@ export class LocalClinicalStore implements IClinicalStore {
   getDocument(id: string) { return this.documents.get(id); }
   listDocuments(encounterId: string) { return [...this.documents.values()].filter(d => d.encounterId === encounterId); }
   putDocument(d: DiagnosticDocument) { this.documents.set(d.documentId, d); }
+  removeDocument(id: string) { this.documents.delete(id); }
 
   addMeasurements(list: TelemetryMeasurement[]): void {
     for (const m of list) {
