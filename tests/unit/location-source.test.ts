@@ -8,6 +8,7 @@ import { randomUUID } from 'crypto';
 import { AmbulanceLocationUpdatedSchema, type AnyEvent } from '../../packages/event-schema/src';
 import { LocalStateStore } from '../../services/api/src/infrastructure/stateStore/LocalStateStore';
 import { createAmbulanceHandler } from '../../services/api/src/lambdas/core/ambulanceCore';
+import { positionSource, positionUpdateText } from '../../packages/ui/src/lib/position';
 import { check, eq, ok, run } from './helpers/assert';
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
@@ -40,6 +41,13 @@ run('Ambulance position source', async () => {
     await sleep(50);
     const a = stores.ambulancesStore.get('AMB-BLR-001');
     eq([a?.currentLocation?.latitude, a?.locationSource], [13.03, undefined], 'unstated stays unstated (not GPS, not the previous source)');
+  });
+
+  await check('screens call a position GPS only when it comes from a GPS device', () => {
+    eq(positionSource('DEVICE_GPS').label, 'GPS', 'device');
+    for (const s of ['MANUAL', 'SIMULATED', undefined, 'garbage']) ok(!/gps/i.test(positionSource(s).label), `${s}: ${positionSource(s).label}`);
+    eq(positionUpdateText(undefined, Date.now()), 'No position update yet', 'no update');
+    ok(positionUpdateText({ locationAsOf: new Date().toISOString(), locationSource: 'MANUAL' }, Date.now()).startsWith('Set by the crew'), 'manual with age');
   });
 
   await check('AWS ambulance core keeps the same source', async () => {

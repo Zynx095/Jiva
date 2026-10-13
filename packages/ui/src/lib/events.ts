@@ -3,6 +3,7 @@ import type { Tone } from './status';
 import { capabilityStatus } from './status';
 import { capabilityLabel, joinList, plainCapabilities, SEVERITY_TEXT } from './labels';
 import { formatClock, formatKm, minutesFromSeconds } from './time';
+import { positionSource } from './position';
 
 /** Structural view of a canonical event (see packages/event-schema). Payload fields are read defensively. */
 export interface JivaEvent {
@@ -29,7 +30,7 @@ export interface EventDescription {
   tone: Tone;
   icon: IconName;
   category: EventCategory;
-  /** High-frequency telemetry (GPS, shadow traces): collapsed by default. */
+  /** High-frequency telemetry (position updates, shadow traces): collapsed by default. */
   quiet?: boolean;
   /** Worth a short live notification when it arrives. */
   notable?: boolean;
@@ -182,7 +183,7 @@ export function describeEvent(e: JivaEvent, name: NameResolver, audience: Audien
     }
     case 'ambulance.location.updated': {
       const speed = num(p, 'speedKmh');
-      return { ...base, title: patient ? 'Ambulance position updated' : `${A} position updated`, detail: speed !== undefined ? `${Math.round(speed)} km/h` : undefined, tone: 'neutral', icon: 'pin', category: 'ambulance', quiet: true };
+      return { ...base, title: patient ? 'Ambulance position updated' : `${A} position updated`, detail: dotJoin([positionSource(str(p, 'source')).label, speed !== undefined && `${Math.round(speed)} km/h`]), tone: 'neutral', icon: 'pin', category: 'ambulance', quiet: true };
     }
     case 'ambulance.arrived': {
       // GPS geofence = derived signal; only the hospital's own record (encounter.arrival.recorded) confirms arrival.
@@ -192,7 +193,7 @@ export function describeEvent(e: JivaEvent, name: NameResolver, audience: Audien
       }
       return patient
         ? { ...base, title: `Your ambulance reached ${H(hospitalId)}`, detail: 'The hospital confirms your arrival and takes over your care.', tone: 'ok', icon: 'pin', category: 'ambulance', notable: true }
-        : { ...base, title: `${A} reached ${H(hospitalId)}`, detail: "GPS geofence · awaiting the hospital's arrival record", tone: 'ok', icon: 'pin', category: 'ambulance', notable: true };
+        : { ...base, title: `${A} reached ${H(hospitalId)}`, detail: "Position at the hospital · awaiting the hospital's arrival record", tone: 'ok', icon: 'pin', category: 'ambulance', notable: true };
     }
     case 'encounter.arrival.recorded':
       return audience === 'patient'
