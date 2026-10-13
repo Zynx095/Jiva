@@ -524,7 +524,7 @@ export default function App() {
                 </JivaCard>
               )}
 
-              {patient && caseId && <PrehospitalCard caseId={caseId} version={observationsVersion} />}
+              {patient && caseId && <PrehospitalCard key={caseId} caseId={caseId} version={observationsVersion} />}
 
               {caseId && (
                 <JivaCard>
