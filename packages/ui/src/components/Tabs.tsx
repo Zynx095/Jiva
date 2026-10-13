@@ -18,10 +18,12 @@ export interface JivaTabsProps<T extends string> {
   label: string;
   idPrefix: string;
   className?: string;
+  /** Compact tabs for narrow side panels. */
+  size?: 'md' | 'sm';
 }
 
 /** Accessible tabs: arrow keys / Home / End move between tabs, only the active tab is in the tab order. */
-export function JivaTabs<T extends string>({ items, value, onChange, label, idPrefix, className }: JivaTabsProps<T>) {
+export function JivaTabs<T extends string>({ items, value, onChange, label, idPrefix, className, size = 'md' }: JivaTabsProps<T>) {
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
   const onKeyDown = (e: React.KeyboardEvent, i: number) => {
     const last = items.length - 1;
@@ -50,7 +52,8 @@ export function JivaTabs<T extends string>({ items, value, onChange, label, idPr
             onClick={() => onChange(t.id)}
             onKeyDown={(e) => onKeyDown(e, i)}
             className={cx(
-              'relative -mb-px flex h-11 shrink-0 items-center gap-1.5 border-b-2 px-3 text-sm font-semibold transition-colors duration-150',
+              'relative -mb-px flex h-11 shrink-0 items-center border-b-2 font-semibold transition-colors duration-150',
+              size === 'sm' ? 'gap-1 px-[7px] text-[13px]' : 'gap-1.5 px-3 text-sm',
               selected ? 'border-brand-700 text-ink-900' : 'border-transparent text-ink-500 hover:border-ink-300 hover:text-ink-800',
             )}
           >

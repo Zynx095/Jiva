@@ -365,7 +365,7 @@ export default function App() {
             <DemoControls advanceAmbulance={advanceAmbulance} />
           </div>
 
-          <aside aria-label="Network details" className="flex flex-col border-t border-ink-200 bg-ink-25 lg:min-h-0 lg:w-[420px] lg:border-l lg:border-t-0 xl:w-[460px]">
+          <aside aria-label="Network details" className="flex flex-col border-t border-ink-200 bg-ink-25 lg:min-h-0 lg:w-[460px] lg:border-l lg:border-t-0">
             {selection ? (
               <div className="flex flex-col lg:min-h-0 lg:flex-1">
                 <div className="flex items-center gap-2 border-b border-ink-200 bg-white px-3 py-2">
@@ -391,7 +391,8 @@ export default function App() {
             ) : (
               <div className="flex flex-col lg:min-h-0 lg:flex-1">
                 <JivaTabs
-                  className="bg-white px-2"
+                  className="bg-white px-1"
+                  size="sm"
                   idPrefix="panel"
                   label="Network lists"
                   value={tab}
@@ -399,8 +400,8 @@ export default function App() {
                   items={[
                     { id: 'incidents', label: 'Incidents', count: kpis.open + kpis.arrived, attention: kpis.open > 0 },
                     { id: 'hospitals', label: 'Hospitals', count: net.hospitals.length, attention: kpis.awaiting > 0 },
-                    { id: 'ambulances', label: 'Ambulances', count: net.ambulances.length },
-                    { id: 'directory', label: 'Directory', count: directory.data?.counts.total },
+                    { id: 'ambulances', label: 'Ambulances' },
+                    { id: 'directory', label: 'Directory' },
                     { id: 'activity', label: 'Activity' },
                   ]}
                 />
