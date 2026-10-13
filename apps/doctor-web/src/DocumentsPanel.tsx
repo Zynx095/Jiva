@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AsyncButton,
   CATEGORY_TEXT,
   CardHeader,
-  DIAGNOSTIC_CATEGORIES,
+  DOCUMENT_KINDS,
+  DOCUMENT_KIND_TEXT,
   DOCUMENT_TYPES,
+  Icon,
   JivaButton,
   JivaCard,
   JivaStatus,
@@ -15,10 +17,12 @@ import {
   documentTypeOf,
   formatBytes,
   formatDateTime,
+  sampleLabel,
   type DocumentRecord,
 } from '@jiva/ui/src';
-import { apiBlob, apiPutFile } from '../api';
-import { CommandError, Field, inputClass, sendCommand } from '../ui';
+import { apiBlob, apiPutFile } from './api';
+import { SampleLibrary } from './SampleLibrary';
+import { CommandError, Field, inputClass, sendCommand } from './ui';
 
 const encPath = (encounterId: string) => `/api/encounters/${encodeURIComponent(encounterId)}/documents`;
 
@@ -43,49 +47,78 @@ async function saveDocument(encounterId: string, d: DocumentRecord): Promise<str
   }
 }
 
+/** The first document type that fits a category (documents recorded before types existed have none). */
+const firstKindFor = (category: string) => DOCUMENT_KINDS.find((k) => k.category === category)?.value ?? 'OTHER';
+
+/** Documents that may be replaced by a new version: verified and not yet replaced. */
+const replaceable = (list: DocumentRecord[]) => list.filter((d) => d.status === 'AVAILABLE' && !d.supersededBy);
+
 /**
- * Diagnostic documents of one encounter (X-rays, ECG traces, lab PDFs) for the assigned clinician:
- * upload with a server-verified checksum and file type, list with the verification status, preview images
- * and download. Files are shared with the patient at upload or through a shared report.
+ * Diagnostic documents of one encounter (X-ray, CT, MRI, ultrasound, ECG, laboratory reports …) for the
+ * assigned clinician: upload with a server-verified checksum and file type, attach a labelled synthetic
+ * sample from the catalogue (demo only), replace a document with a new version (the old one is kept),
+ * preview images and download. JIVA stores and shows files; it never interprets them.
  */
 export function DocumentsPanel({ encounterId, list, onChanged }: { encounterId: string; list: DocumentRecord[] | null | undefined; onChanged: () => void }) {
-  const [uploading, setUploading] = useState(false);
+  const [mode, setMode] = useState<'none' | 'upload' | 'samples'>('none');
+  const [replacing, setReplacing] = useState<string | undefined>(undefined);
+  const done = () => {
+    setMode('none');
+    setReplacing(undefined);
+    onChanged();
+  };
   return (
     <JivaCard>
       <CardHeader
         title="Documents and scans"
         icon="file"
-        subtitle="X-rays, ECGs, lab reports · verified on upload · private to the care team unless shared"
+        subtitle="Verified on upload · private to the care team unless shared · JIVA does not interpret images or results"
         actions={
-          !uploading && (
-            <JivaButton size="sm" icon="plus" onClick={() => setUploading(true)}>
-              Upload
-            </JivaButton>
+          mode === 'none' && (
+            <div className="flex flex-wrap gap-1.5">
+              <JivaButton size="sm" icon="plus" onClick={() => setMode('upload')}>
+                Upload
+              </JivaButton>
+              <JivaButton size="sm" variant="warn-soft" icon="layers" onClick={() => setMode('samples')}>
+                Sample library (demo)
+              </JivaButton>
+            </div>
           )
         }
       />
-      {uploading && (
+      {mode === 'upload' && (
         <UploadForm
           encounterId={encounterId}
-          onSaved={() => {
-            setUploading(false);
-            onChanged();
-          }}
+          replaceable={replaceable(list ?? [])}
+          replacing={replacing}
+          onSaved={done}
           onRefresh={onChanged}
-          onCancel={() => setUploading(false)}
+          onCancel={() => {
+            setMode('none');
+            setReplacing(undefined);
+          }}
         />
       )}
+      {mode === 'samples' && <SampleLibrary encounterId={encounterId} replaceable={replaceable(list ?? [])} onAttached={done} onClose={() => setMode('none')} />}
       {list === undefined ? (
         <SkeletonRows rows={2} className="mt-3" />
       ) : list === null ? (
         <p className="mt-3 text-sm text-danger-700">Documents could not be loaded. They will be retried automatically.</p>
       ) : list.length === 0 ? (
-        !uploading && <p className="mt-3 text-sm text-ink-500">No documents for this encounter yet.</p>
+        mode === 'none' && <p className="mt-3 text-sm text-ink-500">No documents for this encounter yet.</p>
       ) : (
         <ul className="mt-3 divide-y divide-ink-100">
           {list.map((d) => (
             <li key={d.documentId} className="py-3">
-              <DocumentItem encounterId={encounterId} d={d} />
+              <DocumentItem
+                encounterId={encounterId}
+                d={d}
+                all={list}
+                onReplace={() => {
+                  setReplacing(d.documentId);
+                  setMode('upload');
+                }}
+              />
             </li>
           ))}
         </ul>
@@ -94,7 +127,7 @@ export function DocumentsPanel({ encounterId, list, onChanged }: { encounterId: 
   );
 }
 
-function DocumentItem({ encounterId, d }: { encounterId: string; d: DocumentRecord }) {
+function DocumentItem({ encounterId, d, all, onReplace }: { encounterId: string; d: DocumentRecord; all: DocumentRecord[]; onReplace: () => void }) {
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const image = d.contentType === 'image/png' || d.contentType === 'image/jpeg';
@@ -102,24 +135,37 @@ function DocumentItem({ encounterId, d }: { encounterId: string; d: DocumentReco
     if (preview) URL.revokeObjectURL(preview);
   }, [preview]);
   const status = documentStatus(d);
+  const sample = sampleLabel(d);
+  const newer = d.supersededBy ? all.find((x) => x.documentId === d.supersededBy) : undefined;
+  const older = d.supersedes ? all.find((x) => x.documentId === d.supersedes) : undefined;
   return (
-    <div>
+    <div className={cx(d.supersededBy && 'opacity-75')}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-xs font-semibold text-ink-500">
-            {CATEGORY_TEXT[d.category] ?? d.category} · {DOCUMENT_TYPES[d.contentType]?.label ?? d.contentType} · {formatBytes(d.sizeBytes)}
+            {d.documentType ? DOCUMENT_KIND_TEXT[d.documentType] ?? d.documentType : CATEGORY_TEXT[d.category] ?? d.category} · {DOCUMENT_TYPES[d.contentType]?.label ?? d.contentType} · {formatBytes(d.sizeBytes)}
+            {d.version ? ` · version ${d.version}` : ''}
           </p>
           <p className="truncate text-sm font-semibold text-ink-900" title={d.fileName}>
             {d.title}
           </p>
           <p className="text-xs text-ink-500">
-            {d.fileName} · {d.uploadedAt ? `uploaded ${formatDateTime(d.uploadedAt)}` : d.createdAt ? `declared ${formatDateTime(d.createdAt)}` : ''}
+            {d.fileName} · {d.uploadedAt ? `${sample ? 'attached' : 'uploaded'} ${formatDateTime(d.uploadedAt)}` : d.createdAt ? `declared ${formatDateTime(d.createdAt)}` : ''}
             {d.uploader ? ` by ${d.uploader.displayName}` : ''}
           </p>
+          {(newer || older) && (
+            <p className="text-xs text-ink-600">
+              {newer ? `Replaced by version ${newer.version ?? '?'} (${newer.title})` : ''}
+              {newer && older ? ' · ' : ''}
+              {older ? `Replaces version ${older.version ?? 1} (${older.title})` : ''}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
+          {sample && <JivaStatus meta={{ label: sample, tone: 'warn', icon: 'alertTriangle', hint: 'A synthetic sample from the catalogue for the demonstration. It is not a result of this patient.' }} />}
           <JivaStatus meta={status} />
           {d.patientVisible && <JivaStatus meta={{ label: 'Shared with patient', tone: 'ok', icon: 'eye' }} />}
+          {d.supersededBy && <JivaStatus meta={{ label: 'Older version', tone: 'neutral', icon: 'clock' }} />}
         </div>
       </div>
       {d.status === 'REJECTED' && <p className="mt-1 text-xs text-danger-700">{status.hint} Upload the file again.</p>}
@@ -156,6 +202,11 @@ function DocumentItem({ encounterId, d }: { encounterId: string; d: DocumentReco
           >
             Download
           </AsyncButton>
+          {!d.supersededBy && (
+            <JivaButton size="sm" variant="ghost" icon="refresh" onClick={onReplace}>
+              Upload a new version
+            </JivaButton>
+          )}
         </div>
       )}
       {preview && (
@@ -163,7 +214,7 @@ function DocumentItem({ encounterId, d }: { encounterId: string; d: DocumentReco
           <img src={preview} alt={d.title} className="max-h-80 rounded-lg ring-1 ring-ink-200" />
           <figcaption className="mt-1 text-xs text-ink-500">
             {d.title}
-            {d.dataStatus === 'SYNTHETIC_DEMO' ? ' — synthetic demo file' : ''}
+            {sample ? ` — ${sample.toLowerCase()}` : d.dataStatus === 'SYNTHETIC_DEMO' ? ' — synthetic demo file' : ''}
           </figcaption>
         </figure>
       )}
@@ -174,16 +225,41 @@ function DocumentItem({ encounterId, d }: { encounterId: string; d: DocumentReco
 
 type Step = 'idle' | 'checking' | 'declaring' | 'uploading';
 
-function UploadForm({ encounterId, onSaved, onRefresh, onCancel }: { encounterId: string; onSaved: () => void; onRefresh: () => void; onCancel: () => void }) {
+function UploadForm({ encounterId, replaceable, replacing, onSaved, onRefresh, onCancel }: {
+  encounterId: string;
+  replaceable: DocumentRecord[];
+  replacing?: string;
+  onSaved: () => void;
+  onRefresh: () => void;
+  onCancel: () => void;
+}) {
+  const target = replaceable.find((d) => d.documentId === replacing);
   const [file, setFile] = useState<File | null>(null);
-  const [category, setCategory] = useState('IMAGING');
-  const [title, setTitle] = useState('');
+  const [kind, setKind] = useState(() => target?.documentType ?? (target ? firstKindFor(target.category) : 'XRAY'));
+  const [category, setCategory] = useState(() => target?.category ?? 'IMAGING');
+  const [title, setTitle] = useState(target ? `${target.title} — new version` : '');
   const [share, setShare] = useState(false);
+  const [supersedes, setSupersedes] = useState(replacing ?? '');
   const [step, setStep] = useState<Step>('idle');
   const [error, setError] = useState<string | null>(null);
   const type = file ? documentTypeOf(file) : undefined;
   const problem = !file ? null : !type ? 'Accepted files: PDF, PNG, JPEG or DICOM.' : file.size === 0 ? 'The file is empty.' : file.size > MAX_DOCUMENT_BYTES ? `Files up to ${formatBytes(MAX_DOCUMENT_BYTES)}.` : null;
   const id = (k: string) => `doc-${encounterId}-${k}`;
+  const kinds = useMemo(() => DOCUMENT_KINDS.filter((k) => !supersedes || k.category === category || (k.value === 'OTHER' && ['OTHER', 'PROCEDURE'].includes(category))), [supersedes, category]);
+
+  const chooseKind = (value: string) => {
+    setKind(value);
+    const k = DOCUMENT_KINDS.find((x) => x.value === value);
+    if (k && !supersedes) setCategory(k.category);
+  };
+  const chooseTarget = (docId: string) => {
+    setSupersedes(docId);
+    const t = replaceable.find((d) => d.documentId === docId);
+    if (t) {
+      setCategory(t.category);
+      setKind(t.documentType ?? firstKindFor(t.category));
+    }
+  };
 
   const submit = async () => {
     if (!file || !type || problem) return 'Choose a valid file';
@@ -194,12 +270,14 @@ function UploadForm({ encounterId, onSaved, onRefresh, onCancel }: { encounterId
     const declared = await sendCommand<{ document: DocumentRecord; upload: { url: string } }>(encPath(encounterId), {
       clientRequestId: crypto.randomUUID(),
       category,
+      documentType: kind,
       title: title.trim() || file.name,
       fileName: file.name,
       contentType: type,
       sizeBytes: file.size,
       sha256,
       patientVisible: share,
+      ...(supersedes ? { supersedesDocumentId: supersedes } : {}),
     });
     if (declared.error || !declared.body?.upload) {
       setStep('idle');
@@ -229,7 +307,7 @@ function UploadForm({ encounterId, onSaved, onRefresh, onCancel }: { encounterId
 
   return (
     <div className="mt-3 animate-fade space-y-3 rounded-xl bg-ink-25 p-3 ring-1 ring-inset ring-ink-200">
-      <p className="text-sm font-semibold text-ink-900">Upload a document</p>
+      <p className="text-sm font-semibold text-ink-900">{supersedes ? 'Upload a new version' : 'Upload a document'}</p>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="File" htmlFor={id('file')} required hint="PDF, PNG, JPEG or DICOM, up to 20 MB. Use synthetic files in the demo." className="sm:col-span-2">
           <input
@@ -244,11 +322,11 @@ function UploadForm({ encounterId, onSaved, onRefresh, onCancel }: { encounterId
             }}
           />
         </Field>
-        <Field label="Type" htmlFor={id('cat')} required>
-          <select id={id('cat')} className={cx(inputClass, 'h-9')} value={category} onChange={(e) => setCategory(e.target.value)}>
-            {DIAGNOSTIC_CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {CATEGORY_TEXT[c]}
+        <Field label="Document type" htmlFor={id('kind')} required hint={`Filed under ${CATEGORY_TEXT[category] ?? category}`}>
+          <select id={id('kind')} className={cx(inputClass, 'h-9')} value={kind} onChange={(e) => chooseKind(e.target.value)}>
+            {kinds.map((k) => (
+              <option key={k.value} value={k.value}>
+                {k.label}
               </option>
             ))}
           </select>
@@ -256,12 +334,26 @@ function UploadForm({ encounterId, onSaved, onRefresh, onCancel }: { encounterId
         <Field label="Title" htmlFor={id('title')} required>
           <input id={id('title')} className={cx(inputClass, 'h-9')} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} />
         </Field>
+        <Field label="Replaces" htmlFor={id('sup')} className="sm:col-span-2" hint="A new version keeps the earlier one in the record; it is marked as replaced.">
+          <select id={id('sup')} className={cx(inputClass, 'h-9')} value={supersedes} onChange={(e) => chooseTarget(e.target.value)}>
+            <option value="">Nothing — this is a new document</option>
+            {replaceable.map((d) => (
+              <option key={d.documentId} value={d.documentId}>
+                {d.title} (version {d.version ?? 1}){d.origin === 'CATALOGUE_SAMPLE' ? ' — sample' : ''}
+              </option>
+            ))}
+          </select>
+        </Field>
         <label className="inline-flex items-center gap-2 text-sm text-ink-800 sm:col-span-2">
           <input type="checkbox" className="h-4 w-4 accent-brand-700" checked={share} onChange={(e) => setShare(e.target.checked)} />
           Share with the patient now (otherwise share it through a report)
         </label>
       </div>
       {problem && <p className="text-xs font-semibold text-danger-700">{problem}</p>}
+      <p className="flex items-start gap-1.5 text-xs text-ink-500">
+        <Icon name="shield" size={13} className="mt-px shrink-0" />
+        The file's checksum is computed in your browser and checked by JIVA together with its size and file type before anything is stored.
+      </p>
       <div className="flex flex-wrap items-center gap-2">
         <AsyncButton variant="primary" icon="send" disabled={!file || !!problem || step !== 'idle'} pendingText={step === 'checking' ? 'Computing checksum…' : step === 'declaring' ? 'Preparing…' : 'Uploading…'} onAction={submit}>
           Upload and verify

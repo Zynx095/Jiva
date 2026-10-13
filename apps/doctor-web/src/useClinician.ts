@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { HospitalState, PatientState } from '@jiva/domain-models';
-import type { ConnectionState, DocumentRecord, EncounterRecord, JivaEvent, PrescriptionRecord, ReportRecord, RosterEntry, VitalsResponse } from '@jiva/ui/src';
-import { apiGet, socket } from '../api';
+import type {
+  ClinicalNoteRecord, ConnectionState, DocumentRecord, EncounterRecord, JivaEvent, PrehospitalResponse, PrescriptionRecord, ReportRecord, RosterEntry, VitalsResponse,
+} from '@jiva/ui/src';
+import { apiGet, socket } from './api';
 
 interface Me {
   userId: string;
@@ -15,16 +17,21 @@ export interface EncounterRecords {
   encounterId: string;
   prescriptions: PrescriptionRecord[] | null;
   reports: ReportRecord[] | null;
+  notes: ClinicalNoteRecord[] | null;
   documents: DocumentRecord[] | null;
   vitals: VitalsResponse | null;
+  prehospital: PrehospitalResponse | null;
+  /** The case's recorded history as this clinician may see it (content-free events). */
+  timeline: JivaEvent[] | null;
 }
 
 const enc = encodeURIComponent;
 
 /**
  * The clinician's view: the encounters assigned to them (the API returns nothing else), those patients'
- * case summaries, and the records of the selected encounter. A patient reassigned to another doctor
- * disappears from the list and their records are dropped from memory on the next refresh.
+ * case summaries, and every record of the selected encounter — including what the ambulance crew recorded
+ * before the handover. A patient reassigned to another doctor disappears from the list and their records
+ * are dropped from memory on the next refresh.
  */
 export function useClinician(onLiveEvent?: (e: JivaEvent) => void) {
   const [me, setMe] = useState<Me | null>(null);
@@ -39,6 +46,7 @@ export function useClinician(onLiveEvent?: (e: JivaEvent) => void) {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const selectedRef = useRef<string | null>(null);
+  const encountersRef = useRef<EncounterRecord[]>([]);
   const everConnected = useRef(socket.connected);
   const pending = useRef<number | undefined>(undefined);
   const liveRef = useRef(onLiveEvent);
@@ -47,14 +55,19 @@ export function useClinician(onLiveEvent?: (e: JivaEvent) => void) {
   }, [onLiveEvent]);
 
   const loadRecords = useCallback(async (encounterId: string) => {
-    const [prescriptions, reports, documents, vitals] = await Promise.all([
-      apiGet<PrescriptionRecord[]>(`/api/encounters/${enc(encounterId)}/prescriptions`).catch(() => null),
-      apiGet<ReportRecord[]>(`/api/encounters/${enc(encounterId)}/reports`).catch(() => null),
-      apiGet<DocumentRecord[]>(`/api/encounters/${enc(encounterId)}/documents`).catch(() => null),
-      apiGet<VitalsResponse>(`/api/encounters/${enc(encounterId)}/vitals`).catch(() => null),
+    const caseId = encountersRef.current.find((e) => e.encounterId === encounterId)?.caseId;
+    const base = `/api/encounters/${enc(encounterId)}`;
+    const [prescriptions, reports, notes, documents, vitals, prehospital, timeline] = await Promise.all([
+      apiGet<PrescriptionRecord[]>(`${base}/prescriptions`).catch(() => null),
+      apiGet<ReportRecord[]>(`${base}/reports`).catch(() => null),
+      apiGet<ClinicalNoteRecord[]>(`${base}/notes`).catch(() => null),
+      apiGet<DocumentRecord[]>(`${base}/documents`).catch(() => null),
+      apiGet<VitalsResponse>(`${base}/vitals`).catch(() => null),
+      apiGet<PrehospitalResponse>(`${base}/prehospital`).catch(() => null),
+      caseId ? apiGet<JivaEvent[]>(`/api/cases/${enc(caseId)}/timeline`).catch(() => null) : Promise.resolve(null),
     ]);
     if (selectedRef.current !== encounterId) return; // the selection changed meanwhile
-    setRecords({ encounterId, prescriptions, reports, documents, vitals });
+    setRecords({ encounterId, prescriptions, reports, notes, documents, vitals, prehospital, timeline });
   }, []);
 
   const refresh = useCallback(async () => {
@@ -68,6 +81,7 @@ export function useClinician(onLiveEvent?: (e: JivaEvent) => void) {
         who.hospitalId ? apiGet<RosterEntry[]>(`/api/hospitals/${enc(who.hospitalId)}/clinicians`).catch(() => [] as RosterEntry[]) : Promise.resolve([] as RosterEntry[]),
       ]);
       setHospital(hosps.find((h) => h.hospitalId === who.hospitalId) ?? null);
+      encountersRef.current = encs;
       setEncounters(encs);
       setPatients(pats);
       setSelf(staff.find((s) => s.practitionerId === who.practitionerId) ?? null);

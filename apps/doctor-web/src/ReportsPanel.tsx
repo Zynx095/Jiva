@@ -16,7 +16,7 @@ import {
   type DocumentRecord,
   type ReportRecord,
 } from '@jiva/ui/src';
-import { CommandError, Field, inputClass, sendCommand, useIdempotencyKey } from '../ui';
+import { CommandError, Field, inputClass, sendCommand, useIdempotencyKey } from './ui';
 
 interface ReportDraft {
   category: string;

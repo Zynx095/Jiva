@@ -1,44 +1,51 @@
-import { useCallback, useEffect, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PatientState } from '@jiva/domain-models';
 import {
   AppHeader,
-  CardHeader,
   ConnectionPill,
-  ModeBadge,
   EmptyState,
   Icon,
   JivaButton,
   JivaCard,
   JivaStatus,
+  JivaTabs,
+  ModeBadge,
   PersonaSelect,
   SkeletonRows,
-  capabilityLabel,
+  TabPanel,
   cx,
   encounterArrivedAt,
-  encounterHandedOverAt,
   encounterStatus,
   formatClock,
-  formatDateTime,
   hospitalShortName,
+  jivaAppUrl,
   timeAgo,
   useNow,
   useToast,
   type EncounterRecord,
   type JivaEvent,
 } from '@jiva/ui/src';
-import { API_URL, PERSONA } from '../api';
-import { PERSONAS } from '../personas';
+import { API_URL, PERSONA } from './api';
+import { PERSONAS } from './personas';
 import { DocumentsPanel } from './DocumentsPanel';
+import { EncounterHistory, HandoverCard, SceneReport } from './EncounterOverview';
+import { NotesPanel } from './NotesPanel';
+import { PrehospitalPanel } from './PrehospitalPanel';
 import { PrescriptionsPanel } from './PrescriptionsPanel';
-import { VitalsPanel } from './VitalsPanel';
 import { ReportsPanel } from './ReportsPanel';
+import { VitalsPanel } from './VitalsPanel';
 import { useClinician } from './useClinician';
 
+type Tab = 'overview' | 'vitals' | 'prescriptions' | 'reports' | 'documents';
+
 /**
- * Clinician workspace: only the patients assigned to this clinician, and their clinical records. The API
- * enforces the assignment on every read and write; this screen never shows another doctor's patients.
+ * The doctor's clinical workspace: only the patients assigned to this clinician, and everything about
+ * them — what the ambulance crew reported and measured, the hospital's arrival and handover records, the
+ * encounter's history, vital signs, prescriptions (drafts and authorisation), reports, internal notes and
+ * diagnostic documents. The API enforces the assignment on every read and write; this screen never shows
+ * another doctor's patients, and nothing here diagnoses or prescribes by itself.
  */
-export function ClinicianWorkspace() {
+export function DoctorWorkspace() {
   const toast = useToast();
   const practitionerRef = useRef<string | undefined>(undefined);
   const onLive = useCallback(
@@ -59,17 +66,28 @@ export function ClinicianWorkspace() {
     practitionerRef.current = c.me?.practitionerId;
   }, [c.me?.practitionerId]);
   const now = useNow(15_000);
+  const [tab, setTab] = useState<Tab>('overview');
   const selected = c.encounters.find((e) => e.encounterId === c.selectedId);
   const patientOf = (caseId: string) => c.patients.find((p) => p.patientId === caseId);
   const short = c.hospital ? hospitalShortName(c.hospital.displayName, c.hospital.address?.locality) : '';
+  const r = c.records?.encounterId === selected?.encounterId ? c.records : null;
   useEffect(() => {
-    document.title = 'JIVA · Clinician';
+    document.title = 'JIVA · Doctor';
   }, []);
+
+  const drafts = r?.prescriptions?.filter((rx) => rx.current.status === 'DRAFT').length ?? 0;
+  const tabs = [
+    { id: 'overview' as const, label: 'Overview', icon: 'user' as const },
+    { id: 'vitals' as const, label: 'Vital signs', icon: 'heart' as const },
+    { id: 'prescriptions' as const, label: 'Prescriptions', icon: 'pill' as const, count: r?.prescriptions?.length, attention: drafts > 0 },
+    { id: 'reports' as const, label: 'Reports and notes', icon: 'file' as const, count: r ? (r.reports?.length ?? 0) + (r.notes?.length ?? 0) : undefined },
+    { id: 'documents' as const, label: 'Documents and scans', icon: 'layers' as const, count: r?.documents?.length },
+  ];
 
   return (
     <div className="min-h-dvh">
       <AppHeader
-        app="Clinician workspace"
+        app="Doctor workspace"
         context={c.self ? `${c.self.displayName}${c.self.specialty ? ` · ${c.self.specialty}` : ''}${short ? ` · ${short}` : ''}` : c.loaded ? 'Clinician' : 'Loading…'}
         actions={
           <>
@@ -90,7 +108,7 @@ export function ClinicianWorkspace() {
         </div>
       )}
 
-      <main id="main" className="mx-auto grid max-w-[1400px] gap-6 px-4 py-6 lg:grid-cols-[320px_minmax(0,1fr)] lg:px-6">
+      <main id="main" className="mx-auto grid max-w-[1400px] gap-6 px-4 py-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:px-6">
         <aside aria-labelledby="my-patients" className="min-w-0 space-y-3">
           <h2 id="my-patients" className="text-lg font-semibold tracking-[-0.01em] text-ink-900">
             My patients
@@ -112,25 +130,40 @@ export function ClinicianWorkspace() {
               ))}
             </ul>
           )}
+          <p className="px-1 text-xs text-ink-500">
+            Coordination (arrivals, handovers, assigning doctors) happens in the{' '}
+            <a className="font-semibold text-brand-800 underline-offset-2 hover:underline" href={jivaAppUrl('hospital', 'demo-hosp-1')}>
+              hospital console
+            </a>
+            .
+          </p>
         </aside>
 
-        <div className="min-w-0 space-y-5">
+        <div className="min-w-0 space-y-4">
           {selected ? (
             <>
-              <EncounterSummary e={selected} patient={patientOf(selected.caseId)} now={now} />
-              <VitalsPanel encounterId={selected.encounterId} vitals={c.records?.encounterId === selected.encounterId ? c.records.vitals : undefined} onChanged={c.reloadRecords} now={now} />
-              <PrescriptionsPanel
-                encounterId={selected.encounterId}
-                list={c.records?.encounterId === selected.encounterId ? c.records.prescriptions : undefined}
-                onChanged={c.reloadRecords}
-              />
-              <ReportsPanel
-                encounterId={selected.encounterId}
-                list={c.records?.encounterId === selected.encounterId ? c.records.reports : undefined}
-                documents={c.records?.encounterId === selected.encounterId ? (c.records.documents ?? []) : []}
-                onChanged={c.reloadRecords}
-              />
-              <DocumentsPanel encounterId={selected.encounterId} list={c.records?.encounterId === selected.encounterId ? c.records.documents : undefined} onChanged={c.reloadRecords} />
+              <EncounterHeader e={selected} patient={patientOf(selected.caseId)} now={now} />
+              <JivaTabs items={tabs} value={tab} onChange={setTab} label="Encounter sections" idPrefix="enc" />
+              <TabPanel idPrefix="enc" id="overview" className={cx('space-y-4', tab !== 'overview' && 'hidden')}>
+                <SceneReport patient={patientOf(selected.caseId)} />
+                <PrehospitalPanel data={r ? r.prehospital : undefined} now={now} compact />
+                <HandoverCard e={selected} now={now} />
+                <EncounterHistory events={r ? r.timeline : undefined} hospital={c.hospital} />
+              </TabPanel>
+              <TabPanel idPrefix="enc" id="vitals" className={cx('space-y-4', tab !== 'vitals' && 'hidden')}>
+                <VitalsPanel encounterId={selected.encounterId} vitals={r ? r.vitals : undefined} onChanged={c.reloadRecords} now={now} />
+                <PrehospitalPanel data={r ? r.prehospital : undefined} now={now} />
+              </TabPanel>
+              <TabPanel idPrefix="enc" id="prescriptions" className={cx(tab !== 'prescriptions' && 'hidden')}>
+                <PrescriptionsPanel encounterId={selected.encounterId} list={r ? r.prescriptions : undefined} onChanged={c.reloadRecords} />
+              </TabPanel>
+              <TabPanel idPrefix="enc" id="reports" className={cx('space-y-4', tab !== 'reports' && 'hidden')}>
+                <ReportsPanel encounterId={selected.encounterId} list={r ? r.reports : undefined} documents={r?.documents ?? []} onChanged={c.reloadRecords} />
+                <NotesPanel encounterId={selected.encounterId} list={r ? r.notes : undefined} onChanged={c.reloadRecords} />
+              </TabPanel>
+              <TabPanel idPrefix="enc" id="documents" className={cx(tab !== 'documents' && 'hidden')}>
+                <DocumentsPanel encounterId={selected.encounterId} list={r ? r.documents : undefined} onChanged={c.reloadRecords} />
+              </TabPanel>
             </>
           ) : (
             c.loaded && (
@@ -165,36 +198,23 @@ function PatientRow({ e, patient, selected, now, onSelect }: { e: EncounterRecor
   );
 }
 
-function EncounterSummary({ e, patient, now }: { e: EncounterRecord; patient?: PatientState; now: number }) {
-  const handedOverAt = encounterHandedOverAt(e);
+function EncounterHeader({ e, patient, now }: { e: EncounterRecord; patient?: PatientState; now: number }) {
   return (
     <JivaCard>
-      <CardHeader title={e.caseId} icon="user" subtitle={`Encounter ${e.encounterId}`} actions={<JivaStatus meta={encounterStatus(e.status)} />} />
-      <dl className="mt-3 grid gap-x-6 gap-y-2 text-[13px] sm:grid-cols-2 lg:grid-cols-3">
-        <Fact label="Arrived">{`${formatDateTime(encounterArrivedAt(e))} (${timeAgo(encounterArrivedAt(e), now)})`}</Fact>
-        <Fact label="Handed over">{handedOverAt ? formatDateTime(handedOverAt) : '—'}</Fact>
-        <Fact label="Brought by">{e.ambulanceId ?? 'Not by a JIVA ambulance'}</Fact>
-        <Fact label="Reported symptoms">{patient?.reportedSymptoms?.join(', ') || '—'}</Fact>
-        <Fact label="Suspected cause (unconfirmed)">{patient?.suspectedCause || '—'}</Fact>
-        <Fact label="Care needed (assessed)" wide>
-          {patient?.careRequirements.length ? patient.careRequirements.map((x) => capabilityLabel(x)).join(', ') : '—'}
-        </Fact>
-        {patient?.intake?.notes && (
-          <Fact label="Crew notes" wide>
-            {patient.intake.notes}
-          </Fact>
-        )}
-      </dl>
-      <p className="mt-3 text-xs text-ink-500">Intake details come from the ambulance crew and are not a diagnosis.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold text-ink-500">Encounter {e.encounterId}</p>
+          <h2 className="text-xl font-semibold tracking-[-0.01em] text-ink-900">{e.caseId}</h2>
+          <p className="text-[13px] text-ink-700">
+            {patient?.suspectedCause ? `Suspected: ${patient.suspectedCause} (unconfirmed) · ` : ''}arrived {timeAgo(encounterArrivedAt(e), now)}
+            {e.assignedDoctor ? ` · responsible: ${e.assignedDoctor.displayName}` : ''}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <JivaStatus meta={encounterStatus(e.status)} />
+          {e.dataStatus === 'SYNTHETIC_DEMO' && <JivaStatus meta={{ label: 'Synthetic demo patient', tone: 'warn', icon: 'info', hint: 'Created in demo mode. Not a real person.' }} />}
+        </div>
+      </div>
     </JivaCard>
-  );
-}
-
-function Fact({ label, children, wide }: { label: string; children: ReactNode; wide?: boolean }) {
-  return (
-    <div className={cx('min-w-0', wide && 'sm:col-span-2 lg:col-span-3')}>
-      <dt className="text-xs font-semibold text-ink-500">{label}</dt>
-      <dd className="text-ink-900">{children}</dd>
-    </div>
   );
 }

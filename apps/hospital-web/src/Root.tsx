@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { EmptyState, JivaSkeleton } from '@jiva/ui/src';
+import { EmptyState, JivaButton, JivaCard, JivaLogo, JivaSkeleton, jivaAppUrl } from '@jiva/ui/src';
 import App from './App';
-import { apiGet } from './api';
-import { ClinicianWorkspace } from './clinician/ClinicianWorkspace';
+import { apiGet, PERSONA } from './api';
 
 /**
- * One hospital app, two roles: coordination staff (arrivals, handovers, doctor assignment, referral
- * answers) and clinicians (their assigned patients' records). The role comes from the server.
+ * The hospital console serves coordination staff (arrivals, handovers, doctor assignment, referral
+ * answers). Clinicians have their own interface, the doctor workspace; the role comes from the server.
  */
 export default function Root() {
   const [role, setRole] = useState<string | null>(null);
@@ -27,7 +26,21 @@ export default function Root() {
     };
   }, []);
 
-  if (role === 'CLINICIAN') return <ClinicianWorkspace />;
+  if (role === 'CLINICIAN') {
+    return (
+      <div className="mx-auto max-w-md px-4 py-16">
+        <JivaLogo className="mb-6" />
+        <JivaCard>
+          <EmptyState icon="stethoscope" title="Clinicians use the doctor workspace" description="This is the hospital coordination console. Your assigned patients and their records are in the doctor workspace." />
+          <div className="mt-3 flex justify-center">
+            <JivaButton variant="primary" icon="arrowRight" onClick={() => window.location.assign(jivaAppUrl('doctor', PERSONA))}>
+              Open the doctor workspace
+            </JivaButton>
+          </div>
+        </JivaCard>
+      </div>
+    );
+  }
   if (role) return <App />;
   return (
     <div className="mx-auto max-w-md px-4 py-16">

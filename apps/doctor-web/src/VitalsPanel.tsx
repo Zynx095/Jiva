@@ -13,12 +13,13 @@ import {
   formatMeasurementValue,
   fromDateTimeLocal,
   measurementFreshness,
+  measurementQuality,
   measurementSource,
   timeAgo,
   toDateTimeLocal,
   type VitalsResponse,
 } from '@jiva/ui/src';
-import { CommandError, Field, inputClass, sendCommand, useIdempotencyKey } from '../ui';
+import { CommandError, Field, inputClass, sendCommand, useIdempotencyKey } from './ui';
 
 const path = (encounterId: string) => `/api/encounters/${encodeURIComponent(encounterId)}/vitals`;
 
@@ -106,6 +107,7 @@ export function VitalsPanel({ encounterId, vitals, onChanged, now }: { encounter
                   <div className="mt-1 flex flex-wrap gap-1">
                     <JivaStatus meta={measurementSource(m.source)} />
                     <JivaStatus meta={measurementFreshness(m.freshness)} />
+                    {measurementQuality(m.quality) && <JivaStatus meta={measurementQuality(m.quality)!} />}
                   </div>
                   <p className="mt-1 text-xs text-ink-500">
                     {formatDateTime(m.observedAt)} ({timeAgo(m.observedAt, now)})
@@ -121,6 +123,7 @@ export function VitalsPanel({ encounterId, vitals, onChanged, now }: { encounter
               {vitals.measurements.map((m) => (
                 <li key={m.measurementId}>
                   {formatDateTime(m.observedAt)} · {MEASUREMENT_TEXT[m.type].label} {formatMeasurementValue(m)} {MEASUREMENT_TEXT[m.type].unit} · {measurementSource(m.source).label}
+                  {m.quality === 'QUESTIONABLE' ? ' · questionable' : ''}
                 </li>
               ))}
             </ul>
@@ -134,6 +137,7 @@ export function VitalsPanel({ encounterId, vitals, onChanged, now }: { encounter
 function VitalsForm({ encounterId, onSaved, onCancel }: { encounterId: string; onSaved: () => void; onCancel: () => void }) {
   const [d, setD] = useState<Draft>(() => ({ hr: '', spo2: '', sys: '', dia: '', temp: '', rr: '', at: toDateTimeLocal(Date.now()) }));
   const [error, setError] = useState<string | null>(null);
+  const [questionable, setQuestionable] = useState(false);
   // Upper bound for the picker, fixed when the form opens (the server re-checks the time anyway).
   const [latest] = useState(() => toDateTimeLocal(Date.now() + 60_000));
   const keyFor = useIdempotencyKey();
@@ -144,7 +148,7 @@ function VitalsForm({ encounterId, onSaved, onCancel }: { encounterId: string; o
   const measurements = () => {
     const list: Array<Record<string, unknown>> = [];
     const add = (type: string, value: number | undefined, unit: string, extra: Record<string, unknown> = {}) => {
-      if (value !== undefined && Number.isFinite(value)) list.push({ type, value, unit, observedAt, ...extra });
+      if (value !== undefined && Number.isFinite(value)) list.push({ type, value, unit, observedAt, ...extra, ...(questionable ? { quality: 'QUESTIONABLE' } : {}) });
     };
     add('HEART_RATE', num(d.hr), 'bpm');
     add('SPO2', num(d.spo2), '%');
@@ -182,6 +186,10 @@ function VitalsForm({ encounterId, onSaved, onCancel }: { encounterId: string; o
           <input id={id('at')} type="datetime-local" className={cx(inputClass, 'h-9')} value={d.at} max={latest} onChange={set('at')} />
         </Field>
       </div>
+      <label className="flex items-center gap-2 text-[13px] text-ink-800">
+        <input type="checkbox" className="h-4 w-4 accent-brand-700" checked={questionable} onChange={(e) => setQuestionable(e.target.checked)} />
+        Flag these values as questionable (movement, poor signal …)
+      </label>
       <p className="text-xs text-ink-500">Fill in what you measured; empty fields are not recorded. Implausible values are refused by the server.</p>
       <div className="flex flex-wrap gap-2">
         <AsyncButton
