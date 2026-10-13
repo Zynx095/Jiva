@@ -147,7 +147,7 @@
   --fill-primary: linear-gradient(180deg, #2b7b57 0%, #236b4b 100%);
   --fill-primary-hover: linear-gradient(180deg, #236b4b 0%, #1b573c 100%);
   --on-primary: #ffffff;
-  --fill-danger: linear-gradient(180deg, #cb4b4b 0%, #c43d3d 100%);
+  --fill-danger: linear-gradient(180deg, #c64444 0%, #c43d3d 100%);
   --fill-danger-hover: linear-gradient(180deg, #c43d3d 0%, #a82f32 100%);
   --fill-critical: linear-gradient(180deg, #b93a3c 0%, #a82f32 55%, #962a2d 100%);
   --fill-critical-hover: linear-gradient(180deg, #a82f32 0%, #8b272a 100%);
@@ -278,10 +278,10 @@
   --fill-primary: linear-gradient(135deg, #34d399 0%, #10b981 45%, #14b8a6 100%);
   --fill-primary-hover: linear-gradient(135deg, #4ade9b 0%, #2bc48d 45%, #22c7b8 100%);
   --on-primary: #03140c;
-  --fill-danger: linear-gradient(180deg, #d24848 0%, #c43d3d 100%);
-  --fill-danger-hover: linear-gradient(180deg, #db5656 0%, #cc4444 100%);
+  --fill-danger: linear-gradient(180deg, #c64444 0%, #b93a3c 100%);
+  --fill-danger-hover: linear-gradient(180deg, #cc4444 0%, #c43d3d 100%);
   --fill-critical: linear-gradient(135deg, #c43d3d 0%, #a82f32 100%);
-  --fill-critical-hover: linear-gradient(135deg, #d04646 0%, #b33437 100%);
+  --fill-critical-hover: linear-gradient(135deg, #c64444 0%, #b33437 100%);
   --on-danger: #ffffff;
   --fill-inverse: #f2f5f3;
   --on-inverse: #050605;
