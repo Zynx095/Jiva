@@ -125,6 +125,7 @@ const ICONS = {
   wifiOff: [['path', 'M3 3l18 18'], ['path', 'M8.5 15.9a5 5 0 0 1 7 0'], ['path', 'M5 12.5a10 10 0 0 1 4-2.4M14.8 10.3a10 10 0 0 1 4.2 2.2'], ['dot', 12, 19, 1.1]],
   map: [['path', 'M9 4.5l-5.5 2v13l5.5-2 6 2 5.5-2v-13l-5.5 2z'], ['path', 'M9 4.5v13M15 6.5v13']],
   gauge: [['path', 'M4.5 17a8 8 0 1 1 15 0'], ['path', 'M12 13l3.5-3.5'], ['dot', 12, 13, 1.3]],
+  home: [['path', 'M4 10.5 12 4l8 6.5'], ['path', 'M6 9v10.5h12V9'], ['path', 'M10 19.5v-5.5h4v5.5']],
 } satisfies Record<string, readonly Shape[]>;
 
 export type IconName = keyof typeof ICONS;
