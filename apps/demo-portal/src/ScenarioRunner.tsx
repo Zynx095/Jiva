@@ -88,7 +88,7 @@ export function ScenarioRunner({ live }: { live: LiveState }) {
   return (
     <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
       <aside className="space-y-2" aria-label="Scenarios">
-        <h1 className="text-lg font-semibold text-ink-900">Scenarios</h1>
+        <h2 className="text-lg font-semibold tracking-[-0.01em] text-ink-900">Scenarios</h2>
         <p className="text-xs text-ink-600">Each one drives the real workflows as the demo personas. Steps run only when you ask.</p>
         <ul className="space-y-1.5">
           {SCENARIOS.map((s, i) => (
@@ -98,7 +98,7 @@ export function ScenarioRunner({ live }: { live: LiveState }) {
                 onClick={() => choose(s)}
                 aria-pressed={selected.id === s.id}
                 disabled={running && selected.id !== s.id}
-                className={cx('w-full rounded-xl bg-white p-3 text-left ring-1 transition-shadow hover:shadow-sm disabled:opacity-50', selected.id === s.id ? 'ring-2 ring-amber-600' : 'ring-ink-200')}
+                className={cx('w-full rounded-xl bg-white p-3 text-left ring-1 transition-shadow hover:shadow-sm disabled:opacity-50', selected.id === s.id ? 'ring-2 ring-warn-600' : 'ring-ink-200')}
               >
                 <span className="block text-sm font-semibold text-ink-900">
                   {i + 1}. {s.title}
@@ -155,7 +155,7 @@ export function ScenarioRunner({ live }: { live: LiveState }) {
                 <li key={`${s.id}-${i}`} className={cx('rounded-xl p-3 ring-1 ring-inset', st.state === 'failed' ? 'bg-danger-50/60 ring-danger-200' : st.state === 'done' ? 'bg-white ring-brand-200' : 'bg-white ring-ink-200')}>
                   <div className="flex items-start gap-3">
                     <span className="mt-0.5 shrink-0">
-                      {st.state === 'running' ? <Spinner size={18} className="text-amber-700" />
+                      {st.state === 'running' ? <Spinner size={18} className="text-warn-700" />
                         : st.state === 'done' ? <Icon name="checkCircle" size={18} className="text-brand-700" />
                           : st.state === 'failed' ? <Icon name="xCircle" size={18} className="text-danger-700" />
                             : <span className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-ink-100 text-[11px] font-bold text-ink-600">{i + 1}</span>}
@@ -163,7 +163,7 @@ export function ScenarioRunner({ live }: { live: LiveState }) {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-ink-900">{s.title}</p>
                       <p className="text-xs text-ink-600">{s.description}</p>
-                      <p className="mt-1 text-[11px] font-semibold text-amber-900">
+                      <p className="mt-1 text-[11px] font-semibold text-warn-900">
                         Acts as {s.actor} · persona {s.persona}
                       </p>
                       {st.detail && (

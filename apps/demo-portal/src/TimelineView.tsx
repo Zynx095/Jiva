@@ -25,9 +25,9 @@ const NAMES: Record<string, string> = { 'HOSP-BLR-001': 'Hebbal', 'HOSP-BLR-002'
 function provenance(e: JivaEvent): { label: string; cls: string } {
   const p = e.payload ?? {};
   const trusted = (e.metadata?.trustedEvidence as { status?: string } | undefined)?.status;
-  if (p.dataStatus === 'SYNTHETIC_DEMO' || trusted === 'SYNTHETIC_DEMO') return { label: 'Synthetic · demo persona', cls: 'bg-amber-50 text-amber-900 ring-amber-200' };
+  if (p.dataStatus === 'SYNTHETIC_DEMO' || trusted === 'SYNTHETIC_DEMO') return { label: 'Synthetic · demo persona', cls: 'bg-warn-50 text-warn-900 ring-warn-200' };
   if (e.source?.type === 'system') return { label: 'Derived by JIVA from synthetic inputs', cls: 'bg-ink-50 text-ink-700 ring-ink-200' };
-  return { label: 'Synthetic · demo persona', cls: 'bg-amber-50 text-amber-900 ring-amber-200' };
+  return { label: 'Synthetic · demo persona', cls: 'bg-warn-50 text-warn-900 ring-warn-200' };
 }
 
 /**
@@ -101,20 +101,20 @@ export function TimelineView({ live }: { live: LiveState }) {
       />
       <div className="mt-3 flex flex-wrap gap-3 text-[13px] text-ink-800">
         <label className="inline-flex items-center gap-1.5">
-          <input type="checkbox" className="h-4 w-4 accent-amber-700" checked={caseOnly} onChange={(e) => setCaseOnly(e.target.checked)} />
+          <input type="checkbox" className="h-4 w-4 accent-warn-700" checked={caseOnly} onChange={(e) => setCaseOnly(e.target.checked)} />
           Only {DEMO.caseId}
         </label>
         <label className="inline-flex items-center gap-1.5">
-          <input type="checkbox" className="h-4 w-4 accent-amber-700" checked={showAudit} onChange={(e) => setShowAudit(e.target.checked)} />
+          <input type="checkbox" className="h-4 w-4 accent-warn-700" checked={showAudit} onChange={(e) => setShowAudit(e.target.checked)} />
           Audit entries (incl. refused attempts)
         </label>
         <label className="inline-flex items-center gap-1.5">
-          <input type="checkbox" className="h-4 w-4 accent-amber-700" checked={showGps} onChange={(e) => setShowGps(e.target.checked)} />
+          <input type="checkbox" className="h-4 w-4 accent-warn-700" checked={showGps} onChange={(e) => setShowGps(e.target.checked)} />
           GPS updates
         </label>
       </div>
       <p className="mt-2 text-xs text-ink-600">
-        Labels: <span className="rounded-full bg-amber-50 px-1.5 font-semibold text-amber-900 ring-1 ring-inset ring-amber-200">Synthetic · demo persona</span> recorded from a demo persona's action;{' '}
+        Labels: <span className="rounded-full bg-warn-50 px-1.5 font-semibold text-warn-900 ring-1 ring-inset ring-warn-200">Synthetic · demo persona</span> recorded from a demo persona's action;{' '}
         <span className="rounded-full bg-ink-50 px-1.5 font-semibold text-ink-700 ring-1 ring-inset ring-ink-200">Derived by JIVA</span> produced by JIVA's engines from those synthetic inputs. Everything in a demo-mode API is synthetic.
       </p>
       {events === null ? (

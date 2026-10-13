@@ -102,7 +102,7 @@ export function CatalogueAdmin({ onImported }: { onImported: () => void }) {
         <span className="block text-xs font-semibold text-ink-700">Import content ({content.length.toLocaleString()} / 90,000 characters)</span>
         <textarea
           aria-label="Catalogue import content"
-          className="h-40 w-full rounded-lg bg-white px-2.5 py-2 font-mono text-xs text-ink-900 ring-1 ring-inset ring-ink-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          className="h-40 w-full rounded-lg bg-white px-2.5 py-2 font-mono text-xs text-ink-900 ring-1 ring-inset ring-ink-200 focus:outline-none focus:ring-2 focus:ring-warn-500"
           value={content}
           maxLength={90_000}
           onChange={(e) => {
@@ -183,7 +183,7 @@ export function CatalogueAdmin({ onImported }: { onImported: () => void }) {
           )}
           {preview.summary.changed > 0 && (
             <label className="flex items-center gap-2 text-[13px] text-ink-800">
-              <input type="checkbox" className="h-4 w-4 accent-amber-700" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} />
+              <input type="checkbox" className="h-4 w-4 accent-warn-700" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} />
               I confirm that {preview.summary.changed} existing entr{preview.summary.changed === 1 ? 'y' : 'ies'} will change (a new revision each; records that used an entry keep the revision they used).
             </label>
           )}

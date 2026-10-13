@@ -43,7 +43,7 @@ export function AssetLibrary({ live }: { live: LiveState }) {
             <p className="mt-2 text-xs text-ink-600">
               {library.notice} Catalogue version {library.catalogueVersion}.
             </p>
-            <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg bg-amber-50 px-3 py-2 text-[13px] text-amber-950 ring-1 ring-inset ring-amber-200">
+            <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg bg-warn-50 px-3 py-2 text-[13px] text-warn-900 ring-1 ring-inset ring-warn-200">
               <Icon name="stethoscope" size={15} />
               {doctorPersona ? (
                 <span>
@@ -53,7 +53,7 @@ export function AssetLibrary({ live }: { live: LiveState }) {
                 <span>To attach a sample, run a scenario up to the doctor assignment (or assign a demo clinician in Controls).</span>
               )}
               <label className="ml-auto inline-flex items-center gap-1.5">
-                <input type="checkbox" className="h-4 w-4 accent-amber-700" checked={share} onChange={(e) => setShare(e.target.checked)} />
+                <input type="checkbox" className="h-4 w-4 accent-warn-700" checked={share} onChange={(e) => setShare(e.target.checked)} />
                 Share with the patient (labelled as a sample)
               </label>
             </div>

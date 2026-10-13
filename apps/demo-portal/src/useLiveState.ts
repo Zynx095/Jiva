@@ -53,7 +53,8 @@ export function useLiveState(): LiveState {
         call<EncounterRecord[]>(DEMO.management, 'GET', `/api/encounters?caseId=${DEMO.caseId}`),
       ]);
       setCaseState((Array.isArray(pats.body) ? pats.body : []).find((p) => p.patientId === DEMO.caseId) ?? null);
-      setAmbulance((Array.isArray(ambs.body) ? ambs.body : []).find((a) => a.ambulanceId === DEMO.crew.ambulanceId) ?? null);
+      const units = Array.isArray(ambs.body) ? ambs.body : [];
+      setAmbulance(units.find((a) => a.assignedPatient === DEMO.caseId) ?? units.find((a) => a.ambulanceId === DEMO.crew.ambulanceId) ?? null);
       const summary = Array.isArray(encs.body) ? encs.body[0] : undefined;
       if (summary) {
         // The full encounter (doctor, history) is read as the coordinator of the receiving hospital.
@@ -87,6 +88,10 @@ export function useLiveState(): LiveState {
     socket.on('disconnect', onDisconnect);
     socket.on('connect_error', onConnectError);
     socket.on('event', onEvent);
+    if (socket.connected) {
+      everConnected.current = true;
+      setConnection('live');
+    }
     return () => {
       window.clearInterval(t);
       window.clearTimeout(pending.current);
