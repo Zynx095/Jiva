@@ -7,7 +7,7 @@ import os from 'os';
 import path from 'path';
 import type { DiagnosticDocument } from '../../packages/domain-models/src';
 import {
-  contentDisposition, LocalDocumentStorage, newDocumentId, sanitizeFileName, signatureMatches, UploadTickets,
+  contentDisposition, defaultDocumentDir, LocalDocumentStorage, newDocumentId, sanitizeFileName, signatureMatches, UploadTickets,
 } from '../../services/api/src/clinical/documents';
 import { check, eq, ok, run } from './helpers/assert';
 
@@ -68,6 +68,21 @@ run('Phase 8 — diagnostic documents', async () => {
       eq(fs.readdirSync(dir), ['notes.txt'], 'only files the provider created are removed');
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  await check('each API port has its own default document directory (a test API cannot wipe a running demo)', () => {
+    const saved = { port: process.env.PORT, dir: process.env.JIVA_DOCUMENT_DIR };
+    delete process.env.JIVA_DOCUMENT_DIR;
+    try {
+      process.env.PORT = '4000';
+      const demo = defaultDocumentDir();
+      process.env.PORT = '4100';
+      const test = defaultDocumentDir();
+      ok(demo !== test && demo.endsWith(path.join('documents', '4000')) && test.endsWith(path.join('documents', '4100')), `${demo} vs ${test}`);
+    } finally {
+      if (saved.port === undefined) delete process.env.PORT; else process.env.PORT = saved.port;
+      if (saved.dir !== undefined) process.env.JIVA_DOCUMENT_DIR = saved.dir;
     }
   });
 

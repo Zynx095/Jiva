@@ -83,9 +83,13 @@ export class LocalDocumentStorage implements DocumentStorage {
   }
 }
 
-/** Where local documents live: JIVA_DOCUMENT_DIR, else data/local/documents (git-ignored). */
+/**
+ * Where local documents live: JIVA_DOCUMENT_DIR, else data/local/documents/<port> (git-ignored). The port
+ * keeps API processes apart: local documents are cleared when an API starts, so a test API started while a
+ * demo is running must never wipe the demo's uploads.
+ */
 export function defaultDocumentDir(): string {
-  return process.env.JIVA_DOCUMENT_DIR || path.resolve(__dirname, '../../../../data/local/documents');
+  return process.env.JIVA_DOCUMENT_DIR || path.resolve(__dirname, '../../../../data/local/documents', String(process.env.PORT || 4000));
 }
 
 export const newDocumentId = () => `DOC-${randomBytes(8).toString('hex').toUpperCase()}`;
