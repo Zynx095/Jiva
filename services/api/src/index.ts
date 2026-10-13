@@ -59,9 +59,10 @@ if (config.environment === 'production' && runtimeMode() === 'DEMO') {
 
 const ready = preloadData().catch(err => console.error('[StateStore] Preload error:', err.message));
 
+// The six apps: management, ambulance, hospital, patient, doctor workspace and the demo portal (dev and preview ports).
 const allowedOrigins = (process.env.CORS_ORIGINS ||
-  'http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,' +
-  'http://localhost:4173,http://localhost:4174,http://localhost:4175,http://localhost:4176')
+  'http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,' +
+  'http://localhost:4173,http://localhost:4174,http://localhost:4175,http://localhost:4176,http://localhost:4177,http://localhost:4178')
   .split(',').map(s => s.trim()).filter(Boolean);
 
 const app = express();

@@ -143,7 +143,7 @@ export function DoctorWorkspace() {
           {selected ? (
             <>
               <EncounterHeader e={selected} patient={patientOf(selected.caseId)} now={now} />
-              <JivaTabs items={tabs} value={tab} onChange={setTab} label="Encounter sections" idPrefix="enc" />
+              <JivaTabs items={tabs} value={tab} onChange={setTab} label="Encounter sections" idPrefix="enc" className="overflow-y-hidden" />
               <TabPanel idPrefix="enc" id="overview" className={cx('space-y-4', tab !== 'overview' && 'hidden')}>
                 <SceneReport patient={patientOf(selected.caseId)} />
                 <PrehospitalPanel data={r ? r.prehospital : undefined} now={now} compact />

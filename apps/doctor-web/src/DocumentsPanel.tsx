@@ -214,7 +214,7 @@ function DocumentItem({ encounterId, d, all, onReplace }: { encounterId: string;
           <img src={preview} alt={d.title} className="max-h-80 rounded-lg ring-1 ring-ink-200" />
           <figcaption className="mt-1 text-xs text-ink-500">
             {d.title}
-            {sample ? ` — ${sample.toLowerCase()}` : d.dataStatus === 'SYNTHETIC_DEMO' ? ' — synthetic demo file' : ''}
+            {sample ? (/sample/i.test(d.title) ? ' — not this patient' : ` — ${sample.toLowerCase()}`) : d.dataStatus === 'SYNTHETIC_DEMO' ? ' — synthetic demo file' : ''}
           </figcaption>
         </figure>
       )}
