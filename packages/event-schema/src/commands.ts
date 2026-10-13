@@ -223,6 +223,8 @@ export const MEASUREMENT_RULES = {
   BLOOD_PRESSURE: { unit: 'mmHg', min: 40, max: 300, secondaryMin: 20, secondaryMax: 200 },
   TEMPERATURE: { unit: 'degC', min: 25, max: 45 },
   RESPIRATORY_RATE: { unit: 'breaths/min', min: 2, max: 80 },
+  /** Capillary or venous glucose in mg/dL (the unit used in Indian practice). */
+  BLOOD_GLUCOSE: { unit: 'mg/dL', min: 10, max: 900 },
 } as const;
 
 const measurement = <T extends keyof typeof MEASUREMENT_RULES>(type: T) =>
@@ -250,6 +252,7 @@ export const MeasurementInputSchema = z.union([
   bloodPressure,
   measurement('TEMPERATURE'),
   measurement('RESPIRATORY_RATE'),
+  measurement('BLOOD_GLUCOSE'),
 ]);
 
 export const RecordTelemetryCommandSchema = z.object({
@@ -272,7 +275,7 @@ export const UnavailableObservationSchema = z.object({
 
 const prehospitalFields = {
   measurements: z.array(MeasurementInputSchema).max(20).default([]),
-  unavailable: z.array(UnavailableObservationSchema).max(5).default([]),
+  unavailable: z.array(UnavailableObservationSchema).max(6).default([]),
   /** Free-text description of the symptoms (what the patient or bystanders report, what the crew sees). */
   symptomDescription: boundedText(1000).optional(),
   /** When the symptoms started, as reported. */

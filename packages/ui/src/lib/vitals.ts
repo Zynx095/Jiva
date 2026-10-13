@@ -6,7 +6,7 @@ import type { StatusMeta } from './status';
  * and an old value is never presented as current.
  */
 
-export type MeasurementTypeCode = 'HEART_RATE' | 'SPO2' | 'BLOOD_PRESSURE' | 'TEMPERATURE' | 'RESPIRATORY_RATE';
+export type MeasurementTypeCode = 'HEART_RATE' | 'SPO2' | 'BLOOD_PRESSURE' | 'TEMPERATURE' | 'RESPIRATORY_RATE' | 'BLOOD_GLUCOSE';
 
 export interface MeasurementView {
   measurementId: string;
@@ -33,7 +33,7 @@ export interface VitalsResponse {
   sources: { medicalDeviceIntegrated: boolean; simulationAvailable: boolean };
 }
 
-export const MEASUREMENT_ORDER: MeasurementTypeCode[] = ['HEART_RATE', 'SPO2', 'BLOOD_PRESSURE', 'TEMPERATURE', 'RESPIRATORY_RATE'];
+export const MEASUREMENT_ORDER: MeasurementTypeCode[] = ['HEART_RATE', 'SPO2', 'BLOOD_PRESSURE', 'TEMPERATURE', 'RESPIRATORY_RATE', 'BLOOD_GLUCOSE'];
 
 export const MEASUREMENT_TEXT: Record<MeasurementTypeCode, { label: string; unit: string }> = {
   HEART_RATE: { label: 'Heart rate', unit: 'bpm' },
@@ -41,6 +41,7 @@ export const MEASUREMENT_TEXT: Record<MeasurementTypeCode, { label: string; unit
   BLOOD_PRESSURE: { label: 'Blood pressure', unit: 'mmHg' },
   TEMPERATURE: { label: 'Temperature', unit: '°C' },
   RESPIRATORY_RATE: { label: 'Breathing rate', unit: '/min' },
+  BLOOD_GLUCOSE: { label: 'Blood glucose', unit: 'mg/dL' },
 };
 
 /** "128/84", "96", "37.2". */

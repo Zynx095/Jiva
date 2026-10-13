@@ -25,12 +25,12 @@ export interface VitalsDraft {
   rows: Record<MeasurementTypeCode, VitalRow>;
 }
 
-const UNIT: Record<MeasurementTypeCode, string> = { HEART_RATE: 'bpm', SPO2: '%', BLOOD_PRESSURE: 'mmHg', TEMPERATURE: 'degC', RESPIRATORY_RATE: 'breaths/min' };
+const UNIT: Record<MeasurementTypeCode, string> = { HEART_RATE: 'bpm', SPO2: '%', BLOOD_PRESSURE: 'mmHg', TEMPERATURE: 'degC', RESPIRATORY_RATE: 'breaths/min', BLOOD_GLUCOSE: 'mg/dL' };
 // Plausibility bounds (mirroring the server's input checks — entry errors, not clinical thresholds).
-const RANGE: Record<MeasurementTypeCode, [number, number]> = { HEART_RATE: [20, 300], SPO2: [50, 100], BLOOD_PRESSURE: [40, 300], TEMPERATURE: [25, 45], RESPIRATORY_RATE: [2, 80] };
+const RANGE: Record<MeasurementTypeCode, [number, number]> = { HEART_RATE: [20, 300], SPO2: [50, 100], BLOOD_PRESSURE: [40, 300], TEMPERATURE: [25, 45], RESPIRATORY_RATE: [2, 80], BLOOD_GLUCOSE: [10, 900] };
 
 const row = (): VitalRow => ({ value: '', secondary: '', questionable: false, unavailable: '' });
-export const emptyVitals = (): VitalsDraft => ({ at: toDateTimeLocal(Date.now()), rows: { HEART_RATE: row(), SPO2: row(), BLOOD_PRESSURE: row(), TEMPERATURE: row(), RESPIRATORY_RATE: row() } });
+export const emptyVitals = (): VitalsDraft => ({ at: toDateTimeLocal(Date.now()), rows: { HEART_RATE: row(), SPO2: row(), BLOOD_PRESSURE: row(), TEMPERATURE: row(), RESPIRATORY_RATE: row(), BLOOD_GLUCOSE: row() } });
 
 const num = (s: string) => (s.trim() === '' ? undefined : Number(s.replace(',', '.')));
 

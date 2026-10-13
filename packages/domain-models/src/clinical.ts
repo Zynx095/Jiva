@@ -290,8 +290,8 @@ export type TelemetrySource = 'MANUAL_CLINICIAN' | 'MANUAL_CREW' | 'DEVICE_SIMUL
 export type ObservationQuality = 'RELIABLE' | 'QUESTIONABLE';
 /** Why a vital sign was not recorded: stated, never left to look like a normal value. */
 export type ObservationUnavailableReason = 'NOT_MEASURED' | 'EQUIPMENT_UNAVAILABLE' | 'UNABLE_TO_OBTAIN';
-export type MeasurementType = 'HEART_RATE' | 'SPO2' | 'BLOOD_PRESSURE' | 'TEMPERATURE' | 'RESPIRATORY_RATE';
-export type MeasurementUnit = 'bpm' | '%' | 'mmHg' | 'degC' | 'breaths/min';
+export type MeasurementType = 'HEART_RATE' | 'SPO2' | 'BLOOD_PRESSURE' | 'TEMPERATURE' | 'RESPIRATORY_RATE' | 'BLOOD_GLUCOSE';
+export type MeasurementUnit = 'bpm' | '%' | 'mmHg' | 'degC' | 'breaths/min' | 'mg/dL';
 
 export interface TelemetryMeasurement {
   measurementId: string;

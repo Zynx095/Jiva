@@ -48,7 +48,7 @@ export const TelemetrySourceSchema = z.enum(['MANUAL_CLINICIAN', 'MANUAL_CREW', 
 export const ObservationQualitySchema = z.enum(['RELIABLE', 'QUESTIONABLE']);
 export const ObservationUnavailableReasonSchema = z.enum(['NOT_MEASURED', 'EQUIPMENT_UNAVAILABLE', 'UNABLE_TO_OBTAIN']);
 export const ClinicalNoteTypeSchema = z.enum(['PROGRESS', 'ASSESSMENT', 'PROCEDURE', 'HANDOVER', 'OTHER']);
-export const MeasurementTypeSchema = z.enum(['HEART_RATE', 'SPO2', 'BLOOD_PRESSURE', 'TEMPERATURE', 'RESPIRATORY_RATE']);
+export const MeasurementTypeSchema = z.enum(['HEART_RATE', 'SPO2', 'BLOOD_PRESSURE', 'TEMPERATURE', 'RESPIRATORY_RATE', 'BLOOD_GLUCOSE']);
 export const DoctorAssignmentReasonSchema = z.enum(['INITIAL_ASSIGNMENT', 'REASSIGNMENT', 'SHIFT_HANDOVER', 'SPECIALTY_REFERRAL']);
 
 /** Dosage forms a prescription or a medication catalogue entry can name. */
