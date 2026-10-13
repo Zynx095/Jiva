@@ -230,7 +230,7 @@ export function EmergencyIntake({ ambulance, hospitals, location, onLocation, on
         </dl>
         {submit.state === 'error' && <ErrorBox>{submit.message}</ErrorBox>}
         <div className="mt-4 flex flex-wrap gap-2">
-          <JivaButton variant="danger" size="lg" icon="send" loading={submit.state === 'sending'} onClick={() => void send()}>
+          <JivaButton variant="critical" size="lg" icon="send" loading={submit.state === 'sending'} onClick={() => void send()}>
             {submit.state === 'sending' ? 'Sending…' : submit.state === 'error' ? 'Try again' : 'Submit emergency'}
           </JivaButton>
           <JivaButton variant="ghost" size="lg" disabled={submit.state === 'sending'} onClick={() => setStep('form')}>

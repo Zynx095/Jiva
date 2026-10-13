@@ -188,10 +188,11 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const routeCoords = useMemo(() => route?.coordinates, [route?.calculatedAt]);
   const responses = useMemo(() => (caseId ? caseResponses(crew.events).get(caseId) : undefined), [crew.events, caseId]);
-  const severity = useMemo(() => {
-    const e = crew.events.find((x) => x.eventType === 'patient.emergency.created' && (x.patientId === caseId || x.payload.caseId === caseId));
-    return typeof e?.payload.severity === 'string' ? e.payload.severity : undefined;
-  }, [crew.events, caseId]);
+  const reported = useMemo(() => crew.events.find((x) => x.eventType === 'patient.emergency.created' && (x.patientId === caseId || x.payload.caseId === caseId)), [crew.events, caseId]);
+  const severity = typeof reported?.payload.severity === 'string' ? reported.payload.severity : undefined;
+  // The route starts at the unit's last GPS fix. Without a fix since the report (e.g. demo units that only
+  // send GPS on request), the estimate is from where the unit was last seen — say so, never imply live GPS.
+  const originStale = !!caseId && (!ambulance?.locationAsOf || (!!reported && Date.parse(ambulance.locationAsOf) < Date.parse(reported.timestamp)));
 
   const overview = crew.referrals?.caseId === caseId ? crew.referrals : null;
   const rowById = useMemo(() => new Map((overview?.rows ?? []).map((r) => [r.hospitalId, r])), [overview]);
@@ -208,6 +209,22 @@ export default function App() {
   };
 
   const destStatus = destination ? acceptanceStatus(statusFor(destination)) : null;
+  const destRow = destination ? rowById.get(destination.hospitalId) : undefined;
+  const destResponse = destination ? responses?.get(destination.hospitalId) : undefined;
+  const destAnswer = destRow?.answer
+    ? referralDetail(destRow, now)
+    : destResponse?.respondedAt
+      ? `Answered ${formatClock(destResponse.respondedAt)}${destResponse.validUntil ? ` · valid ${timeUntil(destResponse.validUntil, now)}` : ''}`
+      : undefined;
+  const asked = (overview?.rows ?? []).some((r) => r.referral.state !== 'NOT_REQUESTED' || !!r.answer) || (responses?.size ?? 0) > 0;
+  const steps = [
+    { label: 'Reported', done: !!caseId },
+    { label: 'Hospitals asked', done: asked || !!destination || arrived },
+    { label: 'Accepted', done: !!destination || arrived },
+    { label: 'En route', done: arrived },
+    { label: 'At hospital', done: arrived },
+    { label: 'Arrival recorded', done: !!patient?.encounterId },
+  ];
   const next = nextAction({ ambulance, destinationName: destination?.displayName, lost: !!lost && !destination, arrived, confirmed: !!patient?.encounterId, destStatus: destination ? statusFor(destination) : undefined });
 
   // The unit may report a new emergency only while free (mirrors the server's check).
@@ -319,7 +336,11 @@ export default function App() {
               <span className={caseId ? 'text-warn-700' : 'text-ink-500'}>{caseId ? 'Awaiting acceptance' : '—'}</span>
             )}
           </Fact>
-          <Fact label={arrived ? 'Status' : 'ETA'}>
+          <Fact
+            label={arrived ? 'Status' : 'ETA · estimate'}
+            note={!arrived && route ? `${route.synthetic ? 'Synthetic route' : 'Road route'}${route.trafficAware ? '' : ', no live traffic'}${originStale ? ' · from last known position' : ''}` : undefined}
+            noteTone={originStale ? 'warn' : undefined}
+          >
             <Flash value={route?.calculatedAt}>
               {arrived ? 'Arrived' : route ? (
                 <span>
@@ -433,12 +454,8 @@ export default function App() {
                 <p className="text-xs font-semibold text-ink-500">Next action</p>
                 <p className="mt-1 text-xl font-semibold leading-7 tracking-[-0.01em] text-ink-900">{next.title}</p>
                 {next.detail && <p className="mt-1 text-sm text-ink-600">{next.detail}</p>}
-                {destination && !arrived && destination.operationalState.lastConfirmedAt && (
-                  <p className="mt-2 text-xs text-ink-500">
-                    Answered {formatClock(destination.operationalState.lastConfirmedAt)}
-                    {destination.operationalState.expiresAt ? ` · valid ${timeUntil(destination.operationalState.expiresAt, now)}` : ''}
-                  </p>
-                )}
+                {destination && !arrived && destAnswer && <p className="mt-2 text-xs text-ink-500">{destAnswer}</p>}
+                {caseId && <JobProgress steps={steps} current={ambulance?.status === 'EN_ROUTE_TO_HOSPITAL' && !!destination ? 3 : undefined} />}
               </JivaCard>
 
               {reroute && <RerouteCard r={reroute} name={name} onDismiss={() => setReroute(null)} />}
@@ -514,7 +531,7 @@ export default function App() {
                       <dt className="text-xs font-semibold text-ink-500">Care needed (assessed)</dt>
                       <dd className="mt-1 flex flex-wrap gap-1">
                         {patient.careRequirements.map((c) => (
-                          <span key={c} className="rounded-md bg-ink-50 px-1.5 py-0.5 text-xs font-semibold text-ink-700 ring-1 ring-inset ring-ink-200">
+                          <span key={c} className="rounded-full bg-ink-50 px-2 py-0.5 text-xs font-semibold text-ink-700 ring-1 ring-inset ring-ink-200">
                             {capabilityLabel(c)}
                           </span>
                         ))}
@@ -551,6 +568,9 @@ export default function App() {
                     </Row>
                     <Row label="Calculated">{formatClock(route.calculatedAt)}</Row>
                     <Row label="GPS">{ambulance?.locationAsOf ? timeAgo(ambulance.locationAsOf, now) : 'No fix yet'}</Row>
+                    <Row label="Starts from">
+                      <span className={originStale ? 'text-warn-700' : undefined}>{originStale ? 'Last known position (no GPS fix since the report)' : 'Latest GPS fix'}</span>
+                    </Row>
                   </dl>
                 </JivaCard>
               )}
@@ -596,7 +616,7 @@ export default function App() {
                       title="Available"
                       description="Dispatch assignments appear here automatically. If your crew is already with a patient, report the emergency yourself."
                       action={
-                        <JivaButton variant="danger" icon="siren" onClick={() => setIntakeOpen(true)}>
+                        <JivaButton variant="critical" size="lg" icon="siren" onClick={() => setIntakeOpen(true)}>
                           Report an emergency
                         </JivaButton>
                       }
@@ -627,14 +647,42 @@ export default function App() {
   );
 }
 
-function Fact({ label, children, title }: { label: string; children: ReactNode; title?: string }) {
+function Fact({ label, children, title, note, noteTone }: { label: string; children: ReactNode; title?: string; note?: string; noteTone?: 'warn' }) {
   return (
     <div className="min-w-0 bg-white px-4 py-2.5">
       <p className="text-xs font-semibold text-ink-500">{label}</p>
       <div className="mt-0.5 truncate text-[17px] font-semibold leading-7 text-ink-900" title={title}>
         {children}
       </div>
+      {note && <p className={cx('truncate text-xs', noteTone === 'warn' ? 'text-warn-700' : 'text-ink-500')} title={note}>{note}</p>}
     </div>
+  );
+}
+
+/** Where the job stands, in six plain steps (done · current · next). Handover releases the unit. */
+function JobProgress({ steps, current }: { steps: Array<{ label: string; done: boolean }>; current?: number }) {
+  const at = current ?? steps.findIndex((x) => !x.done);
+  return (
+    <ol aria-label="Job progress" className="mt-4 grid grid-cols-6 gap-1.5 border-t border-ink-100 pt-3">
+      {steps.map((x, i) => {
+        const state = x.done && i !== at ? 'done' : i === at ? 'current' : 'next';
+        return (
+          <li key={x.label} aria-current={state === 'current' ? 'step' : undefined} className="flex min-w-0 flex-col items-center gap-1 text-center">
+            <span
+              aria-hidden="true"
+              className={cx(
+                'h-1.5 w-full rounded-full transition-colors duration-300',
+                state === 'done' ? 'bg-brand-600' : state === 'current' ? 'bg-brand-300' : 'bg-ink-200',
+              )}
+            />
+            <span className={cx('text-[11px] leading-tight', state === 'current' ? 'font-semibold text-ink-900' : state === 'done' ? 'text-ink-700' : 'text-ink-500')}>
+              {x.label}
+              <span className="sr-only">{state === 'done' ? ' (done)' : state === 'current' ? ' (current step)' : ' (next)'}</span>
+            </span>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
