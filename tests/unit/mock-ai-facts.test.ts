@@ -5,6 +5,7 @@
  */
 import type { AmbulanceState, HospitalState, PatientState } from '../../packages/domain-models/src';
 import { MockAIProvider } from '../../packages/intelligence/src/mockProvider';
+import { AiSummaryGeneratedSchema } from '../../packages/event-schema/src';
 import { check, eq, ok, run } from './helpers/assert';
 
 const ai = new MockAIProvider();
@@ -37,5 +38,13 @@ run('Mock AI restates facts only', async () => {
     ok(!rejected.timelineHighlights.includes('Hospital accepted'), 'a rejection is not an acceptance');
     const accepted = await ai.summarizeEmergency({ patient: patient({}), events: [ev('hospital.acceptance.received', { status: 'ACCEPTED' })] });
     eq(accepted.timelineHighlights, ['Hospital accepted'], 'acceptance');
+  });
+
+  await check('ai.* outputs say what produced them, so a template is never labelled "AI-generated"', async () => {
+    const { getAiStatus } = await import('../../services/api/src/intelligenceEngine');
+    eq(getAiStatus().generator, process.env.USE_BEDROCK === 'true' ? 'LLM' : 'TEMPLATE', 'the local default is the template');
+    const e = (generator?: string) => ({ eventId: '6f1c4e1e-8a51-4b3f-9a4c-0d6f3d2b1a90', eventType: 'ai.summary.generated', timestamp: new Date().toISOString(), version: '1.0', source: { type: 'system', id: 'intelligence-engine' }, payload: { patientId: 'CASE-1', briefSummary: 'x', timelineHighlights: [], ...(generator ? { generator } : {}) } });
+    ok(AiSummaryGeneratedSchema.safeParse(e('TEMPLATE')).success && AiSummaryGeneratedSchema.safeParse(e('LLM')).success && AiSummaryGeneratedSchema.safeParse(e()).success, 'TEMPLATE, LLM or unstated');
+    ok(!AiSummaryGeneratedSchema.safeParse(e('MAGIC')).success, 'nothing else');
   });
 });
