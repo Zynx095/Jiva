@@ -2,10 +2,11 @@
 /**
  * Launch the complete local JIVA demo with one command.
  *
- *   npm run dev          API (tsx watch) + 4 Vite dev servers
+ *   npm run dev          API (tsx watch) + 6 Vite dev servers
  *   npm run start:prod   API + production builds served by `vite preview`
  *
  * Ports:  API 4000 | management 5173/4173 | ambulance 5174/4174 | hospital 5175/4175 | patient 5176/4176
+ *         doctor workspace 5177/4177 | demo portal 5178/4178 (the separate demonstration interface)
  */
 import { spawn, execSync } from 'node:child_process';
 import net from 'node:net';
@@ -21,6 +22,8 @@ const apps = [
   ['ambulance', 'ambulance-web', 5174, 4174],
   ['hospital', 'hospital-web', 5175, 4175],
   ['patient', 'patient-web', 5176, 4176],
+  ['doctor', 'doctor-web', 5177, 4177],
+  ['demo portal', 'demo-portal', 5178, 4178],
 ];
 
 // A port still held by an earlier run is the most common demo failure: say so before starting anything.
@@ -49,7 +52,7 @@ const services = [
   ...apps.map(([name, ws]) => [name, `npm run ${prod ? 'preview' : 'dev'} --workspace=${ws}`]),
 ];
 
-const colors = [36, 33, 35, 32, 34];
+const colors = [36, 33, 35, 32, 34, 95, 93];
 const children = services.map(([name, cmd], i) => {
   const child = spawn(cmd, { cwd: ROOT, shell: true, env: process.env });
   const tag = `\x1b[${colors[i % colors.length]}m[${name}]\x1b[0m `;
@@ -64,6 +67,7 @@ console.log(`
 JIVA local demo (${prod ? 'PRODUCTION BUILD' : 'development'})
   API          http://localhost:4000   (health: /api/health)
 ${apps.map(([n, , d, p]) => `  ${n.padEnd(12)} http://localhost:${prod ? p : d}`).join('\n')}
+  Demo portal (scenarios, controls, recorded timeline): http://localhost:${prod ? 4178 : 5178}
   Flagship scenario:  npm run simulate:full:blr     Reset:  npm run demo:reset
   Auth: DEMO personas only (x-jiva-demo-user). Not production authentication.
 `);
@@ -89,7 +93,7 @@ void (async () => {
   } else {
     let mode = 'unknown';
     try { mode = (await (await fetch('http://localhost:4000/api/health')).json()).mode ?? 'unknown'; } catch { /* reported above */ }
-    console.log(`\n[dev-all] READY — API healthy (${mode} mode) and all four apps answering. Run \`npm run demo:check\` for a full readiness report.`);
+    console.log(`\n[dev-all] READY — API healthy (${mode} mode) and all ${apps.length} apps answering. Run \`npm run demo:check\` for a full readiness report.`);
   }
 })();
 
