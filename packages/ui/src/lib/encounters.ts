@@ -35,7 +35,7 @@ export interface EncounterRecord {
   handedOverAt?: string;
   /** Full view only. */
   arrival?: { arrivedAt: string; recordedBy: EncounterActor; gpsArrivalAt?: string };
-  handover?: { handedOverAt: string; recordedBy: EncounterActor; fromAmbulanceId?: string };
+  handover?: { handedOverAt: string; recordedBy: EncounterActor; fromAmbulanceId?: string; notes?: string };
   referral?: { requestId: string; responseStatus?: string; respondedAt?: string };
   assignedDoctor?: EncounterDoctor;
   assignmentHistory?: EncounterDoctor[];

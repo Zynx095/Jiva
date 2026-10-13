@@ -19,7 +19,7 @@ import {
   type EncounterRecord,
   type RosterEntry,
 } from '@jiva/ui/src';
-import { CommandError, sendCommand } from './ui';
+import { CommandError, inputClass, sendCommand } from './ui';
 
 /**
  * Journey B at the receiving hospital: record the arrival (creates the encounter), record the handover
@@ -192,6 +192,7 @@ function EncounterCard({ encounter: e, patient, roster, now, onChanged }: { enco
   const [handoverOpen, setHandoverOpen] = useState(false);
   const [handoverId, setHandoverId] = useState('');
   const [handoverError, setHandoverError] = useState<string | null>(null);
+  const [handoverNotes, setHandoverNotes] = useState('');
   const arrivedAt = encounterArrivedAt(e);
   const handedOverAt = encounterHandedOverAt(e);
   const meta = encounterStatus(e.status);
@@ -220,6 +221,12 @@ function EncounterCard({ encounter: e, patient, roster, now, onChanged }: { enco
         {e.arrival?.gpsArrivalAt && <Fact label="Position at hospital (evidence)">{formatClock(e.arrival.gpsArrivalAt)}</Fact>}
         {handedOverAt && <Fact label="Handed over">{`${formatClock(handedOverAt)}${e.handover ? ` · ${ROLE_TEXT[e.handover.recordedBy.role] ?? e.handover.recordedBy.role}` : ''}`}</Fact>}
       </dl>
+      {e.handover?.notes && (
+        <div className="mt-3 rounded-lg bg-ink-50 px-3 py-2 text-[13px] ring-1 ring-inset ring-ink-200">
+          <p className="text-xs font-semibold text-ink-500">Handover notes · hospital team and assigned doctor only</p>
+          <p className="mt-0.5 whitespace-pre-line text-ink-800">{e.handover.notes}</p>
+        </div>
+      )}
 
       {e.status === 'ARRIVED' ? (
         <div className="mt-4 border-t border-ink-100 pt-3">
@@ -229,6 +236,7 @@ function EncounterCard({ encounter: e, patient, roster, now, onChanged }: { enco
             onClick={() => {
               setHandoverId(crypto.randomUUID());
               setHandoverError(null);
+              setHandoverNotes('');
               setHandoverOpen(true);
             }}
           >
@@ -259,7 +267,8 @@ function EncounterCard({ encounter: e, patient, roster, now, onChanged }: { enco
               icon="stethoscope"
               pendingText="Recording…"
               onAction={async () => {
-                const err = await send(`/api/encounters/${encodeURIComponent(e.encounterId)}/handover`, { clientRequestId: handoverId });
+                const notes = handoverNotes.trim();
+                const err = await send(`/api/encounters/${encodeURIComponent(e.encounterId)}/handover`, { clientRequestId: handoverId, ...(notes ? { notes } : {}) });
                 setHandoverError(err);
                 if (!err) {
                   setHandoverOpen(false);
@@ -273,6 +282,19 @@ function EncounterCard({ encounter: e, patient, roster, now, onChanged }: { enco
           </>
         }
       >
+        <label htmlFor={`handover-notes-${e.encounterId}`} className="block text-xs font-semibold text-ink-700">
+          Handover notes (optional)
+        </label>
+        <textarea
+          id={`handover-notes-${e.encounterId}`}
+          rows={3}
+          maxLength={1000}
+          value={handoverNotes}
+          onChange={(ev) => setHandoverNotes(ev.target.value)}
+          placeholder="e.g. Phone and wallet handed to the ward; family informed"
+          className={cx(inputClass, 'mt-1 py-2')}
+        />
+        <p className="mt-1 text-xs text-ink-500">Visible to your hospital team and the assigned doctor, not to the patient. Clinical findings belong in the doctor's notes.</p>
         {handoverError && <CommandError message={handoverError} />}
       </JivaModal>
     </JivaCard>

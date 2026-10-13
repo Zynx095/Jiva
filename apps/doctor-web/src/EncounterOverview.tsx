@@ -69,6 +69,12 @@ export function HandoverCard({ e, now }: { e: EncounterRecord; now: number }) {
         {e.referral && <Fact label="Referral answer">{e.referral.responseStatus ? `${e.referral.responseStatus.toLowerCase()}${e.referral.respondedAt ? ` at ${formatDateTime(e.referral.respondedAt)}` : ''}` : 'Arrived under referral'}</Fact>}
         <Fact label="Encounter">{e.encounterId}</Fact>
       </dl>
+      {e.handover?.notes && (
+        <div className="mt-3 rounded-lg bg-ink-50 px-3 py-2 text-[13px] ring-1 ring-inset ring-ink-200">
+          <p className="text-xs font-semibold text-ink-500">Handover notes (recorded by the hospital team)</p>
+          <p className="mt-0.5 whitespace-pre-line text-ink-800">{e.handover.notes}</p>
+        </div>
+      )}
       {history.length > 0 && (
         <div className="mt-3">
           <p className="text-xs font-semibold text-ink-500">Responsible doctor</p>
