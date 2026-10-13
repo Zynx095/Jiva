@@ -652,7 +652,9 @@ function nextAction({ ambulance, destinationName, lost, arrived, confirmed, dest
   if (arrived && confirmed) return { title: `Hand over at ${destinationName ?? 'the hospital'}`, detail: 'The hospital recorded your arrival. Your unit is released when the hospital records the handover.', tone: 'ok' };
   if (arrived) return { title: `At ${destinationName ?? 'the hospital'}`, detail: 'GPS places you at the hospital. Hand over to the emergency team; the hospital records the arrival and the handover.', tone: 'ok' };
   if (!ambulance.assignedPatient) return { title: 'Available', detail: 'Waiting for dispatch.', tone: 'neutral' };
-  if (lost) return { title: 'Hold — finding a new destination', detail: 'The previous hospital can no longer take this patient. JIVA is waiting for another hospital to accept.', tone: 'danger' };
+  // A unit transporting its patient whose destination was withdrawn: the live event sets `lost`, and after a
+  // reload the state alone says it (en route to a hospital without one) — never "proceed to the patient".
+  if (lost || (!destinationName && ambulance.status === 'EN_ROUTE_TO_HOSPITAL')) return { title: 'Hold — finding a new destination', detail: 'The previous hospital can no longer take this patient. JIVA is waiting for another hospital to accept.', tone: 'danger' };
   if (!destinationName && ambulance.status === 'ON_SCENE') return { title: 'Stay with the patient', detail: 'You reported this emergency. JIVA is asking hospitals that offer the required care; a destination appears as soon as one accepts.', tone: 'warn' };
   if (!destinationName) return { title: 'Proceed to the patient', detail: 'JIVA is asking hospitals that offer the required care. A destination appears as soon as one accepts.', tone: 'warn' };
   if (destStatus === 'UNAVAILABLE' || destStatus === 'REJECTED') return { title: 'Destination no longer available', detail: 'JIVA is re-evaluating eligible hospitals.', tone: 'danger' };
