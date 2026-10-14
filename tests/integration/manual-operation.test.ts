@@ -1,5 +1,5 @@
 /**
- * Hardware-independent operation against a REAL API process (:4107). With no medical device and no GPS
+ * Hardware-independent operation against a REAL API process (:4109). With no medical device and no GPS
  * receiver connected, every workflow runs on what people type in, and the system says so:
  *  A. /api/health states that no device, GPS or AI service is connected, and how positions are produced
  *  B. the crew reports with typed vital signs (including blood glucose) and moves the unit by hand: a MANUAL
@@ -35,9 +35,9 @@ const ambulance = async (api: Api, id: string) => ((await api.get(P.mgmt, '/api/
 const hospital = async (api: Api, id: string) => ((await api.get(P.mgmt, '/api/hospitals')).json as any[]).find(h => h.hospitalId === id);
 
 async function main() {
-  console.log('[Test] Manual (hardware-independent) operation against a real API on :4107');
+  console.log('[Test] Manual (hardware-independent) operation against a real API on :4109');
   const documentDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jiva-manual-docs-'));
-  const api = await startApi(4107, { JIVA_DOCUMENT_DIR: documentDir });
+  const api = await startApi(4109, { JIVA_DOCUMENT_DIR: documentDir });
   try {
     check('fixture: demo reset', (await api.post(P.admin, '/api/demo/reset')).status === 200);
 
