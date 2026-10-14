@@ -80,9 +80,18 @@ npm run build
 # 3. Start API (:4000) and all six apps (:5173-:5178)
 npm run dev
 
-# 4. In a separate terminal, trigger the flagship scenario
+# 4. Open the demo portal — the starting point
+#    http://localhost:5178
+
+# 5. Optional, in a separate terminal: the self-verifying flagship scenario
 npm run simulate:full:blr
 ```
+
+The **demo portal** (http://localhost:5178) explains JIVA, says what is real and what is simulated in the
+running system, opens each role interface as a demo persona, runs ten guided scenarios, and resets the demo
+after an explicit confirmation. Every operational app links back to it. No hardware is needed: vital signs are
+typed in (and can be corrected), the crew sets the ambulance's position by hand, and simulated values are
+labelled. Guide: [`docs/demo-portal-and-manual-operation.md`](docs/demo-portal-and-manual-operation.md).
 
 *Windows users can also simply run `start-jiva.bat` from Command Prompt, which verifies Node.js, installs dependencies, compiles packages, and launches all servers automatically.*
 
@@ -95,7 +104,7 @@ npm run simulate:full:blr
 | Hospital (coordination) | `:5175` | `:4175` |
 | Patient | `:5176` | `:4176` |
 | Doctor workspace | `:5177` | `:4177` |
-| Demo portal (separate, not operational) | `:5178` | `:4178` |
+| **Demo portal** (start here; separate, not operational) | `:5178` | `:4178` |
 
 `npm run start:prod` serves the production builds. Both refuse to start if a port is still in use and print `READY` once the API and all six apps answer. The demo portal runs scripted scenarios through the real workflows and shows the recorded timeline; see [`docs/clinical-workspace.md`](docs/clinical-workspace.md).
 
@@ -110,6 +119,7 @@ crews `demo-amb-1…3`, hospital coordinators `demo-hosp-1…4`, clinicians `dem
 | Command | Purpose |
 |---|---|
 | `npm test` | Unit and integration suites |
+| `npm run test:browser` | Browser suites in installed Edge/Chrome (multi-patient, portal scenarios, portal + manual workflows) |
 | `npm run typecheck` | Build all workspaces and typecheck the tests |
 | `npm run demo:reset` | Reset demo state |
 | `npm run demo:check` | Verify demo readiness, including Lambda bundle loading and the clinical catalogue |
@@ -282,6 +292,7 @@ These are directional, not committed.
 - Clinical records, documents, vital signs and the audit trail live in memory (local API) and are lost on restart.
 - The clinical workflows exist only in the local API; the AWS stack has none of them.
 - No hospital, staff-directory, EHR or medical-device integration exists; demo data is synthetic and labelled.
+- No ambulance GPS or monitoring hardware is connected: vital signs are typed in or simulated (labelled), and positions are set by the crew or simulated (labelled). Manual and simulated vital signs are not clinically verified.
 - All operational data in the demo is synthetic; public data is facility master data only.
 - AWS is synthesized but not deployed; DynamoDB behavior is unverified.
 - Care-window transit constraint `HC-TMP-01` is deferred.
@@ -300,6 +311,8 @@ These are directional, not committed.
 |---|---|
 | [`docs/emergency-to-care.md`](docs/emergency-to-care.md) | The emergency-to-care journey: contracts, APIs, authorization, provenance, limits |
 | [`docs/clinical-workspace.md`](docs/clinical-workspace.md) | Doctor workspace, ambulance intake, clinical catalogue and the demo portal |
+| [`docs/demo-portal-and-manual-operation.md`](docs/demo-portal-and-manual-operation.md) | Demo portal, guided scenarios, reset, manual workflows, data source labels, hardware status, env vars, tests, troubleshooting |
+| [`docs/hardware-independence.md`](docs/hardware-independence.md) | Verified hardware and integration dependencies and the manual path for each |
 | [`IMPLEMENTATION_PROGRESS.md`](IMPLEMENTATION_PROGRESS.md) | Phase-by-phase record with audits, decisions, tests and commits |
 | [`docs/security-review.md`](docs/security-review.md) | Enforced protections, audit trail, release-readiness findings and remaining gaps |
 | [`docs/production-readiness.md`](docs/production-readiness.md) | What is verified, unvalidated, missing, externally dependent or untested in deployment |
