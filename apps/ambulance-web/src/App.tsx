@@ -55,11 +55,11 @@ import {
   type Tone,
   type TimelineItem,
 } from '@jiva/ui/src';
-import { API_URL, PERSONA, apiGet } from './api';
+import { API_URL, PERSONA, apiGet, sendManualPosition } from './api';
 import { useCrew } from './useCrew';
 import { EmergencyIntake, type DraftLocation } from './EmergencyIntake';
 import { PrehospitalCard } from './Vitals';
-import { PositionCard, sendManualPosition } from './Position';
+import { PositionCard } from './Position';
 
 const PERSONAS = [
   { value: 'demo-amb-1', label: 'AMB-BLR-001 (demo-amb-1)' },
