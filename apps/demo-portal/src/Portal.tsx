@@ -58,6 +58,9 @@ export default function Portal() {
       {/* The portal's own identity (OLED theme, set on <html>): a thin gradient edge, never an operational screen. */}
       <div aria-hidden="true" className="h-[3px] jiva-gradient-brand" />
       <header className="sticky top-0 z-30 border-b border-ink-200 bg-canvas/90 supports-[backdrop-filter]:backdrop-blur-md">
+        <a href="#main" className="sr-only z-50 rounded-lg jiva-fill-primary px-3 py-2 text-sm font-semibold focus:not-sr-only focus:absolute focus:left-3 focus:top-2">
+          Skip to content
+        </a>
         <div className="flex min-h-14 flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 lg:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <JivaLogo />
