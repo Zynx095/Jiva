@@ -21,6 +21,7 @@ import {
   plainCapabilities,
   aiOutputLabel,
   minutesFromSeconds,
+  positionUpdateText,
   timeAgo,
   useNow,
   useRuntimeMode,
@@ -227,7 +228,12 @@ export default function App() {
                 <div className="mt-4 flex items-end justify-between gap-3 rounded-xl bg-white/10 px-4 py-3">
                   <div>
                     <p className="text-[13px] font-semibold text-brand-100">Estimated arrival at hospital</p>
-                    <p className="text-xs text-brand-100/90">{route?.synthetic ? 'Estimate from synthetic demo routing, without live traffic' : !route?.trafficAware ? 'Estimate, without live traffic' : 'Estimate'}</p>
+                    <p className="text-xs text-brand-100">
+                      {/* Say what the estimate rests on: the ambulance's last position (and who set it) and the routing used. */}
+                      {ambulance?.locationAsOf ? `From the ambulance’s last reported position (${positionUpdateText(ambulance, now)})` : 'From the ambulance’s last known position'}
+                      {' · '}
+                      {route?.synthetic ? 'synthetic demo routing, without live traffic' : !route?.trafficAware ? 'without live traffic' : 'traffic-aware routing'}
+                    </p>
                   </div>
                   <Flash value={eta}>
                     <span className="text-4xl font-semibold tabular-nums tracking-[-0.02em]">{eta ?? '--'}</span>
