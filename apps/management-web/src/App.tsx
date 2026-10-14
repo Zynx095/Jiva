@@ -346,7 +346,7 @@ export default function App() {
         />
 
         <main id="main" className="flex flex-1 flex-col lg:min-h-0 lg:flex-row">
-          <div className="flex flex-col lg:min-h-0 lg:flex-1">
+          <div className="flex min-w-0 flex-col lg:min-h-0 lg:flex-1">
             <section aria-label="Network map" className="relative h-[58vh] min-h-[340px] lg:h-auto lg:flex-1">
               <NetworkMap
                 filters={filters}
@@ -367,7 +367,7 @@ export default function App() {
             <DemoControls advanceAmbulance={advanceAmbulance} />
           </div>
 
-          <aside aria-label="Network details" className="flex flex-col border-t border-ink-200 bg-ink-25 lg:min-h-0 lg:w-[460px] lg:border-l lg:border-t-0">
+          <aside aria-label="Network details" className="flex flex-col border-t border-ink-200 bg-ink-25 lg:min-h-0 lg:w-[400px] lg:shrink-0 lg:border-l xl:w-[460px] lg:border-t-0">
             {selection ? (
               <div className="flex flex-col lg:min-h-0 lg:flex-1">
                 <div className="flex items-center gap-2 border-b border-ink-200 bg-white px-3 py-2">
