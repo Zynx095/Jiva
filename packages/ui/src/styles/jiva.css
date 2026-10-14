@@ -155,7 +155,7 @@
   --fill-inverse: #202820;
   --on-inverse: #ffffff;
   /* Accent gradients for the one hero element of a screen (current care, next action). */
-  --gradient-brand: linear-gradient(135deg, #1f6a4a 0%, #236b4b 45%, #2c7f6a 100%);
+  --gradient-brand: linear-gradient(135deg, #1d6446 0%, #236b4b 55%, #226a5a 100%);
   --gradient-critical: linear-gradient(135deg, #a82f32 0%, #c43d3d 60%, #c9524a 100%);
   --gradient-sheen: linear-gradient(180deg, rgb(255 255 255 / 0.9) 0%, rgb(255 255 255 / 0) 100%);
   --logo-fill: #236b4b;
