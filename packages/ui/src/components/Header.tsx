@@ -146,7 +146,7 @@ export interface PersonaOption {
 /** DEMO ONLY: switch the persona this screen acts as (reloads with ?as=…). */
 export function PersonaSelect({ value, options, className }: { value: string; options: PersonaOption[]; className?: string }) {
   return (
-    <label className={cx('inline-flex h-7 items-center gap-1.5 rounded-full bg-surface pl-2.5 pr-1 text-xs font-semibold text-ink-700 ring-1 ring-inset ring-ink-200', className)}>
+    <label className={cx('inline-flex h-7 min-w-0 max-w-full items-center gap-1.5 rounded-full bg-surface pl-2.5 pr-1 text-xs font-semibold text-ink-700 ring-1 ring-inset ring-ink-200', className)}>
       <Icon name="user" size={13} />
       <span className="sr-only">Demo persona</span>
       <select
@@ -156,7 +156,7 @@ export function PersonaSelect({ value, options, className }: { value: string; op
           url.searchParams.set('as', e.target.value);
           window.location.assign(url.toString());
         }}
-        className="h-6 cursor-pointer rounded-full bg-transparent pr-1 text-xs font-semibold text-ink-800 outline-none"
+        className="h-6 min-w-0 max-w-full cursor-pointer truncate rounded-full bg-transparent pr-1 text-xs font-semibold text-ink-800 outline-none"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
