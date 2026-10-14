@@ -436,7 +436,7 @@
     font-weight: 600;
     line-height: 1;
     color: var(--color-ink-900);
-    background: white;
+    background: var(--color-surface);
     border: 1px solid var(--color-ink-200);
     border-radius: 6px;
     padding: 5px 7px;
@@ -445,8 +445,10 @@
     transition: opacity 150ms ease-out, transform 150ms var(--ease-out);
   }
   .jiva-mk__label small {
+    /* The browser default for <small> is ~9.6px here: too small for a status. */
+    font-size: 11px;
     font-weight: 500;
-    color: var(--color-ink-500);
+    color: var(--color-ink-600);
     margin-left: 4px;
   }
   .jiva-mk:hover .jiva-mk__label,
