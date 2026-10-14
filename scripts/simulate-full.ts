@@ -7,7 +7,7 @@
  *  T4  AMB-BLR-001 dispatched
  *  T5  Hospital A (HOSP-BLR-001) ACCEPTED → destination A + route
  *  T6  Hospital B (HOSP-BLR-004) ACCEPTED, HOSP-BLR-002 LIMITED (destination unchanged)
- *  T7  ambulance moves along the route (GPS does not trigger rerouting)
+ *  T7  ambulance moves along the route (simulated positions; a position update does not trigger rerouting)
  *  T8  Hospital A reports emergency capacity UNAVAILABLE → A ineligible
  *  T9  JIVA reroutes to B → destination.changed + route.recalculated
  *  T10 ambulance drives to B → ambulance.arrived
@@ -92,7 +92,7 @@ async function respond(hospitalId: string, status: 'ACCEPTED' | 'LIMITED' | 'REJ
   });
 }
 
-/** Drive `steps` GPS fixes along the first `fraction` of a route polyline. */
+/** Drive `steps` simulated position updates along the first `fraction` of a route polyline. */
 async function drive(points: [number, number][], steps: number, fraction = 1) {
   const last = Math.floor((points.length - 1) * fraction);
   for (let i = 1; i <= steps; i++) {
@@ -161,7 +161,7 @@ async function main() {
   await sleep(STEP);
 
   await drive(first.activeRoute.coordinates, 3, 0.5); // partway: still en route to A
-  step('Ambulance telemetry streaming (no route recalculation on GPS)');
+  step('Simulated ambulance positions streaming (no route recalculation per position)');
 
   await send(PERSONA[HOSP_A], {
     eventType: 'hospital.capacity.updated',
