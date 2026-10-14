@@ -44,14 +44,20 @@ Without self-hosted Valhalla/OSRM (see `infrastructure/local/mapping/`), every r
 npm run simulate:full:blr        # ~45 s at the default pace; SIM_STEP_MS=500 for faster
 ```
 
-Timeline: reset → emergency (CASE-BLR-876, severe polytrauma) → assessment (EMERGENCY, TRAUMA, ICU) → candidates → acceptance requests (Hebbal, Whitefield, Indiranagar; Koramangala excluded for missing TRAUMA/ICU) → AMB-BLR-001 dispatched → **Hebbal ACCEPTED → destination + route** → Indiranagar ACCEPTED, Whitefield LIMITED (destination unchanged) → GPS telemetry → **Hebbal reports ED UNAVAILABLE → reroute to Indiranagar** → arrival → AI handoff / anomaly / summary. The script exits non-zero if any expected transition does not happen.
+Timeline: reset → emergency (CASE-BLR-876, severe polytrauma) → assessment (EMERGENCY, TRAUMA, ICU) → candidates → acceptance requests (Hebbal, Whitefield, Indiranagar; Koramangala excluded for missing TRAUMA/ICU) → AMB-BLR-001 dispatched → **Hebbal ACCEPTED → destination + route** → Indiranagar ACCEPTED, Whitefield LIMITED (destination unchanged) → simulated position updates → **Hebbal reports ED UNAVAILABLE → reroute to Indiranagar** → arrival → AI handoff / anomaly / summary. The script exits non-zero if any expected transition does not happen.
 
 ## 4. Demo portal (recommended)
 
-Open the demo portal. **Scenarios** runs any of ten journeys step by step (or all at once) through the real
+Open the demo portal (http://localhost:5178) — it is the starting point. **Home** explains JIVA, lists what is
+real and what is simulated in this run, and has a card per role (Patient, Doctor, Hospital, Ambulance,
+Management) that opens the interface as a chosen demo persona; every operational app links back with
+**‹ Demo portal**. **Reset demo data…** on Home asks for confirmation first. Full guide:
+[`demo-portal-and-manual-operation.md`](demo-portal-and-manual-operation.md).
+
+**Scenarios** runs any of ten journeys step by step (or all at once) through the real
 workflows — acceptance, rejection or busy then reroute, several rejections, answer expiry (20 s), arrival and
 handover, doctor assignment, synthetic scan, a clinician-authorised demonstration prescription, realtime outage and
-recovery — each step showing the persona it acts as and the server's answer. Open the operational apps from the
+recovery — each with a briefing (what it shows, roles, what you do, expected outcome, data used) and each step showing the persona it acts as and the server's answer. Open the operational apps from the
 *Watch it* links to follow along. **Timeline** shows what was actually recorded (events and audit, labelled
 synthetic); **Asset library** previews and attaches synthetic samples and administers the catalogue (preview
 before import); **Controls** drives the case by hand. Scenarios that reset the demo ask first.
@@ -62,14 +68,21 @@ state is gone (re-run a scenario).
 
 ## 5. Manual flow (management demo controls)
 
-Reset demo → Report emergency + dispatch → Hebbal (001) accepts → Indiranagar (004) accepts → Whitefield (002) limited → Advance ambulance (GPS) ×2 → Hebbal (001) ED unavailable → watch the reroute on all four screens → Advance ambulance until arrival.
+Reset demo → Report emergency + dispatch → Hebbal (001) accepts → Indiranagar (004) accepts → Whitefield (002) limited → Advance ambulance (simulated) ×2 → Hebbal (001) ED unavailable → watch the reroute on all four screens → Advance ambulance until arrival.
 The same responses can instead be clicked in the hospital console (open it once as `demo-hosp-1` and once as `?as=demo-hosp-4`). "Report ED unavailable" in Hebbal's console triggers the reroute.
 
 ## 6. What to say is simulated
 
-Hospitals (synthetic), responses, GPS, routes (mock), AI text (mock templates), AWS (synthesized only), vital signs
+Hospitals (synthetic), responses, ambulance positions (set by the crew or simulated — no GPS is connected), routes (mock), AI text (mock templates), AWS (synthesized only), vital signs
 from the simulated monitors (labelled), sample scans and lab reports (synthetic, labelled on the image and in
 every list), the medication catalogue (illustrative, not a formulary). See `docs/judge-qa.md` Q18.
+
+## 6a. Without hardware
+
+No monitor, ECG device or GPS receiver is connected. Vital signs are typed in (doctor: Vital signs → Record vital
+signs; crew: report form and Patient observations) and can be corrected or withdrawn with a reason; the crew
+sets the unit's position with **Your position** ("I'm at the scene", "I'm at ‹hospital›", "Set on the map").
+Screens label each value: *Entered manually*, *Simulated (demo)*, *Set by the crew*, *Simulated position*.
 
 ## 7. Known limitations
 

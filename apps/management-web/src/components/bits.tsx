@@ -5,6 +5,7 @@ import {
   JivaStatus,
   TechnicalDetails,
   acceptanceStatus,
+  aiOutputLabel,
   capabilityLabel,
   cx,
   eventCaseId,
@@ -20,7 +21,7 @@ import {
   type JivaEvent,
 } from '@jiva/ui/src';
 import { useModel } from '../model';
-import type { AmbulanceState, CandidateSummary, CaseResponse } from '../types';
+import type { AmbulanceState, CandidateSummary, CaseResponse, HospitalState } from '../types';
 
 export function CapabilityChips({ codes, className }: { codes: string[]; className?: string }) {
   if (codes.length === 0) return <span className="text-[13px] text-ink-500">Not assessed yet</span>;
@@ -65,6 +66,20 @@ export function responseMeta(r: CaseResponse, now: number) {
     return parts.filter(Boolean).join(' · ');
   })();
   return { meta, detail };
+}
+
+/**
+ * The destination hospital's answer FOR THIS CASE. A hospital's operational state holds only its latest
+ * answer to any case, so it is used only when it names this case; otherwise the case's own response
+ * (from the referral events) is shown, and without either the answer is unknown — never another
+ * patient's answer.
+ */
+export function DestinationAnswer({ caseId, hospital, now }: { caseId?: string; hospital: HospitalState; now: number }) {
+  const m = useModel();
+  const response = caseId ? m.responses.get(caseId)?.get(hospital.hospitalId) : undefined;
+  if (response) return <JivaStatus meta={responseMeta(response, now).meta} />;
+  const op = hospital.operationalState;
+  return <JivaStatus meta={acceptanceStatus(caseId && op.acceptanceCaseId === caseId ? op.acceptance : 'UNKNOWN')} />;
 }
 
 /** One row: who, when asked, their answer — with the answer's context on its own line so nothing collides. */
@@ -133,15 +148,15 @@ export function CandidateTrace({ candidates }: { candidates: CandidateSummary[] 
   );
 }
 
-/** Advisory AI output, always labelled as such. */
+/** Advisory automatic output (template or AI), always labelled by what produced it. */
 export function AiContent({ event }: { event: JivaEvent }) {
   const p = event.payload;
   const list = (k: string) => (Array.isArray(p[k]) ? (p[k] as unknown[]).filter((x): x is string => typeof x === 'string') : []);
   return (
     <div className="space-y-2">
-      <p className="flex items-center gap-1.5 text-xs font-semibold text-ink-500">
+      <p className="flex items-center gap-1.5 text-xs font-semibold text-ink-500" title={aiOutputLabel(p.generator).hint}>
         <Icon name="brief" size={13} />
-        AI-generated · advisory only · cannot change routing
+        {aiOutputLabel(p.generator).label} · cannot change routing
       </p>
       {typeof p.summary === 'string' && <p className="text-[13px] text-ink-800">{p.summary}</p>}
       {typeof p.explanation === 'string' && <p className="text-[13px] text-ink-800">{p.explanation}</p>}

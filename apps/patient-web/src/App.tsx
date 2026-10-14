@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import {
   AppHeader,
   ConnectionPill,
+  DemoPortalLink,
   ModeBadge,
   EmptyState,
   Flash,
@@ -17,7 +18,10 @@ import {
   formatClock,
   hospitalShortName,
   joinList,
+  plainCapabilities,
+  aiOutputLabel,
   minutesFromSeconds,
+  positionUpdateText,
   timeAgo,
   useNow,
   useRuntimeMode,
@@ -47,6 +51,7 @@ const SOURCE_TEXT: Record<string, string> = {
 export default function App() {
   const toast = useToast();
   const [notice, setNotice] = useState<string | null>(null);
+  const [allActivity, setAllActivity] = useState(false);
   const nameRef = useRef<(id: string) => string | undefined>(() => undefined);
 
   const onLive = useCallback(
@@ -92,8 +97,14 @@ export default function App() {
   }, [name]);
 
   const route = ambulance?.activeRoute && ambulance.activeRoute.hospitalId === ambulance.destinationHospital ? ambulance.activeRoute : undefined;
-  const acceptance = hospital?.operationalState?.acceptance;
-  const confirmed = acceptance === 'ACCEPTED' || acceptance === 'LIMITED';
+  // The hospital's operational state holds its latest answer to ANY case: count it only when it names this
+  // patient's case. JIVA routes an ambulance only to a hospital that accepted the case, so the ambulance's
+  // destination is this patient's confirmation too.
+  const op = hospital?.operationalState;
+  const confirmed =
+    (!!hospital && !!ambulance?.destinationHospital && ambulance.destinationHospital === hospital.hospitalId) ||
+    (!!patient && op?.acceptanceCaseId === patient.patientId && (op.acceptance === 'ACCEPTED' || op.acceptance === 'LIMITED'));
+  const acceptance = patient && op?.acceptanceCaseId === patient.patientId ? op.acceptance : confirmed ? 'ACCEPTED' : undefined;
   // Only the hospital's own records move the patient into hospital care: the arrival record opens the
   // encounter and the handover record puts the patient in the hospital's care. GPS alone never does.
   const arrivalConfirmed = !!encounter;
@@ -123,6 +134,9 @@ export default function App() {
           ? { title: 'You have reached the hospital', body: `At ${hospital?.displayName ?? 'the hospital'}. The hospital will confirm your arrival and take over your care.`, icon: 'pin' as IconName }
           : hospital && confirmed
         ? { title: `On the way to ${hospitalShortName(hospital.displayName, hospital.address?.locality)}`, body: `Ambulance ${ambulance?.ambulanceId ?? ''} is taking you to a hospital that confirmed it can receive you.`, icon: 'ambulance' as IconName }
+        : ambulance?.status === 'ON_SCENE' || ambulance?.status === 'EN_ROUTE_TO_HOSPITAL'
+          ? // The crew is already with the patient (it reported the emergency, or is transporting them).
+            { title: 'An ambulance crew is with you', body: `Ambulance ${ambulance.ambulanceId} is looking after you. We are confirming which hospital can treat you now.`, icon: 'ambulance' as IconName }
         : ambulance
           ? { title: 'Help is on the way', body: `Ambulance ${ambulance.ambulanceId} is coming. We are confirming which hospital can treat you now.`, icon: 'ambulance' as IconName }
           : { title: 'Your emergency was reported', body: 'An ambulance is being assigned to you.', icon: 'siren' as IconName };
@@ -170,6 +184,7 @@ export default function App() {
               <PersonaSelect value={PERSONA} options={PERSONAS} />
             </span>
             <ConnectionPill state={pt.connection} lastSync={pt.syncedAt} />
+            <DemoPortalLink apiUrl={API_URL} />
             <ModeBadge apiUrl={API_URL} detail="This is a demonstration with simulated data. In an emergency, call 108." />
           </>
         }
@@ -188,8 +203,8 @@ export default function App() {
 
         <div className="min-w-0 space-y-5">
           {/* CURRENT CARE */}
-          <section aria-labelledby="current-care" className="overflow-hidden rounded-2xl bg-white ring-1 ring-ink-200">
-            <div className="bg-brand-700 px-5 pb-5 pt-5 text-white">
+          <section aria-labelledby="current-care" className="overflow-hidden rounded-2xl bg-surface shadow-e2 ring-1 ring-ink-200">
+            <div className="jiva-gradient-brand px-5 pb-5 pt-5 text-white">
               <p id="current-care" className="text-[13px] font-semibold text-brand-100">
                 Current care
               </p>
@@ -210,10 +225,15 @@ export default function App() {
                 </div>
               )}
               {patient && !arrived && (
-                <div className="mt-4 flex items-end justify-between gap-3 rounded-xl bg-white/10 px-4 py-3">
+                <div className="mt-4 flex items-end justify-between gap-3 rounded-xl bg-black/15 px-4 py-3 ring-1 ring-inset ring-white/10">
                   <div>
                     <p className="text-[13px] font-semibold text-brand-100">Estimated arrival at hospital</p>
-                    <p className="text-xs text-brand-100/90">{route?.synthetic ? 'Estimate from synthetic demo routing, without live traffic' : !route?.trafficAware ? 'Estimate, without live traffic' : 'Estimate'}</p>
+                    <p className="text-xs text-brand-100">
+                      {/* Say what the estimate rests on: the ambulance's last position (and who set it) and the routing used. */}
+                      {ambulance?.locationAsOf ? `From the ambulance’s last reported position (${positionUpdateText(ambulance, now)})` : 'From the ambulance’s last known position'}
+                      {' · '}
+                      {route?.synthetic ? 'synthetic demo routing, without live traffic' : !route?.trafficAware ? 'without live traffic' : 'traffic-aware routing'}
+                    </p>
                   </div>
                   <Flash value={eta}>
                     <span className="text-4xl font-semibold tabular-nums tracking-[-0.02em]">{eta ?? '--'}</span>
@@ -270,7 +290,7 @@ export default function App() {
                     <Icon name={acceptance === 'ACCEPTED' ? 'checkCircle' : acceptance === 'LIMITED' ? 'half' : 'clock'} size={16} />
                     {acceptance === 'ACCEPTED' ? 'Confirmed it can receive you' : acceptance === 'LIMITED' ? 'Can receive you, with some limits' : 'Waiting for the hospital to confirm'}
                   </p>
-                  {hospital.operationalState?.lastConfirmedAt && (
+                  {hospital.operationalState?.lastConfirmedAt && op?.acceptanceCaseId === patient.patientId && (
                     <p className="mt-2 border-t border-ink-100 pt-2 text-xs text-ink-500">
                       Confirmed at {formatClock(hospital.operationalState.lastConfirmedAt)} · {timeAgo(hospital.operationalState.lastConfirmedAt, now)}
                     </p>
@@ -284,41 +304,10 @@ export default function App() {
 
           {patient && <WhatNext patientCare={patient.careRequirements} hospitalName={hospital?.displayName} confirmed={confirmed} arrived={arrived} inCare={inCare} hasAmbulance={!!ambulance} eta={eta} />}
 
-          {summary && (
-            <JivaCard as="section" aria-labelledby="summary-title">
-              <p id="summary-title" className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-500">
-                <Icon name="brief" size={14} />
-                Summary · AI-generated, for information only
-              </p>
-              <p className="mt-1.5 text-sm text-ink-800">{String(summary.payload.briefSummary ?? '')}</p>
-            </JivaCard>
-          )}
-
           <SosCard inHospital={arrivalConfirmed} />
         </div>
 
         <div className="min-w-0 space-y-5">
-          <JivaCard as="section" aria-labelledby="activity-title">
-            <h2 id="activity-title" className="text-[15px] font-semibold text-ink-900">
-              Recent activity
-            </h2>
-            <p className="text-[13px] text-ink-500">Tap an entry to see where it came from.</p>
-            <div className="mt-4">
-              {pt.load === 'loading' ? (
-                <div className="space-y-3">
-                  <JivaSkeleton className="h-10" />
-                  <JivaSkeleton className="h-10" />
-                </div>
-              ) : (
-                <JivaTimeline
-                  items={timeline}
-                  detailsLabel="Details"
-                  empty={<EmptyState compact icon="activity" title="Nothing yet" description="Updates about your care appear here as they happen." />}
-                />
-              )}
-            </div>
-          </JivaCard>
-
           {inCare && encounter ? (
             <>
               <VitalsCard vitals={records?.encounterId === encounter.encounterId ? records.vitals : undefined} now={now} />
@@ -329,6 +318,44 @@ export default function App() {
           ) : (
             patient && <RecordsNotYet />
           )}
+
+          {summary && (
+            <JivaCard as="section" aria-labelledby="summary-title">
+              <p id="summary-title" className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-500" title={aiOutputLabel(summary.payload.generator, 'patient').hint}>
+                <Icon name="brief" size={14} />
+                {aiOutputLabel(summary.payload.generator, 'patient').label}
+              </p>
+              <p className="mt-1.5 text-sm text-ink-800">{plainCapabilities(String(summary.payload.briefSummary ?? ''))}</p>
+            </JivaCard>
+          )}
+
+          <JivaCard as="section" aria-labelledby="activity-title">
+            <h2 id="activity-title" className="text-[15px] font-semibold text-ink-900">
+              Recent activity
+            </h2>
+            <p className="text-[13px] text-ink-500">What happened so far, newest first. Tap an entry to see where it came from.</p>
+            <div className="mt-4">
+              {pt.load === 'loading' ? (
+                <div className="space-y-3">
+                  <JivaSkeleton className="h-10" />
+                  <JivaSkeleton className="h-10" />
+                </div>
+              ) : (
+                <>
+                  <JivaTimeline
+                    items={allActivity ? timeline : timeline.slice(0, 5)}
+                    detailsLabel="Details"
+                    empty={<EmptyState compact icon="activity" title="Nothing yet" description="Updates about your care appear here as they happen." />}
+                  />
+                  {timeline.length > 5 && (
+                    <JivaButton size="sm" variant="tertiary" icon={allActivity ? 'chevronUp' : 'chevronDown'} onClick={() => setAllActivity((v) => !v)}>
+                      {allActivity ? 'Show the latest only' : `Show all ${timeline.length} updates`}
+                    </JivaButton>
+                  )}
+                </>
+              )}
+            </div>
+          </JivaCard>
 
           <p className="px-1 text-center text-xs text-ink-500">
             {pt.syncedAt ? `Updated ${timeAgo(pt.syncedAt, now)}` : ''} · signed in as demo persona {PERSONA}

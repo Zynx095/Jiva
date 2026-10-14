@@ -13,6 +13,7 @@ import {
   type ClinicalNoteRecord,
 } from '@jiva/ui/src';
 import { CommandError, Field, inputClass, sendCommand, useIdempotencyKey } from './ui';
+import { useUnsaved } from './unsaved';
 
 interface Draft {
   noteType: string;
@@ -132,6 +133,8 @@ function NoteForm({ encounterId, base, onSaved, onRefresh, onCancel }: { encount
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const keyFor = useIdempotencyKey();
+  const [initial] = useState(() => JSON.stringify(d));
+  useUnsaved(JSON.stringify(d) !== initial || reason.trim() !== '', base ? 'a note amendment' : 'a clinical note');
   const id = (k: string) => `note-${base?.noteId ?? 'new'}-${k}`;
   const ready = d.title.trim() && d.text.trim() && (!base || reason.trim());
   return (
@@ -175,7 +178,7 @@ function NoteForm({ encounterId, base, onSaved, onRefresh, onCancel }: { encount
             return r.error;
           }}
         >
-          {base ? 'Save amendment' : 'Save note'}
+          {base ? 'Save amendment' : 'Save clinical note'}
         </AsyncButton>
         <JivaButton variant="ghost" onClick={onCancel}>
           Cancel

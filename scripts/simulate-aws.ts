@@ -220,7 +220,7 @@ async function runAwsScenario() {
       timestamp: new Date().toISOString(),
       source: { type: 'ambulance', id: ambulanceId },
       version: '1.0',
-      payload: {
+      payload: { source: 'SIMULATED',
         ambulanceId,
         coordinates: { latitude: lat, longitude: lng },
         speedKmh: 48,
@@ -263,7 +263,7 @@ async function runAwsScenario() {
       timestamp: new Date().toISOString(),
       source: { type: 'ambulance', id: ambulanceId },
       version: '1.0',
-      payload: {
+      payload: { source: 'SIMULATED',
         ambulanceId,
         coordinates: { latitude: lat, longitude: lng },
         speedKmh: 52,

@@ -31,7 +31,7 @@ import { emptyVitals, vitalsPayload, vitalsProblems, type Reason, type VitalRow,
  * connected to JIVA: values are typed in, or simulated in the demo and labelled so.
  */
 
-const inputCls = 'h-9 w-full min-w-0 rounded-lg bg-white px-2.5 text-sm text-ink-900 ring-1 ring-inset ring-ink-200 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-500';
+const inputCls = 'h-9 w-full min-w-0 rounded-lg bg-white px-2.5 text-sm text-ink-900 ring-1 ring-inset ring-ink-300 transition-shadow duration-150 placeholder:text-ink-400 hover:ring-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-600';
 
 export function VitalsFields({ value, onChange, idPrefix }: { value: VitalsDraft; onChange: (d: VitalsDraft) => void; idPrefix: string }) {
   const set = (t: MeasurementTypeCode, patch: Partial<VitalRow>) => onChange({ ...value, rows: { ...value.rows, [t]: { ...value.rows[t], ...patch } } });

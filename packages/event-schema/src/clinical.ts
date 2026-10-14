@@ -155,11 +155,15 @@ export const ClinicalTelemetryRecordedSchema = BaseEventSchema.extend({
     ...recordRef,
     source: TelemetrySourceSchema,
     measurementCount: z.number().int().min(1).max(100),
-    measurementTypes: z.array(MeasurementTypeSchema).min(1).max(5),
+    measurementTypes: z.array(MeasurementTypeSchema).min(1).max(6),
     observedFrom: timestamp,
     observedTo: timestamp,
     deviceId: RecordIdSchema.optional(),
     patientVisible: z.boolean(),
+    /** RECORDED (default): new values. CORRECTED: a value replacing one entered in error. WITHDRAWN: a value withdrawn as entered in error. */
+    action: z.enum(['RECORDED', 'CORRECTED', 'WITHDRAWN']).optional(),
+    /** For CORRECTED / WITHDRAWN: the measurement concerned. */
+    corrects: RecordIdSchema.optional(),
   }).strict(),
 });
 
@@ -193,8 +197,8 @@ export const ClinicalPrehospitalRecordedSchema = BaseEventSchema.extend({
     dataStatus: RecordProvenanceSchema.optional(),
     source: TelemetrySourceSchema,
     measurementCount: z.number().int().min(0).max(20),
-    measurementTypes: z.array(MeasurementTypeSchema).max(5),
-    unavailableCount: z.number().int().min(0).max(5),
+    measurementTypes: z.array(MeasurementTypeSchema).max(6),
+    unavailableCount: z.number().int().min(0).max(6),
     /** Whether a symptom description or onset time was recorded (the text itself is not in the event). */
     narrative: z.boolean(),
     observedFrom: timestamp.optional(),

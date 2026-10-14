@@ -12,7 +12,7 @@ const TONE: Record<string, string> = {
   REJECTED: 'bg-danger-50 text-danger-700 ring-danger-200',
   UNAVAILABLE: 'bg-danger-50 text-danger-700 ring-danger-200',
   EXPIRED: 'bg-ink-100 text-ink-700 ring-ink-200',
-  PENDING: 'bg-amber-50 text-amber-900 ring-amber-200',
+  PENDING: 'bg-warn-50 text-warn-900 ring-warn-200',
 };
 
 /** The demo case as the server reports it right now (read back after every step and every event). */
@@ -21,10 +21,12 @@ export function CaseStrip({ live }: { live: LiveState }) {
   const a = live.ambulance;
   const e = live.encounter;
   return (
-    <JivaCard className="bg-white">
+    <JivaCard className="bg-surface">
       <dl className="grid gap-x-6 gap-y-2 text-[13px] sm:grid-cols-2 xl:grid-cols-4">
         <Fact label={`Case ${DEMO.caseId}`}>{live.caseState ? live.caseState.currentStatus.replace(/_/g, ' ').toLowerCase() : 'no open case'}</Fact>
-        <Fact label={`Ambulance ${DEMO.crew.ambulanceId}`}>{a ? `${a.status.replace(/_/g, ' ').toLowerCase()}${a.destinationHospital ? ` → ${name(a.destinationHospital)}` : ''}` : '—'}</Fact>
+        <Fact label={`Ambulance ${a?.ambulanceId ?? DEMO.crew.ambulanceId}`}>
+          {a ? `${a.status.replace(/_/g, ' ').toLowerCase()}${a.assignedPatient && a.assignedPatient !== DEMO.caseId ? ` · on ${a.assignedPatient}` : ''}${a.destinationHospital ? ` → ${name(a.destinationHospital)}` : ''}` : '—'}
+        </Fact>
         <Fact label="Encounter">{e ? `${e.status === 'IN_CARE' ? 'in hospital care' : 'arrived'} at ${name(e.hospitalId)}` : 'none'}</Fact>
         <Fact label="Responsible doctor">{e?.assignedDoctor?.displayName ?? '—'}</Fact>
       </dl>

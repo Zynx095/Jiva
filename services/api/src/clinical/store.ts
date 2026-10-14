@@ -66,6 +66,8 @@ export interface IClinicalStore {
   listMeasurements(encounterId: string): TelemetryMeasurement[];
   /** Only to roll back a batch whose canonical event could not be recorded. */
   removeMeasurementBatch(encounterId: string, batchId: string): void;
+  /** Mark a stored measurement as withdrawn (or clear the mark with `undefined`); returns the updated measurement. */
+  setMeasurementWithdrawn(encounterId: string, measurementId: string, withdrawn: TelemetryMeasurement['withdrawn']): TelemetryMeasurement | undefined;
 
   // pre-hospital record (per case; written by the attending crew before an encounter exists)
   addPrehospitalEntry(e: PrehospitalEntry): void;
@@ -184,6 +186,15 @@ export class LocalClinicalStore implements IClinicalStore {
   removeMeasurementBatch(encounterId: string, batchId: string): void {
     const arr = this.measurements.get(encounterId);
     if (arr) this.measurements.set(encounterId, arr.filter(m => m.batchId !== batchId));
+  }
+
+  setMeasurementWithdrawn(encounterId: string, measurementId: string, withdrawn: TelemetryMeasurement['withdrawn']): TelemetryMeasurement | undefined {
+    const arr = this.measurements.get(encounterId);
+    const i = arr?.findIndex(m => m.measurementId === measurementId) ?? -1;
+    if (!arr || i < 0) return undefined;
+    const { withdrawn: _old, ...rest } = arr[i];
+    arr[i] = withdrawn ? { ...rest, withdrawn } : rest;
+    return arr[i];
   }
 
   addPrehospitalEntry(e: PrehospitalEntry): void {

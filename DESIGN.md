@@ -1,6 +1,6 @@
 # JIVA Design System
 
-How JIVA looks, moves and speaks across the four apps: Command Center, Ambulance, Hospital and Patient.
+How JIVA looks, moves and speaks across the six apps: Command Center (management), Ambulance, Hospital, Patient, Doctor workspace and the separate Demonstration portal.
 The tokens are in `packages/ui/src/styles/jiva.css` and the components are in `packages/ui/src`. Every app imports both, so there is one source of truth.
 
 > **The rule:** optimise for "I immediately understand what this does", not "lots of animation". JIVA's complexity should feel simple.
@@ -30,7 +30,8 @@ Everyday users never have to read level 4. Operations and audit users can always
 
 **Honesty comes before polish:**
 - Unknown stays unknown. A hospital with no current answer is shown as *No current response* (gray, `?`), never as available.
-- Synthetic data is always labelled: the *Demo data* badge, *Synthetic route · mock provider*, *Simulated demo response*, *AI-generated · advisory only*.
+- Synthetic data is always labelled: the *Demo data* badge, *Synthetic route · mock provider*, *Simulated demo response*, *Simulated (demo)* readings, *Simulated position*, *Automatic summary · template, no AI*.
+- No hardware is connected, and screens never pretend otherwise: vital signs say *Entered manually · care team* / *· ambulance crew*; positions say *Set by the crew* or *Simulated position*; only a reading or position that came from a real device may ever say "monitor" or "GPS" (none does today).
 - A feature without backend data is shown as **not connected**, never mocked. Patient health records are the example: they are labelled *Coming later*.
 
 **Cause → effect.** An action shows four states: idle, then pending ("Sending…"), then success (✓) or error (✕ with the reason and a retry). The downstream effect is then shown where it happened, for example "AMB-BLR-001 is now heading here · 22 min".
@@ -41,39 +42,69 @@ Everyday users never have to read level 4. Operations and audit users can always
 
 ### Colour
 
-The surfaces are white-first: white cards on a near-white gray page. There is one brand colour, one gray family, and amber and red that carry meaning. Do not add other hues.
+Two themes share one token set and one component library (section 2a): the **operational theme** (light, every operational app) and the **OLED theme** (the demonstration portal only). The operational theme: a warm white page, pure white panels, cream for secondary surfaces, one healthcare green, one warm neutral family, and three colours that carry meaning: amber (waiting), muted blue-grey (information) and clinical red (critical). Do not add other hues; most content is neutral and strong colour is reserved for actions and states.
 
 | Token | Hex | Use |
 |---|---|---|
-| `brand-700` | `#0b6b41` | Primary buttons, links, active route on light surfaces (6.6:1 on white) |
-| `brand-600` | `#0f7a4a` | Accepted hospital markers, focus ring |
-| `brand-50/100/200` | `#ecf7f1` … | Positive badge fills and rings |
-| `ink-900` | `#151b19` | Headings, primary text |
-| `ink-700/600` | `#36403c` / `#4a5550` | Body text |
-| `ink-500` | `#5f6b65` | Lightest allowed text colour (5.6:1 on white) |
-| `ink-400` | `#96a19b` | Decorative only (chevrons, separators): **never text** |
-| `ink-200/100/50` | `#dee3e0` … | Borders, dividers, page background (`ink-50`) |
-| `warn-600/700` | `#b4690e` / `#9a5b0b` | Pending, limited, stale, needs attention (text uses 700) |
-| `danger-600/700` | `#c9352a` / `#a3281f` | Critical, rejected, unavailable, errors only |
+| `canvas` | `#faf9f6` | The page background (warm white) |
+| `surface` | `#ffffff` | Panels, cards, header (never write literal white: themes remap `surface`) |
+| `ink-100` | `#f3f0e7` | Cream secondary surface, icon chips, subtle fills |
+| `ink-200` | `#e8e5dc` | Warm borders and dividers |
+| `ink-300` | `#d9d1c1` | Input outlines, stronger borders (`ink-400` on hover) |
+| `ink-900` | `#202820` | Headings, primary text (15:1) |
+| `ink-700/600` | `#404840` / `#545c53` | Body and secondary text |
+| `ink-500` | `#636b62` | Lightest allowed text colour (5.5:1 on white, 4.8:1 on cream) |
+| `ink-400` | `#9a9f96` | Decorative only (chevrons, separators, placeholders): **never body text** |
+| `brand-700` | `#236b4b` | Primary buttons, links, active tab, route (6.4:1 on white) |
+| `brand-800` | `#1b573c` | Hover / pressed green |
+| `brand-50` / `brand-200` | `#e8f2eb` / `#c9dfd0` | Positive badge fill / border |
+| `warn-700/800` on `warn-50` | `#7f5616` / `#664512` on `#fbf5e8` | Pending response, limited, stale, needs attention |
+| `info-800` on `info-50` | `#364855` on `#eef2f5` | Informational notices: "Demo data", "Synthetic demo patient" |
+| `danger-600/700` | `#c43d3d` / `#a82f32` | Critical emergency, declined, unavailable, destructive actions, errors |
+| `danger-50` / `danger-200` | `#fbecec` / `#eecaca` | Soft red surface / border |
 
-- The grays carry a faint green tint. Do not mix in cool or warm Tailwind grays.
-- Shadows are tinted with ink and come from one top light source. Elevation is reserved for floating layers: popovers, toasts, drawers and map controls.
-- There are no gradients, glass effects, neon, glows or purple "AI" styling. AI output is styled like any other neutral content and is labelled as advisory.
+- The neutrals are warm (cream to deep green-black). Do not mix in cool Tailwind grays or Tailwind's default amber.
+- Demo/synthetic labels use the **info** tone, not amber, so amber keeps meaning "needs attention".
+- The operational apps never use the dark theme. No purple, neon, rainbow gradients or glass panels anywhere.
+- Shadows are tinted with ink and come from one top light source (elevation levels in section 2a).
+- Gradients are allowed in exactly three places: the primary / danger / critical action fills (a subtle vertical gradient), and the **one** hero surface of a screen (the patient's *Current care*). Never on every card. No glass effects, neon, glows or purple "AI" styling. Automatic summaries are styled like any other neutral content and say what produced them (*Automatic summary · template, no AI*).
+
+### 2a. Tokens: surfaces, elevation, fills and themes
+
+All in `packages/ui/src/styles/jiva.css`. Components use the semantic tokens below and never a literal colour, so a theme re-skins every shared component without a second component library.
+
+| Token | Operational (light) | OLED (portal) | Use |
+|---|---|---|---|
+| `canvas` (level 0) | `#faf9f6` | `#000000` | Page background |
+| `surface` (level 1–2) | `#ffffff` | `#0a0c0b` | Panels, cards, header |
+| `surface-raised` (level 4) | `#ffffff` | `#121614` | Dialogs, toasts, drawers, menus |
+| `surface-sunken` | `#f7f5f0` | `#050605` | Wells inside a card (e.g. the scenario briefing) |
+| `shadow-e1` … `e4` | ink-tinted, one light source | hairline borders and soft glows | e1 hairline lift (cards) · e2 card on a panel · e3 selected / hovered control · e4 overlays |
+| `--fill-primary` (`jiva-fill-primary`) | green `#2b7b57 → #236b4b`, white text (≥ 5.2:1) | green → teal `#34d399 → #14b8a6`, near-black text (≥ 7.6:1) | Primary actions |
+| `--fill-danger` / `--fill-critical` | red gradients, white text (≥ 4.7:1 at every stop) | same family, white text | Destructive and critical actions |
+| `--fill-inverse` | `#202820` / white | `#f2f5f3` / black | Active filter chips |
+| `--gradient-brand` | `#1d6446 → #236b4b → #226a5a` | `#34d399 → #14b8a6 → #22d3ee` | The one hero surface; the portal's edge and title accent |
+| `--scrim` | ink 35 % | black 72 % | Behind dialogs and drawers |
+| `--ring-focus` | `#2c7a57` | `#4ade9b` | Focus outline (2 px) |
+
+**Theme boundary.** The OLED theme is a class, `theme-oled`, set on the portal's `<html>` (`apps/demo-portal/index.html`). It remaps the tokens inside that element only: true black canvas, charcoal surfaces, an inverted neutral scale (`ink-900` becomes near-white text; `ink-500` stays ≥ 7:1 on surfaces, so there is no low-contrast grey), status scales whose `-50` surfaces are dark tints and whose `-700/800` text is light, restrained red, and green-to-teal accents. No operational app sets the class; the browser suite `tests/browser/portal-manual.browser.ts` checks both sides of the boundary.
 
 ### Typography
 
 - **Plus Jakarta Sans Variable** is self-hosted through `@fontsource-variable` (OFL-1.1) and imported once per app via `@jiva/ui/src/fonts`. There is no runtime font CDN.
 - Font sizes:
   - Body text is 14px in operations apps and 15–16px on the patient screen.
-  - The minimum size is 12px. Only the patient journey labels on phones use 11px.
+  - The minimum size is 12px. Only the patient journey labels on phones and the secondary line of map marker labels use 11px.
 - Headings are semibold with slightly negative tracking, e.g. `tracking-[-0.01em]`. Use sentence case and avoid uppercase labels.
 - Numbers that change (ETAs, counts, countdowns) use `tabular-nums` so they do not jitter.
 - IDs and hashes in technical views use the system monospace.
 
 ### Shape, space, icons
 
-- **Radius:** 12px (`rounded-xl`) for cards, 8px for buttons and inputs, 6px for badges, and full rounding for chips and pills. Inner elements are tighter than their containers.
-- **Spacing:** cards use 16–20px padding, and sections inside panels are 20–32px apart.
+- **Radius:** 12px (`rounded-xl`) for cards and panels, 16px for dialogs, 8–12px for buttons (by size) and inputs, full rounding for status badges, chips and pills. Inner elements are tighter than their containers.
+- **Spacing:** cards use 16px padding on phones and 20px from `sm` up; sections inside panels are 20–32px apart.
+- **Surfaces:** a hairline ring (`ink-200`) plus a barely visible lift; real shadows only on things that float (popovers, toasts, dialogs, map controls, the pinned patient context).
+- **Heights:** buttons 32 / 40 / 48px (`sm` / `md` / `lg`); inputs 36px; primary decisions use `lg`.
 - **Icons:** use the custom set in `components/Icon.tsx`: a 24px grid, 1.75 stroke and round joins. `iconSvg()` renders the same icons for map markers. Icons are decorative (`aria-hidden`) unless they carry a `title`.
 - **Logo:** a live pulse inside a rounded green square (`JivaLogo`). The same mark is `apps/*/public/favicon.svg`.
 
@@ -86,9 +117,12 @@ A status is always shown as **icon + label + colour**, never colour alone. Use t
 | Tone | Colour | Meaning | Examples |
 |---|---|---|---|
 | `ok` | green | Accepted, active, available, confirmed | Accepted ✓, Available ✓, To hospital, Arrived |
-| `warn` | amber | Pending, limited, stale, needs attention | Awaiting response ⏱, Limited ◐, Demo data, Seed data |
+| `warn` | amber | Pending, limited, stale, needs attention | Awaiting response ⏱, Limited ◐, Arrived · awaiting handover, Seed data, Simulated reading |
 | `danger` | red | Rejected, unavailable, critical, error | Declined ✕, Unavailable ⊘, Critical |
-| `neutral` | gray | Unknown, expired, historical, inactive | No current response ?, Expired ⌛, Withdrawn |
+| `neutral` | warm gray | Unknown, expired, historical, inactive | No current response ?, Expired ⌛, Withdrawn |
+| `info` | blue-grey | Information about the data, never a case state | Demo data, Synthetic demo patient, Demo case |
+
+**Case-specific means case-specific.** A hospital's `operationalState.acceptance` is its latest answer to *any* case. A badge about one case uses that case's own referral answer (`referralStatus`, `caseResponses`), the hospital slot only when `acceptanceCaseId` names the case, and "unknown" otherwise — a hospital declining one patient never changes another patient's badge.
 
 Helpers:
 - `acceptanceStatus()` covers hospital answers.
@@ -99,20 +133,33 @@ Helpers:
 
 Every helper also returns a one-sentence `hint`, which is used as the tooltip.
 
+**Where a value came from** (helpers in `lib/vitals.ts`, `lib/position.ts`, `lib/labels.ts`):
+
+| Source | Label | Tone |
+|---|---|---|
+| Vital sign typed by the assigned clinician | Entered manually · care team | neutral |
+| Vital sign typed by the crew | Entered manually · ambulance crew | neutral |
+| Demo simulated monitor | Simulated (demo) | info |
+| Corrected / withdrawn value | "Corrected to …" / "Withdrawn as entered in error", with who, when and why (history only; the patient sees current values) | neutral |
+| Ambulance position set in the crew app | Set by the crew | neutral |
+| Position from a demo tool or scenario | Simulated position | info |
+| Position with no stated source | Position, source not stated (never "GPS") | neutral |
+| Template summary / brief | Automatic summary · template, no AI | neutral |
+
 ---
 
 ## 4. Components (`@jiva/ui/src`)
 
 | Component | Purpose and rules |
 |---|---|
-| `JivaButton` | Variants: `primary` (one per area), `secondary`, `ghost`, `danger`, and `*-soft` outlines for consequential choices. States: hover, pressed (`scale .98`), focus-visible, disabled and loading. |
+| `JivaButton` | Roles: `primary` (the one most important action of the workflow), `secondary`, `tertiary` (green text action), `ghost` (toolbar/dismiss), `danger` (confirms a destructive action), `critical` (an emergency action, e.g. *Report an emergency*, *Submit emergency*) and `*-soft` outlines for consequential choices next to a primary (*Accept with limits*, *Decline request*). Labels say what happens (*Accept emergency*, *Save vital signs*, *Upload document*), never *Go* or *Process*. States: hover, pressed (`scale .98`), focus-visible, disabled (50% and desaturated) and loading. |
 | `AsyncButton` / `useAsyncAction` | For any action that calls the API. It shows pending, success and error (with the message in the tooltip and a live region) by itself. Actions resolve to `null` or an error sentence. |
 | `JivaCard`, `CardHeader`, `DataRow`, `SectionLabel` | White surfaces. `accent` adds a left stripe carrying state. Selectable rows are `<button>`s, not cards with click handlers. |
 | `JivaBadge`, `JivaStatus`, `StatusDot` | The status vocabulary. A dot is always paired with text. |
 | `JivaMetric` | A headline number. When it has `onClick` it works as a shortcut into the list that explains it, e.g. *Awaiting hospital answer* opens Hospitals filtered to pending. |
 | `Flash` | Briefly highlights a value when it changes, so the change is noticed without a notification. It never flashes on first render. |
 | `JivaTimeline` | Newest first and grouped by day. Each entry can expand to its source and evidence. Entries that arrive live slide in. |
-| `JivaTabs` + `TabPanel` | ARIA tabs with arrow, Home and End keys. Counts and an amber "attention" dot are optional. |
+| `JivaTabs` + `TabPanel` | ARIA tabs with arrow, Home and End keys. Counts and an amber "attention" dot are optional. `size="sm"` for narrow side panels. |
 | `JivaFilter`, `ToggleChip` | Instant filter chips. *All* clears the filter. They show counts, the number of active filters, and a *Clear* or *Reset* action. |
 | `JivaSearch` | Global combobox, opened with `/` or Ctrl/⌘+K. Results are grouped by type and support arrow keys, Enter and Escape. |
 | `JivaBreadcrumbs` | Shows the drill-down path. Every level except the current one is clickable. |
@@ -140,7 +187,7 @@ Each marker type has its own shape, colour and label.
 | Marker | Shape | Colour | Label and behaviour |
 |---|---|---|---|
 | Hospital | Rounded square with **H** | Acceptance tone. White with a gray outline when unknown | A corner glyph repeats the state |
-| Ambulance on a job | Dark pill with call sign | Dark ink | Glides about 0.9 s between GPS fixes |
+| Ambulance on a job | Dark pill with call sign | Dark ink | Glides about 0.9 s between position updates |
 | Idle or arrived ambulance | Compact chip | — | Offset so it never hides a hospital |
 | Emergency | Red dot | Red | Soft ring while the case is open |
 
@@ -170,7 +217,20 @@ The map is never covered by permanent panels.
 
 ---
 
-## 6. Realtime feedback
+## 6. Motion
+
+- Durations: 150 ms for hover, press and colour changes; 180 ms fades; 240 ms panel entry (`animate-enter`, 4px rise); 260 ms toasts, drawers and dialogs. One easing: `--ease-out` (`cubic-bezier(0.22, 1, 0.36, 1)`).
+- Motion explains change (a new entry slides in, a value flashes once, progress fills). Nothing pulses for decoration; the only loops are the live dot, the open-emergency ring on the map and skeleton shimmer.
+- `prefers-reduced-motion` removes all of it (see §9). Motion never delays an action or blocks a click.
+
+## 7. Patterns for clinical safety
+
+- **Whose record is this?** The doctor workspace pins the selected patient (case id, reported symptoms, encounter, responsible doctor, status) and the section tabs under the header from tablets up. The selected patient row carries a green ring and a left bar.
+- **Never carry edits to another patient.** Per-patient panels remount when the patient changes. Forms report unsaved edits (`apps/doctor-web/src/unsaved.tsx`); switching patients with edits open asks first, naming both patients ("Keep editing CASE-…" is the default; "Discard and open CASE-…"), and a reload or close warns.
+- **What needs me now?** Each screen leads with its decision: open hospital requests (with the request time and a countdown), the crew's next action with the job's progress, drafts awaiting the doctor's authorisation, the patient's current care.
+- **Honest estimates.** An ETA is labelled an estimate and says its basis: the ambulance's last reported position and who set it (*Set by the crew · 2 min ago*), or its last known position when none was reported since dispatch, and the routing used (synthetic route, no live traffic).
+
+## 8. Realtime feedback
 
 When something changes, say so in context. Do not silently replace a number.
 
@@ -179,7 +239,7 @@ When something changes, say so in context. Do not silently replace a number.
 | Notable event (answer, reroute, arrival, ED unavailable) | Grouped toast with a *View* shortcut |
 | Headline number or ETA changed | `Flash` on the value |
 | New activity | Timeline entry slides in |
-| GPS fix | Marker glides; no toast, no timeline row (GPS rows can be shown on demand) |
+| Position update | Marker glides; no toast, no timeline row (position rows can be shown on demand) |
 | Reroute (crew) | Persistent card: old destination → why → re-evaluated → new destination + ETA, until acknowledged |
 | Answer sent (hospital) | Confirmation card stating the effect ("AMB-BLR-001 is now heading here") |
 | Connection | `ConnectionPill`: Live / Connecting… / Reconnecting… / Offline — showing last known data |
@@ -188,7 +248,7 @@ Each app resyncs from the API about 120 ms after every event, and every 15 s as 
 
 ---
 
-## 7. Empty, loading and error states
+## 9. Empty, loading and error states
 
 - **Empty** states say what is empty, why, and what will make something appear. Example: *"No active emergencies — All emergency cases are currently stable…"*.
 - **Loading** uses skeletons that keep the layout's shape. There are no full-screen spinners.
@@ -196,7 +256,7 @@ Each app resyncs from the API about 120 ms after every event, and every 15 s as 
 
 ---
 
-## 8. Voice
+## 10. Voice
 
 - Use plain, specific and active language with sentence case and no exclamation marks.
 - **Patient screen:**
@@ -204,11 +264,11 @@ Each app resyncs from the API about 120 ms after every event, and every 15 s as 
   - Give no clinical interpretation and no "healthy/unhealthy" judgements.
   - Always offer *Call 108*.
 - **Operations screens:** use short labels (*ICU*, *Trauma*, *Awaiting response*). IDs are allowed.
-- **AI text** is always labelled *AI-generated · advisory only* and never presented as a decision.
+- **Automatic text** says what produced it — *Automatic summary · template, no AI* today (an LLM provider would read *AI-generated · advisory only*) — and is never presented as a decision.
 
 ---
 
-## 9. Accessibility
+## 11. Accessibility
 
 - Every screen has a skip link, semantic landmarks (`header`, `main`, `aside`, labelled `section`s) and one `h1`/`h2` hierarchy per view.
 - `:focus-visible` shows a 2px `brand-600` ring on everything. Map markers are focusable buttons.
@@ -216,19 +276,22 @@ Each app resyncs from the API about 120 ms after every event, and every 15 s as 
 - `prefers-reduced-motion` turns off animations, marker gliding, value flashes and map flights.
 - Toasts and connection state use polite live regions. Countdowns are `role="timer"` and are not announced every second.
 - The minimum target size is 24px, and primary decisions are 40–48px.
+- Checked with axe-core (WCAG 2.1 A/AA) on all six apps, including open forms and dialogs: 0 violations at the time of the redesign. Map markers' accessible names start with their visible label.
 
-## 10. Responsive
+## 12. Responsive
 
 | Role | Phone | Desktop |
 |---|---|---|
-| Patient | Single column, journey first | Two columns: care, then activity and records |
+| Patient | Single column: journey, care team, what happens next, help, records, activity | Two columns: care and help on the left; records, summary and activity on the right |
 | Hospital | Requests first, side panels below | Requests and patients on the left, facility, briefs and activity on the right |
 | Ambulance | Decision bar (2×2), map, then job panel | Decision bar, map and job panel side by side |
-| Command Center | KPIs scroll, map, collapsible demo bar, tabs | Map and demo controls with a 420–460px details panel |
+| Command Center | KPIs scroll, map, collapsible demo bar, tabs | Map and demo controls with a 460px details panel |
+| Doctor | Patient list, then the record (context scrolls away) | Patient list (stays in view) and the record with the pinned patient context |
+| Demo portal | Scenario list, then steps | Scenario list beside the steps and the live case strip |
 
 The header actions wrap. No screen scrolls horizontally at 390px.
 
-## 11. Performance
+## 13. Performance
 
-- The map is created once. Markers update their attributes instead of re-mounting. Routes keep a stable reference per calculation, so GPS fixes never redraw them.
+- The map is created once. Markers update their attributes instead of re-mounting. Routes keep a stable reference per calculation, so position updates never redraw them.
 - Event lists are capped (Command Center: 400 in memory, 150 rendered). Search uses `useDeferredValue`. The clock re-renders every 1 s only while a deadline is visible, otherwise every 5 s.

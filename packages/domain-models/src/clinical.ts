@@ -84,6 +84,8 @@ export interface HospitalEncounter {
     recordedBy: ActorRef;
     eventId: string;
     fromAmbulanceId?: string;
+    /** Handover notes typed by the person recording it (hospital team and assigned clinician only). */
+    notes?: string;
   };
   assignedDoctor?: DoctorAssignment;
   /** Every assignment, oldest first (current one included). */
@@ -290,8 +292,8 @@ export type TelemetrySource = 'MANUAL_CLINICIAN' | 'MANUAL_CREW' | 'DEVICE_SIMUL
 export type ObservationQuality = 'RELIABLE' | 'QUESTIONABLE';
 /** Why a vital sign was not recorded: stated, never left to look like a normal value. */
 export type ObservationUnavailableReason = 'NOT_MEASURED' | 'EQUIPMENT_UNAVAILABLE' | 'UNABLE_TO_OBTAIN';
-export type MeasurementType = 'HEART_RATE' | 'SPO2' | 'BLOOD_PRESSURE' | 'TEMPERATURE' | 'RESPIRATORY_RATE';
-export type MeasurementUnit = 'bpm' | '%' | 'mmHg' | 'degC' | 'breaths/min';
+export type MeasurementType = 'HEART_RATE' | 'SPO2' | 'BLOOD_PRESSURE' | 'TEMPERATURE' | 'RESPIRATORY_RATE' | 'BLOOD_GLUCOSE';
+export type MeasurementUnit = 'bpm' | '%' | 'mmHg' | 'degC' | 'breaths/min' | 'mg/dL';
 
 export interface TelemetryMeasurement {
   measurementId: string;
@@ -313,6 +315,10 @@ export interface TelemetryMeasurement {
   /** As flagged by whoever measured it; absent = not flagged. */
   quality?: ObservationQuality;
   dataStatus: DataStatus;
+  /** This value replaces an earlier one entered in error (that measurement's id). */
+  corrects?: string;
+  /** Set when the value was withdrawn (replaced by a correction, or entered in error). It stays in the history. */
+  withdrawn?: { at: string; by: ActorRef; reason: string; replacedBy?: string };
 }
 
 // ------------------------------------------------------------------ pre-hospital record (ambulance)

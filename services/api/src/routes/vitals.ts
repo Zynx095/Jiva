@@ -2,14 +2,14 @@ import { Router, type Request, type Response } from 'express';
 import { randomUUID } from 'crypto';
 import type { AuthContext } from '@jiva/auth';
 import type { HospitalEncounter, TelemetryMeasurement } from '@jiva/domain-models';
-import { RecordTelemetryCommandSchema, SimulateTelemetryCommandSchema, type MeasurementInput } from '@jiva/event-schema';
+import { CorrectMeasurementCommandSchema, MeasurementInputSchema, RecordTelemetryCommandSchema, SimulateTelemetryCommandSchema, type MeasurementInput } from '@jiva/event-schema';
 import { clinicalStore } from '../clinical';
 import { actorFromAuth, isAssignedClinician } from '../clinical/policy';
 import {
-  latestByType, measurementsFromInputs, newBatchId, observationTimeProblem, simulatedReading, simulationAllowed, SIMULATED_DEVICE_ID, type BatchContext,
+  correctionRefusal, latestByType, measurementsFromInputs, newBatchId, observationTimeProblem, replacementInput, simulatedReading, simulationAllowed, SIMULATED_DEVICE_ID, type BatchContext,
 } from '../clinical/telemetry';
 import { recordProvenance } from '../clinical/views';
-import { asyncRoute, audit, auditAccess, idempotent, replayOr, validationError, withKeyLock } from '../commands/support';
+import { asyncRoute, audit, auditAccess, conflict, idempotent, replayOr, validationError, withKeyLock } from '../commands/support';
 import { encounterFor, publishCommandEvent } from './encounters';
 import { target, writableEncounter } from './clinicalRecords';
 
@@ -30,7 +30,7 @@ function projectMeasurement(m: TelemetryMeasurement, view: 'CLINICIAN' | 'PATIEN
   return { ...rest, ...(name ? { recordedByName: name } : {}) };
 }
 
-function telemetryEvent(auth: AuthContext, enc: HospitalEncounter, batch: TelemetryMeasurement[], ctx: BatchContext) {
+function telemetryEvent(auth: AuthContext, enc: HospitalEncounter, batch: TelemetryMeasurement[], ctx: BatchContext, correction?: { action: 'CORRECTED' | 'WITHDRAWN'; corrects: string }) {
   const times = batch.map(m => Date.parse(m.observedAt));
   return {
     eventId: randomUUID(), eventType: 'clinical.telemetry.recorded', timestamp: ctx.recordedAt, version: '1.0',
@@ -43,6 +43,7 @@ function telemetryEvent(auth: AuthContext, enc: HospitalEncounter, batch: Teleme
       ...(ctx.deviceId ? { deviceId: ctx.deviceId } : {}),
       // Values stay in the clinical store; the patient may see their own vital signs.
       patientVisible: true,
+      ...(correction ?? {}),
     },
   };
 }
@@ -83,8 +84,9 @@ export function vitalsRouter(): Router {
     const enc = encounterFor(req, res, 'telemetry.read', 'telemetry.read');
     if (!enc) return;
     auditAccess(auth, 'telemetry.read', target(enc, 'TELEMETRY'));
-    const all = clinicalStore.listMeasurements(enc.encounterId);
     const view = auth.role === 'PATIENT' ? 'PATIENT' : 'CLINICIAN';
+    // The care team sees corrected and withdrawn values in the history; the patient sees only current values.
+    const all = clinicalStore.listMeasurements(enc.encounterId).filter(m => view === 'CLINICIAN' || !m.withdrawn);
     const latest = latestByType(all, Date.now());
     res.json({
       encounterId: enc.encounterId,
@@ -115,6 +117,60 @@ export function vitalsRouter(): Router {
       const body = { status: 'recorded', batchId: ctx.batchId, measurements: batch.map(m => projectMeasurement(m, 'CLINICIAN')) };
       idem.remember(201, body);
       return res.status(201).json(body);
+    });
+  }));
+
+  /**
+   * Correct a value the care team entered: replace it with the corrected value (same type and time) or
+   * withdraw it as entered in error. The original stays in the history, marked with who, when and why.
+   */
+  router.post('/encounters/:id/vitals/:measurementId/correct', asyncRoute(async (req: AuthedRequest, res) => {
+    const auth = req.auth!;
+    const found = encounterFor(req, res, 'telemetry.write', 'telemetry.correct');
+    if (!found) return;
+    const parsed = CorrectMeasurementCommandSchema.safeParse(req.body);
+    if (!parsed.success) return validationError(res, parsed.error);
+    const measurementId = String(req.params.measurementId);
+    const idem = idempotent('telemetry.correct', auth, parsed.data.clientRequestId, { encounterId: found.encounterId, measurementId, ...parsed.data });
+    if (replayOr(res, idem)) return;
+
+    return withKeyLock(`case:${found.caseId}`, async () => {
+      if (replayOr(res, idem)) return;
+      const enc = writableEncounter(req, res, found.encounterId, 'telemetry.write', 'telemetry.correct');
+      if (!enc) return;
+      const original = clinicalStore.listMeasurements(enc.encounterId).find(m => m.measurementId === measurementId);
+      if (!original) return res.status(404).json({ error: 'not_found' });
+      const refusal = correctionRefusal(original);
+      if (refusal === 'NOT_CORRECTABLE') return conflict(res, 'not_correctable', 'Only values the care team entered by hand can be corrected. Simulated readings are never edited.');
+      if (refusal === 'ALREADY_WITHDRAWN') return conflict(res, 'already_withdrawn', 'This value was already corrected or withdrawn. Refresh to see the current value.');
+      let input: MeasurementInput | undefined;
+      if (parsed.data.replacement) {
+        const checked = MeasurementInputSchema.safeParse(replacementInput(original, parsed.data.replacement));
+        if (!checked.success) return validationError(res, checked.error);
+        input = checked.data;
+      }
+
+      const ctx = batchContext(auth, enc, 'MANUAL_CLINICIAN');
+      const replacement = input ? { ...measurementsFromInputs([input], ctx)[0], corrects: original.measurementId } : undefined;
+      if (replacement) clinicalStore.addMeasurements([replacement]);
+      const withdrawnRecord = clinicalStore.setMeasurementWithdrawn(enc.encounterId, original.measurementId, {
+        at: ctx.recordedAt, by: actorFromAuth(auth), reason: parsed.data.reason, ...(replacement ? { replacedBy: replacement.measurementId } : {}),
+      })!;
+      try {
+        await publishCommandEvent(auth, telemetryEvent(auth, enc, [replacement ?? original], ctx, { action: replacement ? 'CORRECTED' : 'WITHDRAWN', corrects: original.measurementId }));
+      } catch (err) {
+        clinicalStore.setMeasurementWithdrawn(enc.encounterId, original.measurementId, undefined);
+        if (replacement) clinicalStore.removeMeasurementBatch(enc.encounterId, ctx.batchId);
+        throw err;
+      }
+      audit(auth, 'telemetry.correct', 'ALLOWED', target(enc, 'TELEMETRY', original.measurementId));
+      const body = {
+        status: replacement ? 'corrected' : 'withdrawn',
+        withdrawn: projectMeasurement(withdrawnRecord, 'CLINICIAN'),
+        ...(replacement ? { replacement: projectMeasurement(replacement, 'CLINICIAN') } : {}),
+      };
+      idem.remember(200, body);
+      return res.status(200).json(body);
     });
   }));
 

@@ -6,7 +6,7 @@ import type { StatusMeta } from './status';
  * and an old value is never presented as current.
  */
 
-export type MeasurementTypeCode = 'HEART_RATE' | 'SPO2' | 'BLOOD_PRESSURE' | 'TEMPERATURE' | 'RESPIRATORY_RATE';
+export type MeasurementTypeCode = 'HEART_RATE' | 'SPO2' | 'BLOOD_PRESSURE' | 'TEMPERATURE' | 'RESPIRATORY_RATE' | 'BLOOD_GLUCOSE';
 
 export interface MeasurementView {
   measurementId: string;
@@ -24,6 +24,10 @@ export interface MeasurementView {
   /** Flagged by whoever measured it. */
   quality?: 'RELIABLE' | 'QUESTIONABLE';
   dataStatus: string;
+  /** This value replaces an earlier one entered in error. */
+  corrects?: string;
+  /** The value was withdrawn (corrected, or entered in error); it stays in the care team's history. */
+  withdrawn?: { at: string; reason: string; replacedBy?: string };
 }
 
 export interface VitalsResponse {
@@ -33,7 +37,7 @@ export interface VitalsResponse {
   sources: { medicalDeviceIntegrated: boolean; simulationAvailable: boolean };
 }
 
-export const MEASUREMENT_ORDER: MeasurementTypeCode[] = ['HEART_RATE', 'SPO2', 'BLOOD_PRESSURE', 'TEMPERATURE', 'RESPIRATORY_RATE'];
+export const MEASUREMENT_ORDER: MeasurementTypeCode[] = ['HEART_RATE', 'SPO2', 'BLOOD_PRESSURE', 'TEMPERATURE', 'RESPIRATORY_RATE', 'BLOOD_GLUCOSE'];
 
 export const MEASUREMENT_TEXT: Record<MeasurementTypeCode, { label: string; unit: string }> = {
   HEART_RATE: { label: 'Heart rate', unit: 'bpm' },
@@ -41,7 +45,44 @@ export const MEASUREMENT_TEXT: Record<MeasurementTypeCode, { label: string; unit
   BLOOD_PRESSURE: { label: 'Blood pressure', unit: 'mmHg' },
   TEMPERATURE: { label: 'Temperature', unit: '°C' },
   RESPIRATORY_RATE: { label: 'Breathing rate', unit: '/min' },
+  BLOOD_GLUCOSE: { label: 'Blood glucose', unit: 'mg/dL' },
 };
+
+/**
+ * Entry-plausibility limits (mirroring the server's MEASUREMENT_RULES): values outside them are typing
+ * errors, refused before sending. They are NOT clinical thresholds and nothing is flagged as abnormal.
+ * `unit` is the API unit; the label's unit (MEASUREMENT_TEXT) is the display form.
+ */
+export const MEASUREMENT_LIMITS: Record<MeasurementTypeCode, { unit: string; min: number; max: number; secondaryMin?: number; secondaryMax?: number }> = {
+  HEART_RATE: { unit: 'bpm', min: 20, max: 300 },
+  SPO2: { unit: '%', min: 50, max: 100 },
+  BLOOD_PRESSURE: { unit: 'mmHg', min: 40, max: 300, secondaryMin: 20, secondaryMax: 200 },
+  TEMPERATURE: { unit: 'degC', min: 25, max: 45 },
+  RESPIRATORY_RATE: { unit: 'breaths/min', min: 2, max: 80 },
+  BLOOD_GLUCOSE: { unit: 'mg/dL', min: 10, max: 900 },
+};
+
+/** A number typed by a person ("37,2" is accepted as 37.2); empty → undefined; garbage → NaN. */
+export const parseEntered = (s: string): number | undefined => (s.trim() === '' ? undefined : Number(s.trim().replace(',', '.')));
+
+/** One sentence about a single typed value, or null when it is empty or plausible. */
+export function enteredValueProblem(type: MeasurementTypeCode, value: string, secondary?: string): string | null {
+  const lim = MEASUREMENT_LIMITS[type];
+  const v = parseEntered(value);
+  const label = MEASUREMENT_TEXT[type].label;
+  if (type === 'BLOOD_PRESSURE') {
+    const d = parseEntered(secondary ?? '');
+    if (v === undefined && d === undefined) return null;
+    if (v === undefined || d === undefined || !Number.isFinite(v) || !Number.isFinite(d)) return 'Blood pressure needs both systolic and diastolic values.';
+    if (v < lim.min || v > lim.max || d < (lim.secondaryMin ?? 0) || d > (lim.secondaryMax ?? Infinity)) return `Blood pressure looks like a typing error (systolic ${lim.min}–${lim.max}, diastolic ${lim.secondaryMin}–${lim.secondaryMax}).`;
+    if (v <= d) return 'Systolic must be higher than diastolic.';
+    return null;
+  }
+  if (v === undefined) return null;
+  if (!Number.isFinite(v)) return `${label}: enter a number.`;
+  if (v < lim.min || v > lim.max) return `${label} must be between ${lim.min} and ${lim.max} ${MEASUREMENT_TEXT[type].unit} — check for a typing error.`;
+  return null;
+}
 
 /** "128/84", "96", "37.2". */
 export function formatMeasurementValue(m: Pick<MeasurementView, 'type' | 'value' | 'secondaryValue'>): string {
@@ -53,13 +94,13 @@ export function formatMeasurementValue(m: Pick<MeasurementView, 'type' | 'value'
 export function measurementSource(source?: string): StatusMeta {
   switch (source) {
     case 'MANUAL_CLINICIAN':
-      return { label: 'Entered by clinician', tone: 'ok', icon: 'user', hint: 'Measured and entered by a member of the care team.' };
+      return { label: 'Entered manually · care team', tone: 'neutral', icon: 'user', hint: 'Measured by a member of the care team and typed in. No device is connected; JIVA does not verify the value.' };
     case 'MANUAL_CREW':
-      return { label: 'Entered by ambulance crew', tone: 'ok', icon: 'ambulance', hint: 'Measured and entered by the attending ambulance crew before the handover.' };
+      return { label: 'Entered manually · ambulance crew', tone: 'neutral', icon: 'ambulance', hint: 'Measured by the attending ambulance crew and typed in before the handover. No device is connected; JIVA does not verify the value.' };
     case 'DEVICE_SIMULATED':
-      return { label: 'Simulated (demo)', tone: 'warn', icon: 'alertTriangle', hint: 'Generated for the demonstration. Not a real measurement.' };
+      return { label: 'Simulated (demo)', tone: 'warn', icon: 'alertTriangle', hint: 'Generated by a demo simulator for the demonstration. Not a real measurement and not from a device.' };
     case 'MEDICAL_DEVICE':
-      return { label: 'Medical device', tone: 'ok', icon: 'activity' };
+      return { label: 'From a medical device', tone: 'neutral', icon: 'activity', hint: 'Imported from a registered device integration.' };
     default:
       return { label: 'Unknown source', tone: 'neutral', icon: 'help' };
   }

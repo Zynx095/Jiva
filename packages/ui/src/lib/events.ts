@@ -1,8 +1,9 @@
 import type { IconName } from '../components/Icon';
 import type { Tone } from './status';
 import { capabilityStatus } from './status';
-import { capabilityLabel, joinList, SEVERITY_TEXT } from './labels';
+import { capabilityLabel, joinList, plainCapabilities, SEVERITY_TEXT } from './labels';
 import { formatClock, formatKm, minutesFromSeconds } from './time';
+import { positionSource } from './position';
 
 /** Structural view of a canonical event (see packages/event-schema). Payload fields are read defensively. */
 export interface JivaEvent {
@@ -29,7 +30,7 @@ export interface EventDescription {
   tone: Tone;
   icon: IconName;
   category: EventCategory;
-  /** High-frequency telemetry (GPS, shadow traces): collapsed by default. */
+  /** High-frequency telemetry (position updates, shadow traces): collapsed by default. */
   quiet?: boolean;
   /** Worth a short live notification when it arrives. */
   notable?: boolean;
@@ -182,7 +183,7 @@ export function describeEvent(e: JivaEvent, name: NameResolver, audience: Audien
     }
     case 'ambulance.location.updated': {
       const speed = num(p, 'speedKmh');
-      return { ...base, title: patient ? 'Ambulance position updated' : `${A} position updated`, detail: speed !== undefined ? `${Math.round(speed)} km/h` : undefined, tone: 'neutral', icon: 'pin', category: 'ambulance', quiet: true };
+      return { ...base, title: patient ? 'Ambulance position updated' : `${A} position updated`, detail: dotJoin([positionSource(str(p, 'source')).label, speed !== undefined && `${Math.round(speed)} km/h`]), tone: 'neutral', icon: 'pin', category: 'ambulance', quiet: true };
     }
     case 'ambulance.arrived': {
       // GPS geofence = derived signal; only the hospital's own record (encounter.arrival.recorded) confirms arrival.
@@ -192,7 +193,7 @@ export function describeEvent(e: JivaEvent, name: NameResolver, audience: Audien
       }
       return patient
         ? { ...base, title: `Your ambulance reached ${H(hospitalId)}`, detail: 'The hospital confirms your arrival and takes over your care.', tone: 'ok', icon: 'pin', category: 'ambulance', notable: true }
-        : { ...base, title: `${A} reached ${H(hospitalId)}`, detail: "GPS geofence · awaiting the hospital's arrival record", tone: 'ok', icon: 'pin', category: 'ambulance', notable: true };
+        : { ...base, title: `${A} reached ${H(hospitalId)}`, detail: "Position at the hospital · awaiting the hospital's arrival record", tone: 'ok', icon: 'pin', category: 'ambulance', notable: true };
     }
     case 'encounter.arrival.recorded':
       return audience === 'patient'
@@ -281,9 +282,15 @@ export function describeEvent(e: JivaEvent, name: NameResolver, audience: Audien
     case 'clinical.telemetry.recorded': {
       const simulated = str(p, 'source') === 'DEVICE_SIMULATED';
       const n = num(p, 'measurementCount') ?? 0;
+      const action = str(p, 'action');
+      if (action === 'CORRECTED' || action === 'WITHDRAWN') {
+        return patient
+          ? { ...base, title: action === 'CORRECTED' ? 'A vital sign was corrected' : 'A vital sign entry was withdrawn', detail: 'Your care team corrected an entry. See your vital signs.', tone: 'neutral', icon: 'heart', category: 'case' }
+          : { ...base, title: `Vital sign ${action === 'CORRECTED' ? 'corrected' : 'withdrawn as entered in error'}${caseId ? ` · ${caseId}` : ''}`, detail: 'The original entry is kept in the history', tone: 'neutral', icon: 'heart', category: 'case' };
+      }
       return patient
         ? { ...base, title: simulated ? 'Simulated vital signs added (demo)' : 'New vital signs recorded', detail: 'See your vital signs.', tone: simulated ? 'warn' : 'ok', icon: 'heart', category: 'case', notable: !simulated }
-        : { ...base, title: `${n} vital sign${n === 1 ? '' : 's'} recorded${caseId ? ` · ${caseId}` : ''}`, detail: simulated ? 'Simulated monitor — demo data' : 'Entered by a clinician', tone: simulated ? 'warn' : 'ok', icon: 'heart', category: 'case' };
+        : { ...base, title: `${n} vital sign${n === 1 ? '' : 's'} recorded${caseId ? ` · ${caseId}` : ''}`, detail: simulated ? 'Simulated monitor — demo data' : 'Entered manually by the care team', tone: simulated ? 'warn' : 'ok', icon: 'heart', category: 'case' };
     }
     case 'clinical.document.stored': {
       const sample = str(p, 'origin') === 'CATALOGUE_SAMPLE';
@@ -296,7 +303,7 @@ export function describeEvent(e: JivaEvent, name: NameResolver, audience: Audien
     case 'ai.anomaly.explained':
       return { ...base, title: 'Disruption explained', detail: str(p, 'explanation'), tone: 'neutral', icon: 'brief', category: 'ai' };
     case 'ai.summary.generated':
-      return { ...base, title: patient ? 'A summary of your journey is ready' : 'Case summary ready', detail: str(p, 'briefSummary'), tone: 'neutral', icon: 'brief', category: 'ai' };
+      return { ...base, title: patient ? 'A summary of your journey is ready' : 'Case summary ready', detail: patient ? plainCapabilities(str(p, 'briefSummary') ?? '') || undefined : str(p, 'briefSummary'), tone: 'neutral', icon: 'brief', category: 'ai' };
     case 'feasibility.trace.recorded': {
       const outcome = str(p, 'outcome');
       return { ...base, title: 'Shadow engine evaluated hospitals', detail: dotJoin([outcome && outcome.toLowerCase().replace(/_/g, ' '), 'observation only, no decision authority']), tone: 'neutral', icon: 'shield', category: 'decision', quiet: true };

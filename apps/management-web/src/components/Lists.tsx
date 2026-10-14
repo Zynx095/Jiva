@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
+  aiOutputLabel,
   EmptyState,
   Icon,
   JivaFilter,
@@ -22,11 +23,12 @@ import {
   timeUntil,
   type EventCategory,
   type TimelineItem,
+  positionUpdateText,
 } from '@jiva/ui/src';
 import { gpsFreshness, hospitalFreshness, isAwaiting, isOpenCase } from '../derive';
 import { useModel } from '../model';
 import type { HospitalState, PatientState } from '../types';
-import { CapabilityChips, EventDetails, RouteFacts } from './bits';
+import { CapabilityChips, DestinationAnswer, EventDetails, RouteFacts } from './bits';
 import { STATUS_FILTERS, statusBucket } from './NetworkMap';
 
 const rowButton =
@@ -78,7 +80,7 @@ function LatestUpdates() {
       if (e.eventType === 'feasibility.trace.recorded' || e.eventType === 'demo.reset') continue;
       const d = describeEvent(e, m.name, 'ops');
       if (d.quiet) continue;
-      out.push({ id: e.eventId, time: e.timestamp, title: d.title, description: d.detail, tone: d.tone, icon: d.icon, meta: d.category === 'ai' ? 'AI-generated · advisory only' : undefined });
+      out.push({ id: e.eventId, time: e.timestamp, title: d.title, description: d.detail, tone: d.tone, icon: d.icon, meta: d.category === 'ai' ? aiOutputLabel(e.payload.generator).label : undefined });
       if (out.length === 5) break;
     }
     return out;
@@ -130,7 +132,7 @@ function CaseCard({ p }: { p: PatientState }) {
         ) : (
           <span className="flex-1 text-warn-700">No ambulance assigned</span>
         )}
-        {dest && <JivaStatus meta={acceptanceStatus(dest.operationalState.acceptance)} />}
+        {dest && <DestinationAnswer caseId={p.patientId} hospital={dest} now={m.now} />}
       </div>
       {amb && <RouteFacts ambulance={amb} className="mt-1 block pl-6" />}
       {responses.length > 0 && (
@@ -162,7 +164,7 @@ function CaseCard({ p }: { p: PatientState }) {
           )}
         </div>
       )}
-      <span className="mt-2 flex items-center justify-end gap-0.5 text-xs font-semibold text-brand-700 opacity-80 group-hover:opacity-100">
+      <span className="mt-2 flex items-center justify-end gap-0.5 text-xs font-semibold text-brand-700 group-hover:text-brand-800">
         View case <Icon name="chevronRight" size={14} />
       </span>
     </button>
@@ -298,7 +300,7 @@ export function AmbulancesList({ loaded }: { loaded: boolean }) {
                     )}
                   </p>
                   {a.assignedPatient && <RouteFacts ambulance={a} className="mt-0.5 block text-xs" />}
-                  <p className={cx('mt-0.5 text-xs', gps.stale ? 'text-warn-700' : 'text-ink-500')}>{a.locationAsOf ? `GPS ${timeAgo(a.locationAsOf, m.now)}${gps.stale ? ' — stale' : ''}` : gps.text}</p>
+                  <p className={cx('mt-0.5 text-xs', gps.stale ? 'text-warn-700' : 'text-ink-500')}>{a.locationAsOf ? `${positionUpdateText(a, m.now)}${gps.stale ? ' — stale' : ''}` : gps.text}</p>
                 </div>
               </div>
             </button>
@@ -312,7 +314,7 @@ export function AmbulancesList({ loaded }: { loaded: boolean }) {
 /* ------------------------------------------------------------------ activity */
 
 type ActivityFilter = Exclude<EventCategory, 'system' | 'case'>;
-const CATEGORY_LABEL: Record<ActivityFilter, string> = { decision: 'Decisions', hospital: 'Hospitals', ambulance: 'Ambulances', routing: 'Routing', ai: 'AI briefs' };
+const CATEGORY_LABEL: Record<ActivityFilter, string> = { decision: 'Decisions', hospital: 'Hospitals', ambulance: 'Ambulances', routing: 'Routing', ai: 'Automatic briefs' };
 
 export function ActivityFeed({ loaded }: { loaded: boolean }) {
   const m = useModel();
@@ -362,7 +364,7 @@ export function ActivityFeed({ loaded }: { loaded: boolean }) {
           options={(Object.keys(CATEGORY_LABEL) as ActivityFilter[]).map((c) => ({ value: c, label: CATEGORY_LABEL[c] }))}
         />
         <ToggleChip icon="pin" pressed={showGps} onChange={setShowGps}>
-          GPS updates
+          Position updates
         </ToggleChip>
       </div>
       {!loaded ? (

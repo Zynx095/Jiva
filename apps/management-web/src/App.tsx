@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AppHeader,
   ConnectionPill,
+  DemoPortalLink,
   ModeBadge,
   Icon,
   JivaBreadcrumbs,
@@ -32,6 +33,7 @@ import {
   caseCandidates,
   caseFacts,
   caseResponses,
+  acceptingHospitals,
   hospitalDisplayStatus,
   isAtHospital,
   isAwaiting,
@@ -175,6 +177,7 @@ export default function App() {
   }, [net.events, net.patients, net.hospitals, net.ambulances]);
 
   const pending = useMemo(() => pendingHospitals(derived.responses, derived.openCases, now), [derived, now]);
+  const accepting = useMemo(() => acceptingHospitals(derived.responses, derived.openCases, now), [derived, now]);
 
   const model: NetworkModel = useMemo(
     () => ({
@@ -185,7 +188,7 @@ export default function App() {
       events: net.events,
       ...derived,
       pending,
-      hospitalStatus: (h) => hospitalDisplayStatus(h, pending),
+      hospitalStatus: (h) => hospitalDisplayStatus(h, pending, accepting),
       ambulanceForCase: (caseId) => net.ambulances.find((a) => a.assignedPatient === caseId),
       selection,
       select,
@@ -198,7 +201,7 @@ export default function App() {
         setFit({ coordinates: coords, key: `${ambulanceId}:${Date.now()}` });
       },
     }),
-    [now, net.patients, net.hospitals, net.ambulances, net.events, derived, pending, selection, select, openTab],
+    [now, net.patients, net.hospitals, net.ambulances, net.events, derived, pending, accepting, selection, select, openTab],
   );
   useEffect(() => {
     latest.current.model = model;
@@ -234,11 +237,11 @@ export default function App() {
       onJob: net.ambulances.filter(isOnJob).length,
       idle: net.ambulances.filter((a) => a.status === 'AVAILABLE').length,
       awaiting,
-      accepted: net.hospitals.filter((h) => hospitalDisplayStatus(h, pending) === 'ACCEPTED').length,
-      limited: net.hospitals.filter((h) => hospitalDisplayStatus(h, pending) === 'LIMITED').length,
+      accepted: net.hospitals.filter((h) => hospitalDisplayStatus(h, pending, accepting) === 'ACCEPTED').length,
+      limited: net.hospitals.filter((h) => hospitalDisplayStatus(h, pending, accepting) === 'LIMITED').length,
       requests: net.events.filter((e) => e.eventType === 'hospital.acceptance.requested').length,
     };
-  }, [derived, net.patients, net.ambulances, net.hospitals, net.events, now, pending]);
+  }, [derived, net.patients, net.ambulances, net.hospitals, net.events, now, pending, accepting]);
 
   const searchItems = useMemo<SearchItem[]>(
     () => [
@@ -316,6 +319,7 @@ export default function App() {
             <>
               <SystemStatus health={net.health} />
               <ConnectionPill state={net.connection} lastSync={net.lastSync} />
+              <DemoPortalLink apiUrl={API_URL} />
               <ModeBadge apiUrl={API_URL} />
             </>
           }
@@ -342,7 +346,7 @@ export default function App() {
         />
 
         <main id="main" className="flex flex-1 flex-col lg:min-h-0 lg:flex-row">
-          <div className="flex flex-col lg:min-h-0 lg:flex-1">
+          <div className="flex min-w-0 flex-col lg:min-h-0 lg:flex-1">
             <section aria-label="Network map" className="relative h-[58vh] min-h-[340px] lg:h-auto lg:flex-1">
               <NetworkMap
                 filters={filters}
@@ -363,7 +367,7 @@ export default function App() {
             <DemoControls advanceAmbulance={advanceAmbulance} />
           </div>
 
-          <aside aria-label="Network details" className="flex flex-col border-t border-ink-200 bg-ink-25 lg:min-h-0 lg:w-[420px] lg:border-l lg:border-t-0 xl:w-[460px]">
+          <aside aria-label="Network details" className="flex flex-col border-t border-ink-200 bg-ink-25 lg:min-h-0 lg:w-[400px] lg:shrink-0 lg:border-l xl:w-[460px] lg:border-t-0">
             {selection ? (
               <div className="flex flex-col lg:min-h-0 lg:flex-1">
                 <div className="flex items-center gap-2 border-b border-ink-200 bg-white px-3 py-2">
@@ -389,7 +393,8 @@ export default function App() {
             ) : (
               <div className="flex flex-col lg:min-h-0 lg:flex-1">
                 <JivaTabs
-                  className="bg-white px-2"
+                  className="bg-white px-1"
+                  size="sm"
                   idPrefix="panel"
                   label="Network lists"
                   value={tab}
@@ -397,8 +402,8 @@ export default function App() {
                   items={[
                     { id: 'incidents', label: 'Incidents', count: kpis.open + kpis.arrived, attention: kpis.open > 0 },
                     { id: 'hospitals', label: 'Hospitals', count: net.hospitals.length, attention: kpis.awaiting > 0 },
-                    { id: 'ambulances', label: 'Ambulances', count: net.ambulances.length },
-                    { id: 'directory', label: 'Directory', count: directory.data?.counts.total },
+                    { id: 'ambulances', label: 'Ambulances' },
+                    { id: 'directory', label: 'Directory' },
                     { id: 'activity', label: 'Activity' },
                   ]}
                 />

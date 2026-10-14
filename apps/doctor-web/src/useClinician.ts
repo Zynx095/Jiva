@@ -47,6 +47,8 @@ export function useClinician(onLiveEvent?: (e: JivaEvent) => void) {
   const [error, setError] = useState<string | null>(null);
   const selectedRef = useRef<string | null>(null);
   const encountersRef = useRef<EncounterRecord[]>([]);
+  const loadSeq = useRef(0);
+  const appliedSeq = useRef(0);
   const everConnected = useRef(socket.connected);
   const pending = useRef<number | undefined>(undefined);
   const liveRef = useRef(onLiveEvent);
@@ -55,6 +57,7 @@ export function useClinician(onLiveEvent?: (e: JivaEvent) => void) {
   }, [onLiveEvent]);
 
   const loadRecords = useCallback(async (encounterId: string) => {
+    const seq = ++loadSeq.current;
     const caseId = encountersRef.current.find((e) => e.encounterId === encounterId)?.caseId;
     const base = `/api/encounters/${enc(encounterId)}`;
     const [prescriptions, reports, notes, documents, vitals, prehospital, timeline] = await Promise.all([
@@ -67,6 +70,9 @@ export function useClinician(onLiveEvent?: (e: JivaEvent) => void) {
       caseId ? apiGet<JivaEvent[]>(`/api/cases/${enc(caseId)}/timeline`).catch(() => null) : Promise.resolve(null),
     ]);
     if (selectedRef.current !== encounterId) return; // the selection changed meanwhile
+    // A slower, older load (e.g. the periodic refresh started before a save) must not replace newer records.
+    if (seq < appliedSeq.current) return;
+    appliedSeq.current = seq;
     setRecords({ encounterId, prescriptions, reports, notes, documents, vitals, prehospital, timeline });
   }, []);
 

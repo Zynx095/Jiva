@@ -17,6 +17,8 @@ const AI_RECIPIENT: AuthContext = { userId: 'intelligence-engine', role: 'MANAGE
  * the operational workflow never depends on AI availability.
  */
 export const aiProviderName = process.env.USE_BEDROCK === 'true' ? 'BedrockAIProvider' : 'MockAIProvider';
+/** Stamped on every ai.* output so screens never call a template "AI-generated". */
+const generator = aiProviderName === 'BedrockAIProvider' ? 'LLM' : 'TEMPLATE';
 const baseProvider = process.env.USE_BEDROCK === 'true' ? new BedrockAIProvider() : new MockAIProvider();
 let aiProvider = new CachedAIProvider(baseProvider);
 
@@ -26,7 +28,7 @@ const timers = new Set<NodeJS.Timeout>();
 let aiFailures = 0;
 
 export function getAiStatus() {
-  return { provider: aiProviderName, failures: aiFailures };
+  return { provider: aiProviderName, generator, failures: aiFailures };
 }
 
 export function resetIntelligence(): void {
@@ -56,7 +58,7 @@ const aiEvent = (eventType: string, payload: Record<string, unknown>) => ({
   timestamp: new Date().toISOString(),
   source: { type: 'system', id: 'intelligence-engine' },
   version: '1.0',
-  payload,
+  payload: { ...payload, generator },
 }) as AnyEvent;
 
 export function initializeIntelligenceEngine() {

@@ -28,7 +28,7 @@ export function JivaDrawer({ open, onClose, title, subtitle, children, footer }:
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="my-0 mr-0 ml-auto h-dvh max-h-none w-[min(100vw,440px)] max-w-none bg-white p-0 text-ink-900 shadow-lg backdrop:bg-ink-950/30 open:animate-drawer"
+      className="my-0 mr-0 ml-auto h-dvh max-h-none w-[min(100vw,440px)] max-w-none bg-surface-raised p-0 text-ink-900 shadow-e4 backdrop:bg-(--scrim) open:animate-drawer"
     >
       <div className="flex h-full flex-col">
         <header className="flex items-start justify-between gap-3 border-b border-ink-200 px-5 py-4">

@@ -12,6 +12,7 @@ import {
 } from '@jiva/ui/src';
 import { apiBlob } from './api';
 import { CommandError, Field, inputClass, sendCommand, useIdempotencyKey } from './ui';
+import { useUnsaved } from './unsaved';
 import { useSampleLibrary } from './useCatalogue';
 
 const FILTERS = ['ALL', 'XRAY', 'CT', 'MRI', 'ULTRASOUND', 'ECG', 'LAB_REPORT'] as const;
@@ -127,6 +128,7 @@ function AttachForm({ encounterId, entry, replaceable, onBack, onAttached }: { e
   const [supersedes, setSupersedes] = useState('');
   const [error, setError] = useState<string | null>(null);
   const keyFor = useIdempotencyKey();
+  useUnsaved(title !== entry.title || share || supersedes !== '', 'a sample attachment');
   const id = (k: string) => `sample-${entry.assetId}-${k}`;
   return (
     <div className="space-y-3">

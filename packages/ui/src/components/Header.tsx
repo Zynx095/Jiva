@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import { useRuntimeMode } from '../lib/mode';
+import { jivaAppUrl } from '../lib/apps';
 import { cx } from '../lib/cx';
 import { timeAgo, useNow } from '../lib/time';
 import { Spinner } from './Button';
@@ -11,10 +12,10 @@ export function JivaLogo({ size = 30, withWordmark = true, className }: { size?:
   return (
     <span className={cx('inline-flex items-center gap-2', className)}>
       <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-        <rect width="32" height="32" rx="9" fill="var(--color-brand-700)" />
+        <rect width="32" height="32" rx="9" fill="var(--logo-fill)" />
         <path d="M6.5 17h4.2l2.6-6.2 4.6 11.4 2.6-5.2h5" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-      {withWordmark && <span className="text-[17px] font-bold tracking-[0.06em] text-ink-900">JIVA</span>}
+      {withWordmark && <span className="text-[17px] font-bold tracking-[0.08em] text-ink-900">JIVA</span>}
     </span>
   );
 }
@@ -32,11 +33,23 @@ export interface AppHeaderProps {
 }
 
 export function AppHeader({ app, context, center, actions, mainId = 'main' }: AppHeaderProps) {
+  // Publish the header's height (it wraps on narrow screens) so sticky page sections sit right below it.
+  const ref = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const apply = () => document.documentElement.style.setProperty('--jiva-header-h', `${Math.round(el.getBoundingClientRect().height)}px`);
+    apply();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   return (
-    <header className="sticky top-0 z-30 border-b border-ink-200 bg-white">
+    <header ref={ref} className="sticky top-0 z-30 border-b border-ink-200 bg-surface">
       <a
         href={`#${mainId}`}
-        className="sr-only z-50 rounded-lg bg-brand-700 px-3 py-2 text-sm font-semibold text-white focus:not-sr-only focus:absolute focus:left-3 focus:top-2"
+        className="sr-only z-50 rounded-lg jiva-fill-primary px-3 py-2 text-sm font-semibold focus:not-sr-only focus:absolute focus:left-3 focus:top-2"
       >
         Skip to content
       </a>
@@ -45,7 +58,7 @@ export function AppHeader({ app, context, center, actions, mainId = 'main' }: Ap
           <JivaLogo />
           <span className="hidden h-6 w-px bg-ink-200 sm:block" aria-hidden="true" />
           <div className="min-w-0 leading-tight">
-            <div className="truncate text-[15px] font-semibold text-ink-900">{app}</div>
+            <div className="truncate text-[15px] font-semibold tracking-[-0.01em] text-ink-900">{app}</div>
             {context && <div className="truncate text-xs text-ink-500">{context}</div>}
           </div>
         </div>
@@ -85,7 +98,7 @@ export function DemoBadge({ detail = 'Synthetic hospitals, simulated responses a
   return (
     <span
       title={detail}
-      className={cx('inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-full bg-warn-50 px-2.5 text-xs font-semibold text-warn-800 ring-1 ring-inset ring-warn-200', className)}
+      className={cx('inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-full bg-info-50 px-2.5 text-xs font-semibold text-info-800 ring-1 ring-inset ring-info-200', className)}
     >
       <Icon name="info" size={13} strokeWidth={2} />
       Demo data
@@ -104,6 +117,27 @@ export function ModeBadge({ apiUrl, detail, className }: { apiUrl: string; detai
   return <DemoBadge detail={detail} className={className} />;
 }
 
+/**
+ * DEMO ONLY: the way back to the demonstration portal. Rendered only once the server confirms DEMO mode —
+ * an operational screen has no portal to return to. A plain link: it grants nothing and keeps no persona.
+ */
+export function DemoPortalLink({ apiUrl, className }: { apiUrl: string; className?: string }) {
+  const mode = useRuntimeMode(apiUrl);
+  if (mode !== 'DEMO') return null;
+  return (
+    <a
+      href={jivaAppUrl('demo')}
+      className={cx(
+        'inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-full bg-surface pl-1.5 pr-2.5 text-xs font-semibold text-ink-700 ring-1 ring-inset ring-ink-200 transition-colors duration-150 hover:text-ink-900 hover:ring-ink-300',
+        className,
+      )}
+    >
+      <Icon name="chevronLeft" size={14} />
+      Demo portal
+    </a>
+  );
+}
+
 export interface PersonaOption {
   value: string;
   label: string;
@@ -112,7 +146,7 @@ export interface PersonaOption {
 /** DEMO ONLY: switch the persona this screen acts as (reloads with ?as=…). */
 export function PersonaSelect({ value, options, className }: { value: string; options: PersonaOption[]; className?: string }) {
   return (
-    <label className={cx('inline-flex h-7 items-center gap-1.5 rounded-full bg-white pl-2.5 pr-1 text-xs font-semibold text-ink-700 ring-1 ring-inset ring-ink-200', className)}>
+    <label className={cx('inline-flex h-7 min-w-0 max-w-full items-center gap-1.5 rounded-full bg-surface pl-2.5 pr-1 text-xs font-semibold text-ink-700 ring-1 ring-inset ring-ink-200', className)}>
       <Icon name="user" size={13} />
       <span className="sr-only">Demo persona</span>
       <select
@@ -122,7 +156,7 @@ export function PersonaSelect({ value, options, className }: { value: string; op
           url.searchParams.set('as', e.target.value);
           window.location.assign(url.toString());
         }}
-        className="h-6 cursor-pointer rounded-full bg-transparent pr-1 text-xs font-semibold text-ink-800 outline-none"
+        className="h-6 min-w-0 max-w-full cursor-pointer truncate rounded-full bg-transparent pr-1 text-xs font-semibold text-ink-800 outline-none"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>

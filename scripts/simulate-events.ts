@@ -99,7 +99,7 @@ async function runEmergencyScenario() {
       timestamp: new Date().toISOString(),
       source: { type: 'ambulance', id: a.ambulanceId },
       version: '1.0',
-      payload: {
+      payload: { source: 'SIMULATED',
         ambulanceId: a.ambulanceId,
         coordinates: a.currentLocation
       }
@@ -151,7 +151,7 @@ async function runEmergencyScenario() {
     timestamp: new Date().toISOString(),
     source: { type: 'ambulance', id: ambulanceId },
     version: '1.0',
-    payload: {
+    payload: { source: 'SIMULATED',
       ambulanceId,
       coordinates: { latitude: 13.0500, longitude: 77.5960 },
       speedKmh: 45,

@@ -2,22 +2,34 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { cx } from '../lib/cx';
 import { Icon, type IconName } from './Icon';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'danger-soft' | 'warn-soft' | 'ok-soft';
+export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'ghost' | 'danger' | 'critical' | 'danger-soft' | 'warn-soft' | 'ok-soft';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
+/**
+ * One visual weight per role:
+ *   primary   — the one most important action of the current workflow (green)
+ *   secondary — useful, less important (white, warm outline)
+ *   tertiary  — low-emphasis text action (green text)
+ *   ghost     — toolbar / dismiss actions (neutral text)
+ *   danger    — confirms a destructive action (red)
+ *   critical  — an emergency action (deep red, strongest weight); always explicit about its effect
+ *   *-soft    — consequential choices shown side by side with a primary (outlined in their tone)
+ */
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-brand-700 text-white shadow-xs hover:bg-brand-800 active:bg-brand-900',
-  secondary: 'bg-white text-ink-800 shadow-xs ring-1 ring-inset ring-ink-200 hover:bg-ink-50 hover:ring-ink-300',
-  ghost: 'text-ink-700 hover:bg-ink-100 hover:text-ink-900',
-  danger: 'bg-danger-600 text-white shadow-xs hover:bg-danger-700 active:bg-danger-800',
-  'danger-soft': 'bg-white text-danger-700 shadow-xs ring-1 ring-inset ring-danger-200 hover:bg-danger-50',
-  'warn-soft': 'bg-white text-warn-800 shadow-xs ring-1 ring-inset ring-warn-200 hover:bg-warn-50',
-  'ok-soft': 'bg-white text-brand-800 shadow-xs ring-1 ring-inset ring-brand-200 hover:bg-brand-50',
+  primary: 'jiva-fill-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_1px_2px_rgb(32_40_32/0.18)] hover:jiva-fill-primary-hover hover:shadow-e2',
+  secondary: 'bg-surface text-ink-800 shadow-xs ring-1 ring-inset ring-ink-300 hover:bg-ink-50 hover:text-ink-900 hover:ring-ink-400 active:bg-ink-100',
+  tertiary: 'text-brand-700 hover:bg-brand-50 hover:text-brand-800 active:bg-brand-100',
+  ghost: 'text-ink-700 hover:bg-ink-100 hover:text-ink-900 active:bg-ink-200',
+  danger: 'jiva-fill-danger shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_1px_2px_rgb(32_40_32/0.18)] hover:jiva-fill-danger-hover hover:shadow-e2',
+  critical: 'jiva-fill-critical shadow-[inset_0_1px_0_rgb(255_255_255/0.16),0_2px_8px_rgb(168_47_50/0.30)] hover:jiva-fill-critical-hover',
+  'danger-soft': 'bg-surface text-danger-700 shadow-xs ring-1 ring-inset ring-danger-200 hover:bg-danger-50 hover:ring-danger-300',
+  'warn-soft': 'bg-surface text-warn-800 shadow-xs ring-1 ring-inset ring-warn-200 hover:bg-warn-50 hover:ring-warn-300',
+  'ok-soft': 'bg-surface text-brand-800 shadow-xs ring-1 ring-inset ring-brand-200 hover:bg-brand-50 hover:ring-brand-300',
 };
 
 const SIZES: Record<ButtonSize, string> = {
   sm: 'h-8 gap-1.5 rounded-lg px-3 text-[13px]',
-  md: 'h-10 gap-2 rounded-lg px-4 text-sm',
+  md: 'h-10 gap-2 rounded-[10px] px-4 text-sm',
   lg: 'h-12 gap-2 rounded-xl px-5 text-[15px]',
 };
 
@@ -51,7 +63,7 @@ export const JivaButton = React.forwardRef<HTMLButtonElement, JivaButtonProps>(f
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cx(
-        'inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap font-semibold transition-[background-color,box-shadow,color,transform] duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 disabled:active:scale-100',
+        'inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap font-semibold tracking-[-0.005em] transition-[background-color,box-shadow,color,transform] duration-150 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:saturate-50 disabled:shadow-none disabled:active:scale-100',
         VARIANTS[variant],
         SIZES[size],
         block && 'w-full',

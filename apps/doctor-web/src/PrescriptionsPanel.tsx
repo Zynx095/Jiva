@@ -21,6 +21,7 @@ import {
 } from '@jiva/ui/src';
 import { MedicationPicker } from './MedicationPicker';
 import { CommandError, Field, inputClass, sendCommand, useIdempotencyKey } from './ui';
+import { useUnsaved } from './unsaved';
 
 interface Form {
   medication: string;
@@ -75,7 +76,7 @@ export function PrescriptionsPanel({ encounterId, list, onChanged }: { encounter
         subtitle={drafts ? `${drafts} draft${drafts === 1 ? '' : 's'} awaiting your authorisation` : 'The patient sees authorised prescriptions only (not drafts or your change notes)'}
         actions={
           !creating && (
-            <JivaButton size="sm" icon="plus" onClick={() => setCreating(true)}>
+            <JivaButton size="sm" variant="primary" icon="plus" onClick={() => setCreating(true)}>
               New prescription
             </JivaButton>
           )
@@ -194,6 +195,8 @@ function PrescriptionForm({ encounterId, base, onSaved, onRefresh, onCancel }: {
   const [attest, setAttest] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const keyFor = useIdempotencyKey();
+  const [initial] = useState(() => JSON.stringify(base ? formOf(base.current) : EMPTY));
+  useUnsaved(JSON.stringify(f) !== initial || (!base && chosen !== null) || (!!base && reason !== (base.current.status === 'DRAFT' ? 'Draft revised' : '')) || attest, base ? 'prescription changes' : 'a new prescription');
   const id = (k: string) => `rx-${base?.prescriptionId ?? 'new'}-${k}`;
   const set = (k: keyof Form) => (e: { target: { value: string } }) => setF((prev) => ({ ...prev, [k]: e.target.value }));
   const draftEdit = base?.current.status === 'DRAFT';
@@ -362,6 +365,7 @@ function ReasonForm({ rx, encounterId, kind, onSaved, onRefresh, onCancel }: { r
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const keyFor = useIdempotencyKey();
+  useUnsaved(reason.trim() !== '', kind === 'stop' ? 'a reason for stopping a medication' : 'a reason for discarding a draft');
   const id = `${kind}-${rx.prescriptionId}`;
   const stop = kind === 'stop';
   return (

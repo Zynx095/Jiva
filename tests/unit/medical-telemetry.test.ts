@@ -21,7 +21,10 @@ run('Phase 10 — medical telemetry', async () => {
     ok(!valid({ type: 'SPO2', value: 101, unit: '%', observedAt: at(0) }), 'SpO2 above 100');
     ok(!valid({ type: 'TEMPERATURE', value: 98.6, unit: 'degF', observedAt: at(0) }), 'wrong unit');
     ok(!valid({ type: 'BLOOD_PRESSURE', value: 80, secondaryValue: 90, unit: 'mmHg', observedAt: at(0) }), 'systolic below diastolic');
-    ok(!valid({ type: 'BLOOD_GLUCOSE', value: 5, unit: 'mmol/L', observedAt: at(0) }), 'unknown type');
+    ok(!valid({ type: 'BLOOD_GLUCOSE', value: 5, unit: 'mmol/L', observedAt: at(0) }), 'glucose only in mg/dL');
+    ok(valid({ type: 'BLOOD_GLUCOSE', value: 142, unit: 'mg/dL', observedAt: at(0) }), 'blood glucose in mg/dL');
+    ok(!valid({ type: 'BLOOD_GLUCOSE', value: 2, unit: 'mg/dL', observedAt: at(0) }) && !valid({ type: 'BLOOD_GLUCOSE', value: 1200, unit: 'mg/dL', observedAt: at(0) }), 'implausible glucose (entry error) refused');
+    ok(!valid({ type: 'PULSE_PRESSURE', value: 40, unit: 'mmHg', observedAt: at(0) }), 'unknown type');
     ok(!RecordTelemetryCommandSchema.safeParse({ clientRequestId: '6f1c4e1e-8a51-4b3f-9a4c-0d6f3d2b1a90', measurements: [{ type: 'SPO2', value: 97, unit: '%', observedAt: at(0), source: 'MEDICAL_DEVICE' }] }).success, 'a client cannot claim a source');
     ok(!RecordTelemetryCommandSchema.safeParse({ clientRequestId: '6f1c4e1e-8a51-4b3f-9a4c-0d6f3d2b1a90', source: 'MEDICAL_DEVICE', measurements: [{ type: 'SPO2', value: 97, unit: '%', observedAt: at(0) }] }).success, '…not even at the top level');
   });

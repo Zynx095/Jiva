@@ -167,6 +167,7 @@ const INTEGRATION_TEXT: Record<string, string> = {
   hospitalCapacityFeeds: 'Hospital capacity feeds',
   hospitalStaffDirectory: 'Hospital staff directory',
   medicalDevices: 'Medical devices',
+  ambulanceGps: 'Ambulance GPS',
   documentObjectStorage: 'Production document storage',
 };
 
@@ -188,7 +189,10 @@ function DataProvenance({ p }: { p: ProvenanceReport }) {
           </DataRow>
           <DataRow label="Directory">Public listings · not connected to JIVA</DataRow>
           <DataRow label="Clinicians">{p.datasets.clinicians.count ? `${p.datasets.clinicians.count} · ${p.datasets.clinicians.dataStatus === 'SYNTHETIC_DEMO' ? 'synthetic roster' : p.datasets.clinicians.dataStatus}` : 'None loaded'}</DataRow>
-          <DataRow label="Vital signs">{p.providers.telemetry.simulator ? 'Clinician entry + labelled simulator' : 'Clinician entry only'} · no medical devices</DataRow>
+          <DataRow label="Vital signs">{p.providers.telemetry.simulator ? 'Entered by care team and crew + labelled simulator' : 'Entered by care team and crew'} · no medical devices</DataRow>
+          {p.providers.positions && (
+            <DataRow label="Ambulance positions">{p.providers.positions.simulator ? 'Set by the crew + labelled simulator' : 'Set by the crew'} · no GPS feed</DataRow>
+          )}
         </dl>
         <ul className="flex flex-wrap gap-1.5 pt-1">
           {Object.entries(p.liveIntegrations).map(([k, v]) => (

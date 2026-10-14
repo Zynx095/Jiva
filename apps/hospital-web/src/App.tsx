@@ -5,6 +5,7 @@ import {
   AsyncButton,
   CardHeader,
   ConnectionPill,
+  DemoPortalLink,
   ModeBadge,
   EmptyState,
   Icon,
@@ -31,6 +32,9 @@ import {
   formatKm,
   hospitalShortName,
   minutesFromSeconds,
+  aiOutputLabel,
+  positionSource,
+  positionUpdateText,
   msUntil,
   timeAgo,
   timeUntil,
@@ -91,7 +95,7 @@ export default function App() {
       } else if (e.eventType === 'route.recalculated' && p.oldHospitalId === me && p.newHospitalId !== me) {
         toast.show({ title: `${String(p.ambulanceId)} rerouted elsewhere`, description: 'It is no longer heading to your hospital.', tone: 'warn', icon: 'route', groupKey: `dest:${String(p.ambulanceId)}` });
       } else if (e.eventType === 'ambulance.arrived' && p.hospitalId === me && p.basis !== 'HOSPITAL_CONFIRMED') {
-        toast.show({ title: `${String(p.ambulanceId)} is at your hospital`, description: `GPS places ${String(p.caseId ?? 'the patient')} at your hospital. Record the arrival when the patient is with your team.`, tone: 'ok', icon: 'pin', groupKey: `arr:${String(p.caseId ?? p.ambulanceId)}` });
+        toast.show({ title: `${String(p.ambulanceId)} is at your hospital`, description: `The ambulance's position places ${String(p.caseId ?? 'the patient')} at your hospital. Record the arrival when the patient is with your team.`, tone: 'ok', icon: 'pin', groupKey: `arr:${String(p.caseId ?? p.ambulanceId)}` });
       } else if (e.eventType === 'encounter.arrival.recorded' && p.hospitalId === me) {
         toast.show({ title: `Arrival recorded · ${String(p.caseId)}`, description: 'Record the handover when the crew hands the patient over.', tone: 'ok', icon: 'hospital', groupKey: `arr:${String(p.caseId)}` });
       } else if (e.eventType === 'encounter.handover.recorded' && p.hospitalId === me) {
@@ -167,6 +171,22 @@ export default function App() {
     return error;
   };
 
+  /** Report one service's status by hand; the other services keep their current values. */
+  const reportServiceStatus = async (key: ServiceKey, status: CapacityValue) => {
+    const op = hs.hospital?.operationalState;
+    const value = (k: ServiceKey) => (k === key ? status : ((op?.[k] as CapacityValue | undefined) ?? 'UNKNOWN'));
+    const error = await sendEvent({
+      eventId: crypto.randomUUID(),
+      eventType: 'hospital.capacity.updated',
+      timestamp: new Date().toISOString(),
+      source: { type: 'hospital', id: hs.hospitalId },
+      version: '1.0',
+      payload: { hospitalId: hs.hospitalId, emergencyStatus: value('emergency'), traumaStatus: value('trauma'), icuStatus: value('icu'), ventilatorStatus: value('ventilator') },
+    });
+    if (!error) void hs.refresh();
+    return error;
+  };
+
   const short = hs.hospital ? hospitalShortName(hs.hospital.displayName, hs.hospital.address?.locality) : '';
   const visibleConfirmations = confirmations.filter((c) => now - Date.parse(c.at) < 45_000);
 
@@ -179,6 +199,7 @@ export default function App() {
           <>
             <PersonaSelect value={PERSONA} options={PERSONAS} />
             <ConnectionPill state={hs.connection} lastSync={hs.lastSync} />
+            <DemoPortalLink apiUrl={API_URL} />
             <ModeBadge apiUrl={API_URL} detail="Simulated hospital: responses you send here are demo data, not real capacity." />
           </>
         }
@@ -265,7 +286,7 @@ export default function App() {
               <p className="text-sm text-ink-500">Answers sent for your hospital — from this screen or from the demo controls — are listed here.</p>
             ) : (
               <ul className="divide-y divide-ink-100 rounded-xl bg-white ring-1 ring-ink-200">
-                {recentAnswers.slice(0, 8).map((e) => {
+                {recentAnswers.slice(0, 6).map((e) => {
                   const p = e.payload;
                   const status = String(p.status);
                   const valid = typeof p.validUntil === 'string' ? p.validUntil : undefined;
@@ -281,8 +302,13 @@ export default function App() {
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         <JivaStatus meta={acceptanceStatus(status)} />
-                        {valid && (status === 'ACCEPTED' || status === 'LIMITED') && (
-                          <span className="text-xs text-ink-500">{msUntil(valid, now) > 0 ? `valid ${timeUntil(valid, now)}` : 'expired'}</span>
+                        {encounterCases.has(String(p.caseId)) ? (
+                          <span className="text-xs text-ink-500">Patient arrived</span>
+                        ) : (
+                          valid &&
+                          (status === 'ACCEPTED' || status === 'LIMITED') && (
+                            <span className="text-xs text-ink-500">{msUntil(valid, now) > 0 ? `valid ${timeUntil(valid, now)}` : 'expired'}</span>
+                          )
                         )}
                       </div>
                     </li>
@@ -294,8 +320,8 @@ export default function App() {
         </div>
 
         <aside className="min-w-0 space-y-6" aria-label="Hospital status and briefs">
-          <FacilityPanel hospital={hs.hospital} />
-          <HandoffPanel handoffs={handoffs} />
+          <FacilityPanel hospital={hs.hospital} onReport={reportServiceStatus} />
+          <HandoffPanel handoffs={handoffs} onTheWay={new Set(incoming.map((a) => a.assignedPatient ?? ''))} />
           <ActivityPanel events={hs.events} name={name} />
         </aside>
       </main>
@@ -350,12 +376,12 @@ function StatusStrip({ hospital, now, onUnavailable, onAvailable }: { hospital: 
         ))}
         <span className="hidden h-6 w-px bg-ink-200 md:block" aria-hidden="true" />
         <div className="flex items-center gap-2">
-          <span className="text-[13px] text-ink-500">Your current answer</span>
+          <span className="text-[13px] text-ink-500">Latest answer</span>
           <JivaStatus meta={acc} suffix={op?.acceptanceCaseId && op.acceptance !== 'UNKNOWN' ? ` · ${op.acceptanceCaseId}` : undefined} />
           {live && op?.expiresAt && <span className="text-xs text-ink-500">valid {timeUntil(op.expiresAt, now)}</span>}
         </div>
         <p className="text-xs text-ink-500">{op?.capacityAsOf ? `Status reported ${timeAgo(op.capacityAsOf, now)}` : 'Seed status — not a live report'}</p>
-        <div className="ml-auto flex gap-2">
+        <div className="ml-auto flex flex-wrap gap-2">
           {op?.emergency === 'UNAVAILABLE' ? (
             <AsyncButton size="sm" variant="ok-soft" icon="checkCircle" pendingText="Reporting…" onAction={onAvailable}>
               Report ED available
@@ -414,7 +440,9 @@ function RequestCard({ req, patient, now, onRespond }: { req: AcceptanceRequest;
             <h3 id={`req-${req.requestId}`} className="mt-0.5 text-xl font-semibold tracking-[-0.01em] text-ink-900">
               {req.caseId}
             </h3>
-            <p className="text-xs text-ink-500">Referral {req.requestId} · your answer is tied to this case only</p>
+            <p className="text-xs text-ink-500">
+              Requested {formatClock(req.requestedAt)} ({timeAgo(req.requestedAt, now)}) · referral {req.requestId} · your answer applies to this case only
+            </p>
           </div>
           <div className={cx('rounded-xl px-3 py-2 text-right ring-1 ring-inset', expired ? 'bg-ink-50 ring-ink-200' : urgent ? 'bg-danger-50 ring-danger-200' : 'bg-warn-50 ring-warn-200')} role="timer" aria-live="off">
             <p className={cx('text-xs font-semibold', expired ? 'text-ink-600' : urgent ? 'text-danger-700' : 'text-warn-800')}>{expired ? 'Response window closed' : 'Answer within'}</p>
@@ -449,13 +477,13 @@ function RequestCard({ req, patient, now, onRespond }: { req: AcceptanceRequest;
             <>
               <div className="grid gap-2 sm:grid-cols-3">
                 <AsyncButton size="lg" variant="primary" icon="checkCircle" disabled={expired} pendingText="Sending…" onAction={send('ACCEPTED', [])}>
-                  Accept
+                  Accept emergency
                 </AsyncButton>
                 <JivaButton size="lg" variant="warn-soft" icon="half" disabled={expired} onClick={() => pick('limited')}>
                   Accept with limits
                 </JivaButton>
                 <JivaButton size="lg" variant="danger-soft" icon="xCircle" disabled={expired} onClick={() => pick('rejected')}>
-                  Decline
+                  Decline request
                 </JivaButton>
               </div>
               <p className="mt-2.5 text-xs text-ink-500">
@@ -580,13 +608,13 @@ function IncomingCard({ a, patient, now, hasBrief, action }: { a: AmbulanceState
       </div>
       <div className="mt-3 flex items-end justify-between gap-3">
         <div>
-          <p className="text-xs text-ink-500">{arrived ? 'At your hospital (GPS)' : 'Arrives in'}</p>
+          <p className="text-xs text-ink-500">{arrived ? 'At your hospital (by position)' : 'Arrives in'}</p>
           <p className="text-2xl font-semibold tabular-nums tracking-[-0.02em] text-ink-900">{arrived ? 'Now' : route ? `${minutesFromSeconds(route.durationSeconds)} min` : '—'}</p>
         </div>
         <div className="text-right text-xs text-ink-500">
           <p className="font-semibold text-ink-700">{a.ambulanceId}</p>
           <p>{route ? `${formatKm(route.distanceMeters)}${route.synthetic ? ' · synthetic route' : ''}` : 'Route pending'}</p>
-          <p>{a.locationAsOf ? `GPS ${timeAgo(a.locationAsOf, now)}` : 'No GPS fix yet'}</p>
+          <p title={positionSource(a.locationSource).hint}>{positionUpdateText(a, now, 'No position update yet')}</p>
         </div>
       </div>
       {patient && patient.careRequirements.length > 0 && <p className="mt-2 text-xs text-ink-600">Needs: {patient.careRequirements.map((c) => capabilityLabel(c)).join(', ')}</p>}
@@ -597,7 +625,7 @@ function IncomingCard({ a, patient, now, hasBrief, action }: { a: AmbulanceState
       )}
       {action ? (
         <div className="mt-3 flex items-center justify-between gap-2 border-t border-ink-100 pt-3">
-          <span className="text-xs text-ink-500">{arrived ? 'GPS is evidence only — confirm the arrival.' : 'When the patient reaches your department:'}</span>
+          <span className="text-xs text-ink-500">{arrived ? 'A position is evidence only — confirm the arrival.' : 'When the patient reaches your department:'}</span>
           {action}
         </div>
       ) : null}
@@ -616,8 +644,20 @@ const SERVICES = [
   { key: 'ventilator', label: 'Ventilators' },
 ] as const;
 
-function FacilityPanel({ hospital }: { hospital: HospitalState | null }) {
+/** Services whose status a coordinator can report through JIVA (the capacity event carries these four). */
+type ServiceKey = 'emergency' | 'icu' | 'trauma' | 'ventilator';
+type CapacityValue = 'AVAILABLE' | 'LIMITED' | 'UNAVAILABLE' | 'UNKNOWN';
+const REPORTABLE: ReadonlySet<string> = new Set<ServiceKey>(['emergency', 'icu', 'trauma', 'ventilator']);
+const CAPACITY_CHOICES: Array<{ value: CapacityValue; label: string }> = [
+  { value: 'AVAILABLE', label: 'Available' },
+  { value: 'LIMITED', label: 'Limited' },
+  { value: 'UNAVAILABLE', label: 'Unavailable' },
+  { value: 'UNKNOWN', label: 'Unknown' },
+];
+
+function FacilityPanel({ hospital, onReport }: { hospital: HospitalState | null; onReport: (key: ServiceKey, status: CapacityValue) => Promise<string | null> }) {
   const [service, setService] = useState<(typeof SERVICES)[number] | null>(null);
+  const [choice, setChoice] = useState<CapacityValue | null>(null);
   if (!hospital) {
     return (
       <JivaCard>
@@ -651,6 +691,49 @@ function FacilityPanel({ hospital }: { hospital: HospitalState | null }) {
               <dd className="font-medium text-ink-900">{op.capacityAsOf ? formatClock(op.capacityAsOf) : 'Seed value'}</dd>
             </div>
           </dl>
+          {REPORTABLE.has(service.key) ? (
+            <fieldset className="space-y-2">
+              <legend className="text-xs font-semibold text-ink-700">Report the current status (entered manually — JIVA has no live bed feed)</legend>
+              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={`${service.label} status`}>
+                {CAPACITY_CHOICES.map((c) => {
+                  const current = (choice ?? op[service.key]) === c.value;
+                  return (
+                    <button
+                      key={c.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={current}
+                      onClick={() => setChoice(c.value)}
+                      className={cx(
+                        'inline-flex h-8 items-center rounded-full px-3 text-[13px] font-semibold ring-1 ring-inset transition-colors duration-150',
+                        current ? 'bg-ink-900 text-white ring-ink-900' : 'bg-white text-ink-700 ring-ink-300 hover:bg-ink-50',
+                      )}
+                    >
+                      {c.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <AsyncButton
+                size="sm"
+                variant="primary"
+                icon="check"
+                disabled={!choice || choice === op[service.key]}
+                pendingText="Reporting…"
+                successText="Reported"
+                onAction={async () => {
+                  const err = choice ? await onReport(service.key as ServiceKey, choice) : null;
+                  if (!err) setChoice(null);
+                  return err;
+                }}
+              >
+                Report {service.label.toLowerCase()} status
+              </AsyncButton>
+              <p className="text-xs text-ink-500">Other services keep their current status. An unavailable emergency department reroutes ambulances heading here.</p>
+            </fieldset>
+          ) : (
+            <p className="text-xs text-ink-500">This service's status cannot be reported through JIVA yet.</p>
+          )}
           <p className="rounded-lg bg-ink-50 p-3 text-xs text-ink-600 ring-1 ring-inset ring-ink-200">
             Wards, rooms and beds stay inside your hospital systems. JIVA only receives service-level flags and your answers to requests — by design.
           </p>
@@ -662,7 +745,14 @@ function FacilityPanel({ hospital }: { hospital: HospitalState | null }) {
         <ul className="mt-3 divide-y divide-ink-100">
           {SERVICES.map((s) => (
             <li key={s.key}>
-              <button type="button" onClick={() => setService(s)} className="flex w-full items-center justify-between gap-3 py-2.5 text-left hover:bg-ink-25">
+              <button
+                type="button"
+                onClick={() => {
+                  setService(s);
+                  setChoice(null);
+                }}
+                className="flex w-full items-center justify-between gap-3 py-2.5 text-left hover:bg-ink-25"
+              >
                 <span className="min-w-0">
                   <span className="block text-[13px] font-semibold text-ink-900">{s.label}</span>
                   <span className="block text-xs text-ink-500">{hospital.capabilities?.[s.key] ? 'Listed' : 'Not listed'}</span>
@@ -680,60 +770,97 @@ function FacilityPanel({ hospital }: { hospital: HospitalState | null }) {
   );
 }
 
-function HandoffPanel({ handoffs }: { handoffs: JivaEvent[] }) {
+/**
+ * Automatic handoff briefs (template or AI, advisory). Briefs for patients still on the way come first; briefs for patients who
+ * already arrived are kept under "Earlier briefs". The brief restates the crew's report — it is shown as
+ * neutral text, never styled as an alarm or a diagnosis.
+ */
+function HandoffPanel({ handoffs, onTheWay }: { handoffs: JivaEvent[]; onTheWay: Set<string> }) {
+  const latest = new Map<string, JivaEvent>();
+  for (const h of handoffs) {
+    const id = String(h.payload.patientId);
+    if (!latest.has(id)) latest.set(id, h); // newest first
+  }
+  const all = [...latest.values()];
+  const current = all.filter((h) => onTheWay.has(String(h.payload.patientId)));
+  const earlier = all.filter((h) => !onTheWay.has(String(h.payload.patientId)));
   return (
     <JivaCard>
-      <CardHeader title="Handoff briefs" icon="brief" subtitle="AI-generated · advisory only" />
-      {handoffs.length === 0 ? (
+      <CardHeader title="Handoff briefs" icon="brief" subtitle={`${aiOutputLabel(all[0]?.payload.generator).label} · not a diagnosis`} />
+      {all.length === 0 ? (
         <p className="mt-3 text-[13px] text-ink-500">A brief appears here when a patient is routed to your hospital.</p>
       ) : (
-        <ul className="mt-3 space-y-3">
-          {handoffs.slice(0, 4).map((h) => {
-            const p = h.payload;
-            const alerts = Array.isArray(p.criticalAlerts) ? (p.criticalAlerts as string[]) : [];
-            const preps = Array.isArray(p.recommendedPreparations) ? (p.recommendedPreparations as string[]) : [];
-            return (
-              <li key={h.eventId} className="rounded-xl bg-ink-25 p-3 ring-1 ring-inset ring-ink-200">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[13px] font-semibold text-ink-900">{String(p.patientId)}</p>
-                  <span className="text-xs text-ink-500">{formatClock(h.timestamp)}</span>
-                </div>
-                <p className="mt-1 text-[13px] text-ink-700">{String(p.summary ?? '')}</p>
-                {alerts.length > 0 && (
-                  <ul className="mt-2 space-y-0.5 text-xs text-danger-700">
-                    {alerts.map((a) => (
-                      <li key={a} className="flex items-center gap-1">
-                        <Icon name="alertTriangle" size={12} />
-                        {a}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {preps.length > 0 && (
-                  <ul className="mt-1.5 space-y-0.5 text-xs text-ink-700">
-                    {preps.map((a) => (
-                      <li key={a} className="flex items-center gap-1">
-                        <Icon name="check" size={12} />
-                        {a}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+        <>
+          {current.length === 0 ? (
+            <p className="mt-3 text-[13px] text-ink-500">No patient is on the way right now.</p>
+          ) : (
+            <ul className="mt-3 space-y-3">
+              {current.map((h) => (
+                <Brief key={h.eventId} h={h} />
+              ))}
+            </ul>
+          )}
+          {earlier.length > 0 && (
+            <details className="mt-3 text-[13px]">
+              <summary className="font-semibold text-ink-600 hover:text-ink-900">Earlier briefs ({earlier.length}) · patients already arrived</summary>
+              <ul className="mt-2 space-y-3">
+                {earlier.map((h) => (
+                  <Brief key={h.eventId} h={h} />
+                ))}
+              </ul>
+            </details>
+          )}
+        </>
       )}
     </JivaCard>
   );
 }
 
+function Brief({ h }: { h: JivaEvent }) {
+  const p = h.payload;
+  const points = Array.isArray(p.criticalAlerts) ? (p.criticalAlerts as string[]) : [];
+  const preps = Array.isArray(p.recommendedPreparations) ? (p.recommendedPreparations as string[]) : [];
+  return (
+    <li className="rounded-xl bg-ink-50 p-3 ring-1 ring-inset ring-ink-200">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[13px] font-semibold text-ink-900">{String(p.patientId)}</p>
+        <span className="text-xs text-ink-500">{formatClock(h.timestamp)}</span>
+      </div>
+      <p className="mt-1 text-[13px] text-ink-700">{String(p.summary ?? '')}</p>
+      <p className="mt-0.5 text-[11px] font-medium text-ink-500" title={aiOutputLabel(p.generator).hint}>
+        {aiOutputLabel(p.generator).label}
+      </p>
+      {points.length > 0 && (
+        <ul className="mt-2 space-y-0.5 text-xs text-ink-700">
+          {points.map((a) => (
+            <li key={a} className="flex items-start gap-1.5">
+              <Icon name="info" size={12} className="mt-0.5 shrink-0 text-ink-500" />
+              {a}
+            </li>
+          ))}
+        </ul>
+      )}
+      {preps.length > 0 && (
+        <ul className="mt-1.5 space-y-0.5 text-xs text-ink-700">
+          {preps.map((a) => (
+            <li key={a} className="flex items-start gap-1.5">
+              <Icon name="check" size={12} className="mt-0.5 shrink-0 text-ink-500" />
+              {a}
+            </li>
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
+
 function ActivityPanel({ events, name }: { events: JivaEvent[]; name: (id: string) => string | undefined }) {
+  const [more, setMore] = useState(false);
   const items = useMemo<TimelineItem[]>(
     () =>
       events
         .filter((e) => e.eventType !== 'ai.handoff.generated')
-        .slice(0, 25)
+        .slice(0, 40)
         .map((e) => {
           const d = describeEvent(e, name, 'hospital');
           return {
@@ -752,7 +879,12 @@ function ActivityPanel({ events, name }: { events: JivaEvent[]; name: (id: strin
     <JivaCard>
       <CardHeader title="Activity" icon="activity" subtitle="Everything JIVA shared with your hospital" />
       <div className="mt-3">
-        <JivaTimeline items={items} dense detailsLabel="Evidence" empty={<p className="text-[13px] text-ink-500">No activity for your hospital yet.</p>} />
+        <JivaTimeline items={more ? items : items.slice(0, 10)} dense detailsLabel="Evidence" empty={<p className="text-[13px] text-ink-500">No activity for your hospital yet.</p>} />
+        {items.length > 10 && (
+          <JivaButton size="sm" variant="tertiary" icon={more ? 'chevronUp' : 'chevronDown'} onClick={() => setMore((v) => !v)}>
+            {more ? 'Show the latest only' : `Show ${items.length - 10} earlier updates`}
+          </JivaButton>
+        )}
       </div>
     </JivaCard>
   );

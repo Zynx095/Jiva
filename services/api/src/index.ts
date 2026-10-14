@@ -30,7 +30,8 @@ import {
 } from './stateEngines';
 import { initializeIntelligenceEngine, resetIntelligence, getAiStatus } from './intelligenceEngine';
 import { feasibilityShadow, feasibilityMode, decisionAuthority } from './feasibility';
-import { preloadData, stateStore, localStoreInstance } from './stateStore';
+import { preloadData, stateStore, localStoreInstance, patientsStore, ambulancesStore } from './stateStore';
+import { checkSubmissionState } from './submissionState';
 import { config } from '@jiva/config';
 import { DemoAuthProvider, CognitoAuthProvider, AuthContext } from '@jiva/auth';
 import { authenticateRequest } from './authVerification';
@@ -288,6 +289,11 @@ app.post('/api/events', async (req: AuthenticatedRequest, res) => {
     if (!verdict.ok) return res.status(verdict.status).json({ error: verdict.error, message: verdict.message });
   }
 
+  // State preconditions (shared with the AWS ingestion lambda): no second emergency for an open case, no
+  // dispatch of a unit that is attending another patient.
+  const state = await checkSubmissionState(event, { patient: id => patientsStore.get(id), ambulance: id => ambulancesStore.get(id) });
+  if (!state.ok) return res.status(state.status).json({ error: state.error, message: state.message });
+
   // Trust boundary: provenance is derived from the authenticated principal, never from the payload.
   const { duplicate } = await recordAndPublish(req.auth!, event);
   if (duplicate) {
@@ -389,6 +395,12 @@ io.on('connection', (socket) => {
 });
 
 ready.then(() => {
+  httpServer.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`[API] Fatal: port ${config.port} is already in use by another process. Stop it before restarting JIVA.`);
+      process.exit(1);
+    }
+  });
   httpServer.listen(config.port, () => {
     console.log(`[API] Server running on http://localhost:${config.port} in ${config.environment.toUpperCase()} config, ${runtimeMode()} mode${runtimeMode() === 'DEMO' ? ' (DEMO personas — not authentication)' : ''}`);
     if (runtimeMode() === 'DEMO' && process.env.JIVA_DEMO_ALLOW_REMOTE === 'true') console.warn('[API] WARNING: JIVA_DEMO_ALLOW_REMOTE=true — any device on this network can act as any demo persona, including admin.');

@@ -76,6 +76,12 @@ export const RecordArrivalCommandSchema = z.object({
 export const RecordHandoverCommandSchema = z.object({
   clientRequestId: ClientRequestIdSchema,
   handedOverAt: timestamp.optional(),
+  /**
+   * What was handed over besides the patient (belongings, who was informed, crew remarks). Stored with the
+   * encounter for the hospital team and the assigned clinician — never put on the event stream, never shown
+   * to the patient.
+   */
+  notes: boundedText(1000).optional(),
 }).strict();
 
 export const AssignDoctorCommandSchema = z.object({
@@ -223,6 +229,8 @@ export const MEASUREMENT_RULES = {
   BLOOD_PRESSURE: { unit: 'mmHg', min: 40, max: 300, secondaryMin: 20, secondaryMax: 200 },
   TEMPERATURE: { unit: 'degC', min: 25, max: 45 },
   RESPIRATORY_RATE: { unit: 'breaths/min', min: 2, max: 80 },
+  /** Capillary or venous glucose in mg/dL (the unit used in Indian practice). */
+  BLOOD_GLUCOSE: { unit: 'mg/dL', min: 10, max: 900 },
 } as const;
 
 const measurement = <T extends keyof typeof MEASUREMENT_RULES>(type: T) =>
@@ -250,11 +258,27 @@ export const MeasurementInputSchema = z.union([
   bloodPressure,
   measurement('TEMPERATURE'),
   measurement('RESPIRATORY_RATE'),
+  measurement('BLOOD_GLUCOSE'),
 ]);
 
 export const RecordTelemetryCommandSchema = z.object({
   clientRequestId: ClientRequestIdSchema,
   measurements: z.array(MeasurementInputSchema).min(1).max(20),
+}).strict();
+
+/**
+ * Correct a value the care team entered: either replace it (a corrected value of the same measurement, same
+ * time) or withdraw it as entered in error. The original is kept in the history with who, when and why;
+ * it is never edited in place.
+ */
+export const CorrectMeasurementCommandSchema = z.object({
+  clientRequestId: ClientRequestIdSchema,
+  reason: boundedText(300),
+  /** The corrected value (checked against the measurement type's rules); omit to withdraw the value. */
+  replacement: z.object({
+    value: z.number().finite(),
+    secondaryValue: z.number().finite().optional(),
+  }).strict().optional(),
 }).strict();
 
 /** Demo only: ask the simulated bedside monitor for one labelled, synthetic reading. */
@@ -272,7 +296,7 @@ export const UnavailableObservationSchema = z.object({
 
 const prehospitalFields = {
   measurements: z.array(MeasurementInputSchema).max(20).default([]),
-  unavailable: z.array(UnavailableObservationSchema).max(5).default([]),
+  unavailable: z.array(UnavailableObservationSchema).max(6).default([]),
   /** Free-text description of the symptoms (what the patient or bystanders report, what the crew sees). */
   symptomDescription: boundedText(1000).optional(),
   /** When the symptoms started, as reported. */
@@ -338,6 +362,7 @@ export const DeviceObservationBatchSchema = z.object({
 export type EmergencyIntakeCommand = z.infer<typeof EmergencyIntakeCommandSchema>;
 export type RecordArrivalCommand = z.infer<typeof RecordArrivalCommandSchema>;
 export type RecordHandoverCommand = z.infer<typeof RecordHandoverCommandSchema>;
+export type CorrectMeasurementCommand = z.infer<typeof CorrectMeasurementCommandSchema>;
 export type AssignDoctorCommand = z.infer<typeof AssignDoctorCommandSchema>;
 export type CreatePrescriptionCommand = z.infer<typeof CreatePrescriptionCommandSchema>;
 export type AmendPrescriptionCommand = z.infer<typeof AmendPrescriptionCommandSchema>;

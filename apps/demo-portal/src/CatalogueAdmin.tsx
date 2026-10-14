@@ -74,14 +74,14 @@ export function CatalogueAdmin({ onImported }: { onImported: () => void }) {
       <div className="mt-3 flex flex-wrap items-end gap-3">
         <label className="space-y-1 text-xs font-semibold text-ink-700">
           <span className="block">Catalogue</span>
-          <select className="h-9 rounded-lg bg-white px-2.5 text-sm ring-1 ring-inset ring-ink-200" value={kind} onChange={(e) => { setKind(e.target.value as Kind); setPreview(null); }}>
+          <select className="h-9 rounded-lg bg-surface px-2.5 text-sm ring-1 ring-inset ring-ink-200" value={kind} onChange={(e) => { setKind(e.target.value as Kind); setPreview(null); }}>
             <option value="medications">Medications</option>
             <option value="scan-assets">Sample documents (synthetic)</option>
           </select>
         </label>
         <label className="space-y-1 text-xs font-semibold text-ink-700">
           <span className="block">Format</span>
-          <select className="h-9 rounded-lg bg-white px-2.5 text-sm ring-1 ring-inset ring-ink-200" value={format} onChange={(e) => setFormat(e.target.value as Format)}>
+          <select className="h-9 rounded-lg bg-surface px-2.5 text-sm ring-1 ring-inset ring-ink-200" value={format} onChange={(e) => setFormat(e.target.value as Format)}>
             <option value="csv">CSV</option>
             <option value="json">JSON</option>
           </select>
@@ -92,7 +92,7 @@ export function CatalogueAdmin({ onImported }: { onImported: () => void }) {
         <AsyncButton size="sm" icon="arrowDown" onAction={() => exportFile('json')}>
           Load current as JSON
         </AsyncButton>
-        <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg bg-white px-3 text-[13px] font-semibold text-ink-800 ring-1 ring-inset ring-ink-200 hover:bg-ink-50">
+        <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg bg-surface px-3 text-[13px] font-semibold text-ink-800 ring-1 ring-inset ring-ink-200 hover:bg-ink-50">
           <Icon name="file" size={14} />
           Open a file…
           <input type="file" accept=".csv,.json,text/csv,application/json" className="sr-only" onChange={(e) => e.target.files?.[0] && void loadFile(e.target.files[0])} />
@@ -102,7 +102,7 @@ export function CatalogueAdmin({ onImported }: { onImported: () => void }) {
         <span className="block text-xs font-semibold text-ink-700">Import content ({content.length.toLocaleString()} / 90,000 characters)</span>
         <textarea
           aria-label="Catalogue import content"
-          className="h-40 w-full rounded-lg bg-white px-2.5 py-2 font-mono text-xs text-ink-900 ring-1 ring-inset ring-ink-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          className="h-40 w-full rounded-lg bg-surface px-2.5 py-2 font-mono text-xs text-ink-900 ring-1 ring-inset ring-ink-200 focus:outline-none focus:ring-2 focus:ring-warn-500"
           value={content}
           maxLength={90_000}
           onChange={(e) => {
@@ -183,7 +183,7 @@ export function CatalogueAdmin({ onImported }: { onImported: () => void }) {
           )}
           {preview.summary.changed > 0 && (
             <label className="flex items-center gap-2 text-[13px] text-ink-800">
-              <input type="checkbox" className="h-4 w-4 accent-amber-700" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} />
+              <input type="checkbox" className="h-4 w-4 accent-warn-700" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} />
               I confirm that {preview.summary.changed} existing entr{preview.summary.changed === 1 ? 'y' : 'ies'} will change (a new revision each; records that used an entry keep the revision they used).
             </label>
           )}

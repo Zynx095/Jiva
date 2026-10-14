@@ -17,6 +17,7 @@ import {
   type ReportRecord,
 } from '@jiva/ui/src';
 import { CommandError, Field, inputClass, sendCommand, useIdempotencyKey } from './ui';
+import { useUnsaved } from './unsaved';
 
 interface ReportDraft {
   category: string;
@@ -215,6 +216,8 @@ function ReportForm({ encounterId, base, documents, onSaved, onRefresh, onCancel
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const keyFor = useIdempotencyKey();
+  const [initial] = useState(() => JSON.stringify([d, attached]));
+  useUnsaved(JSON.stringify([d, attached]) !== initial || reason.trim() !== '', base ? 'report changes' : 'a new report');
   const id = (k: string) => `rpt-${base?.reportId ?? 'new'}-${k}`;
   const set = (k: keyof ReportDraft) => (e: { target: { value: string } }) => setD((prev) => ({ ...prev, [k]: e.target.value }));
   const final = !!base && isFinal(base);
@@ -292,7 +295,7 @@ function ReportForm({ encounterId, base, documents, onSaved, onRefresh, onCancel
       </div>
       <div className="flex flex-wrap gap-2">
         <AsyncButton variant="primary" icon="check" disabled={!ready} pendingText="Saving…" onAction={submit}>
-          {base ? 'Save' : 'Record report'}
+          {base ? 'Save report changes' : 'Save report'}
         </AsyncButton>
         <JivaButton variant="ghost" onClick={onCancel}>
           Cancel

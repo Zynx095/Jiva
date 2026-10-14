@@ -23,6 +23,7 @@ import {
 import { apiBlob, apiPutFile } from './api';
 import { SampleLibrary } from './SampleLibrary';
 import { CommandError, Field, inputClass, sendCommand } from './ui';
+import { useUnsaved } from './unsaved';
 
 const encPath = (encounterId: string) => `/api/encounters/${encodeURIComponent(encounterId)}/documents`;
 
@@ -76,10 +77,10 @@ export function DocumentsPanel({ encounterId, list, onChanged }: { encounterId: 
         actions={
           mode === 'none' && (
             <div className="flex flex-wrap gap-1.5">
-              <JivaButton size="sm" icon="plus" onClick={() => setMode('upload')}>
-                Upload
+              <JivaButton size="sm" variant="primary" icon="plus" onClick={() => setMode('upload')}>
+                Upload document
               </JivaButton>
-              <JivaButton size="sm" variant="warn-soft" icon="layers" onClick={() => setMode('samples')}>
+              <JivaButton size="sm" icon="layers" onClick={() => setMode('samples')}>
                 Sample library (demo)
               </JivaButton>
             </div>
@@ -244,6 +245,7 @@ function UploadForm({ encounterId, replaceable, replacing, onSaved, onRefresh, o
   const [error, setError] = useState<string | null>(null);
   const type = file ? documentTypeOf(file) : undefined;
   const problem = !file ? null : !type ? 'Accepted files: PDF, PNG, JPEG or DICOM.' : file.size === 0 ? 'The file is empty.' : file.size > MAX_DOCUMENT_BYTES ? `Files up to ${formatBytes(MAX_DOCUMENT_BYTES)}.` : null;
+  useUnsaved(!!file || title !== (target ? `${target.title} — new version` : '') || share, 'a document upload');
   const id = (k: string) => `doc-${encounterId}-${k}`;
   const kinds = useMemo(() => DOCUMENT_KINDS.filter((k) => !supersedes || k.category === category || (k.value === 'OTHER' && ['OTHER', 'PROCEDURE'].includes(category))), [supersedes, category]);
 

@@ -24,6 +24,7 @@ import {
   type DirectoryFacility,
   type MapFit,
   type MapFocus,
+  positionUpdateText,
 } from '@jiva/ui/src';
 import { gpsFreshness, hospitalFreshness, isOpenCase } from '../derive';
 import { useModel } from '../model';
@@ -291,7 +292,7 @@ function SelectionPopup({ onClose, onShowDetails }: { onClose: () => void; onSho
           {a.destinationHospital ? ` → ${m.name(a.destinationHospital) ?? a.destinationHospital}` : a.assignedPatient ? ' · awaiting destination' : ''}
           {r && a.status !== 'ARRIVED' ? ` · ${minutesFromSeconds(r.durationSeconds)} min` : ''}
         </p>
-        <p className="mt-0.5 text-xs text-ink-500">{a.locationAsOf ? `GPS ${timeAgo(a.locationAsOf, m.now)}` : gpsFreshness(a, m.now).text}</p>
+        <p className="mt-0.5 text-xs text-ink-500">{a.locationAsOf ? positionUpdateText(a, m.now) : gpsFreshness(a, m.now).text}</p>
       </>
     );
   } else {

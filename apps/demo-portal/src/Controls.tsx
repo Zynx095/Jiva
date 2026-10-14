@@ -133,7 +133,7 @@ export function Controls({ live }: { live: LiveState }) {
           <CardHeader title="Journey" icon="navigation" subtitle={destination ? `Destination: ${DEMO.hospitals[destination]?.name ?? destination}` : 'No destination yet'} />
           <div className="mt-3 flex flex-wrap gap-2">
             <AsyncButton icon="pin" disabled={!destination} onAction={() => run(steps.gpsArrival(destination!))}>
-              Ambulance reaches the destination (GPS)
+              Ambulance reaches the destination (simulated position)
             </AsyncButton>
             <AsyncButton icon="hospital" disabled={!destination || !!encounter} onAction={() => run(steps.recordArrival(destination!))}>
               Hospital records the arrival
@@ -149,7 +149,7 @@ export function Controls({ live }: { live: LiveState }) {
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <select
               aria-label="Clinician to assign"
-              className="h-9 rounded-lg bg-white px-2.5 text-sm ring-1 ring-inset ring-ink-200"
+              className="h-9 rounded-lg bg-surface px-2.5 text-sm ring-1 ring-inset ring-ink-200"
               value={doctor}
               onChange={(e) => setDoctor(e.target.value)}
               disabled={!encounter || encounter.status !== 'IN_CARE'}

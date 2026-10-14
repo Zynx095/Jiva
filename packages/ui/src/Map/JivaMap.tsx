@@ -97,9 +97,9 @@ const BASEMAP_PAINT = {
   'raster-fade-duration': 200,
 } as const;
 
-const ROUTE_COLOR = '#0a5535'; // brand-800: high contrast on the pale basemap
+const ROUTE_COLOR = '#1b573c'; // brand-800: high contrast on the pale basemap
 const ROUTE_CASING = '#ffffff';
-const ALT_ROUTE_COLOR = '#96a19b'; // ink-400
+const ALT_ROUTE_COLOR = '#9a9f96'; // ink-400
 
 function boundsOf(coords: [number, number][]): LngLatBounds {
   const b = new LngLatBounds();
@@ -175,7 +175,7 @@ export const JivaMap: React.FC<JivaMapProps> = ({
           },
         },
         layers: [
-          { id: 'jiva-background', type: 'background', paint: { 'background-color': '#f7f8f7' } },
+          { id: 'jiva-background', type: 'background', paint: { 'background-color': '#f7f5f0' } },
           { id: 'osm-tiles', type: 'raster', source: 'osm', minzoom: 0, maxzoom: 19, paint: { ...BASEMAP_PAINT } },
         ],
       },
@@ -324,7 +324,7 @@ export const JivaMap: React.FC<JivaMapProps> = ({
 
   return (
     <div
-      className={cx('jiva-map overflow-hidden bg-[#f7f8f7]', className)}
+      className={cx('jiva-map overflow-hidden bg-[#f7f5f0]', className)}
       // Fills its (positioned) parent. `h-full` inside flex items resolves to 0/min-height.
       style={{ position: 'absolute', inset: 0, minHeight: '300px', ...style }}
     >
@@ -399,7 +399,7 @@ export function MapLegend({ showEmergency = true, showAmbulance = true, showDire
           </div>
         )}
         <div className={row}>
-          <span className="h-1 w-5 rounded-full bg-[#0a5535]" aria-hidden="true" />
+          <span className="h-1 w-5 rounded-full bg-[#1b573c]" aria-hidden="true" />
           Active route
         </div>
         {showDirectory && (

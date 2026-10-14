@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AmbulanceState, HospitalState } from '@jiva/domain-models';
-import { CardHeader, Icon, JivaButton, JivaCard, Spinner, capabilityLabel, cx, formatDateTime, fromDateTimeLocal, timeAgo, toDateTimeLocal, useNow } from '@jiva/ui/src';
+import { CardHeader, Icon, JivaButton, JivaCard, Spinner, capabilityLabel, cx, formatDateTime, fromDateTimeLocal, positionSource, timeAgo, toDateTimeLocal, useNow } from '@jiva/ui/src';
 import { postCommand } from './api';
 import { VitalsFields } from './Vitals';
 import { emptyVitals, vitalsPayload, vitalsProblems, vitalsSummary, type VitalsDraft } from './vitalsDraft';
@@ -130,10 +130,12 @@ export function EmergencyIntake({ ambulance, hospitals, location, onLocation, on
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
     );
   };
-  const useAmbulanceGps = () => {
+  const useAmbulancePosition = () => {
     const loc = ambulance?.currentLocation;
     if (!loc) return;
-    onLocation({ latitude: loc.latitude, longitude: loc.longitude, method: 'DEVICE_GPS', source: `Ambulance GPS${ambulance?.locationAsOf ? ` · fix ${timeAgo(ambulance.locationAsOf)}` : ''}` });
+    // The unit's last known position is GPS only if it came from a GPS device; otherwise it counts as entered.
+    const gps = ambulance?.locationSource === 'DEVICE_GPS';
+    onLocation({ latitude: loc.latitude, longitude: loc.longitude, method: gps ? 'DEVICE_GPS' : 'MANUAL_ENTRY', source: `Ambulance position (${positionSource(ambulance?.locationSource).label.toLowerCase()})${ambulance?.locationAsOf ? ` · ${timeAgo(ambulance.locationAsOf)}` : ''}` });
   };
   const applyManual = () => {
     if (!manual) return;
@@ -230,7 +232,7 @@ export function EmergencyIntake({ ambulance, hospitals, location, onLocation, on
         </dl>
         {submit.state === 'error' && <ErrorBox>{submit.message}</ErrorBox>}
         <div className="mt-4 flex flex-wrap gap-2">
-          <JivaButton variant="danger" size="lg" icon="send" loading={submit.state === 'sending'} onClick={() => void send()}>
+          <JivaButton variant="critical" size="lg" icon="send" loading={submit.state === 'sending'} onClick={() => void send()}>
             {submit.state === 'sending' ? 'Sending…' : submit.state === 'error' ? 'Try again' : 'Submit emergency'}
           </JivaButton>
           <JivaButton variant="ghost" size="lg" disabled={submit.state === 'sending'} onClick={() => setStep('form')}>
@@ -268,7 +270,7 @@ export function EmergencyIntake({ ambulance, hospitals, location, onLocation, on
           <legend className="text-sm font-semibold text-ink-900">Where is the patient?</legend>
           <div className="flex flex-wrap gap-2">
             <JivaButton size="sm" icon="crosshair" loading={geo.busy} onClick={useDevice}>This device's location</JivaButton>
-            <JivaButton size="sm" icon="ambulance" disabled={!ambulance?.currentLocation} onClick={useAmbulanceGps}>Ambulance GPS</JivaButton>
+            <JivaButton size="sm" icon="ambulance" disabled={!ambulance?.currentLocation} onClick={useAmbulancePosition}>Ambulance position</JivaButton>
             <JivaButton size="sm" icon="pin" variant="ghost" onClick={() => setManual(manual ? null : { lat: '', lng: '' })} aria-expanded={!!manual}>Enter coordinates</JivaButton>
           </div>
           <p className="text-xs text-ink-500">Or tap the map to drop a pin where the patient is.</p>
@@ -410,7 +412,7 @@ export function EmergencyIntake({ ambulance, hospitals, location, onLocation, on
   );
 }
 
-const inputCls = 'h-9 rounded-lg bg-white px-2.5 text-sm text-ink-900 ring-1 ring-inset ring-ink-200 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-500';
+const inputCls = 'h-9 rounded-lg bg-white px-2.5 text-sm text-ink-900 ring-1 ring-inset ring-ink-300 transition-shadow duration-150 placeholder:text-ink-400 hover:ring-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-600';
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (

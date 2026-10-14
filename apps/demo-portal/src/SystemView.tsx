@@ -1,16 +1,16 @@
 import type { ReactNode } from 'react';
-import { CardHeader, ConnectionPill, Icon, JivaCard, jivaAppUrl, type JivaApp } from '@jiva/ui/src';
+import { CardHeader, ConnectionPill, Icon, JivaCard, jivaAppUrl } from '@jiva/ui/src';
 import { API_URL } from './api';
-import { DEMO } from './workflows';
-import type { LiveState } from './useLiveState';
+import { ROLES } from './roles';
+import { routingText, type LiveState } from './useLiveState';
 
-const APPS: Array<{ app: JivaApp; title: string; personas: Array<[string, string]> }> = [
-  { app: 'ambulance', title: 'Ambulance', personas: [[DEMO.crew.persona, `Crew ${DEMO.crew.ambulanceId}`], ['demo-amb-1', 'Crew AMB-BLR-001']] },
-  { app: 'hospital', title: 'Hospital console', personas: [['demo-hosp-1', 'Hebbal coordinator'], ['demo-hosp-4', 'Indiranagar coordinator']] },
-  { app: 'doctor', title: 'Doctor workspace', personas: [[DEMO.doctor.persona, DEMO.doctor.name], ['demo-doc-1', 'Dr. Kavya Rao']] },
-  { app: 'patient', title: 'Patient', personas: [[DEMO.patient, `Patient ${DEMO.caseId}`]] },
-  { app: 'management', title: 'Management', personas: [[DEMO.management, 'Network coordination']] },
-];
+const INTEGRATION_TEXT: Record<string, string> = {
+  hospitalCapacityFeeds: 'Hospital capacity feeds',
+  hospitalStaffDirectory: 'Hospital staff directory',
+  medicalDevices: 'Medical devices (ECG, monitors)',
+  ambulanceGps: 'Ambulance GPS',
+  documentObjectStorage: 'Production document storage',
+};
 
 /** The running system as the API reports it, the portal's own live connection, and the operational apps. */
 export function SystemView({ live }: { live: LiveState }) {
@@ -18,15 +18,38 @@ export function SystemView({ live }: { live: LiveState }) {
   const integrations = Object.entries(h?.provenance?.liveIntegrations ?? {});
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <JivaCard>
+      <JivaCard className="lg:row-span-2">
         <CardHeader title="Mode and data" icon="shield" subtitle={`API ${API_URL}`} />
         <dl className="mt-3 space-y-2 text-[13px]">
           <Row label="Mode">{h?.mode ?? 'unknown'} (demo personas only work in DEMO mode, and only from this machine)</Row>
           <Row label="Statement">{h?.provenance?.statement ?? '—'}</Row>
-          <Row label="Routing provider">{h?.components?.mapping?.provider ?? '—'}{h?.components?.mapping?.synthetic ? ' (synthetic routes, labelled)' : ''}</Row>
+          <Row label="Routing provider">{routingText(h?.components?.mapping)}</Row>
           <Row label="Live connections">{h?.components?.realtime?.activeConnections ?? '—'}</Row>
           <Row label="Live integrations">
-            {integrations.length ? integrations.map(([k, v]) => `${k}: ${v ? 'yes' : 'no'}`).join(' · ') : '—'}
+            {integrations.length ? (
+              <ul className="mt-0.5 space-y-0.5">
+                {integrations.map(([k, v]) => (
+                  <li key={k}>
+                    {INTEGRATION_TEXT[k] ?? k}: <span className="font-semibold">{v ? 'connected' : 'not integrated'}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              '—'
+            )}
+          </Row>
+        </dl>
+      </JivaCard>
+      <JivaCard>
+        <CardHeader title="Hardware" icon="activity" subtitle="What produces vital signs and ambulance positions in this run" />
+        <dl className="mt-3 space-y-2 text-[13px]">
+          <Row label="Vital signs">
+            {h?.provenance?.providers?.telemetry?.medicalDevices ? 'A medical device feed is connected.' : 'No medical device is connected.'} Doctors and crews type readings in
+            (labelled “Entered manually”){h?.provenance?.providers?.telemetry?.simulator ? '; the demo simulator’s readings are labelled “Simulated (demo)”.' : '.'}
+          </Row>
+          <Row label="Ambulance positions">
+            {h?.provenance?.providers?.positions?.deviceGps ? 'A GPS feed is connected.' : 'No GPS receiver is connected.'} Crews set the position by hand (at the scene, at the
+            hospital, or on the map){h?.provenance?.providers?.positions?.simulator ? '; scenario and simulator moves are labelled simulated.' : '.'}
           </Row>
         </dl>
       </JivaCard>
@@ -40,11 +63,11 @@ export function SystemView({ live }: { live: LiveState }) {
       <JivaCard className="lg:col-span-2">
         <CardHeader title="The operational apps" icon="eye" subtitle="Each opens in a new tab as a demo persona; they show the same server state the scenarios change" />
         <ul className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          {APPS.map((a) => (
-            <li key={a.app} className="rounded-xl bg-white p-3 ring-1 ring-inset ring-ink-200">
+          {ROLES.map((a) => (
+            <li key={a.app} className="rounded-xl bg-surface p-3 ring-1 ring-inset ring-ink-200">
               <p className="text-sm font-semibold text-ink-900">{a.title}</p>
               <ul className="mt-1 space-y-1">
-                {a.personas.map(([persona, label]) => (
+                {a.personas.map(({ value: persona, label }) => (
                   <li key={persona}>
                     <a className="inline-flex items-center gap-1 text-[13px] font-semibold text-brand-800 underline-offset-2 hover:underline" href={jivaAppUrl(a.app, persona)} target="_blank" rel="noreferrer">
                       <Icon name="arrowRight" size={12} />

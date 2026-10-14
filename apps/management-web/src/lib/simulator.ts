@@ -90,6 +90,6 @@ export const DemoSimulator = {
   moveAmbulance: (ambulanceId: string, lat: number, lng: number) => send(AMBULANCE_PERSONA[ambulanceId], {
     eventType: 'ambulance.location.updated',
     source: { type: 'ambulance', id: ambulanceId },
-    payload: { ambulanceId, coordinates: { latitude: lat, longitude: lng }, speedKmh: 45, heading: 180 },
+    payload: { source: 'SIMULATED', ambulanceId, coordinates: { latitude: lat, longitude: lng }, speedKmh: 45, heading: 180 },
   }),
 };

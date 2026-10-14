@@ -157,6 +157,9 @@ export function encounterRouter(): Router {
           handedOverAt, recordedBy: actorFromAuth(auth), dataStatus: recordProvenance(auth),
         },
       });
+      // The notes stay in the clinical store (the event above is content-free and reaches the patient too).
+      const recorded = clinicalStore.getEncounter(enc.encounterId);
+      if (cmd.notes && recorded?.handover) clinicalStore.putEncounter({ ...recorded, handover: { ...recorded.handover, notes: cmd.notes } });
       audit(auth, 'encounter.handover.record', 'ALLOWED', { entityType: 'ENCOUNTER', entityId: enc.encounterId, encounterId: enc.encounterId, caseId: enc.caseId, hospitalId: enc.hospitalId });
       const body = { status: 'recorded', encounter: projectEncounter(clinicalStore.getEncounter(enc.encounterId)!, 'FULL', hospitalName(enc.hospitalId)) };
       idem.remember(200, body);

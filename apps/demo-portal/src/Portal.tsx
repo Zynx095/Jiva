@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import { ConnectionPill, EmptyState, Icon, JivaCard, JivaLogo, JivaSkeleton, cx, type IconName } from '@jiva/ui/src';
 import { AssetLibrary } from './AssetLibrary';
+import { Home } from './Home';
 import { Controls } from './Controls';
 import { ScenarioRunner } from './ScenarioRunner';
 import { SystemView } from './SystemView';
 import { TimelineView } from './TimelineView';
 import { useLiveState } from './useLiveState';
 
-type View = 'scenarios' | 'controls' | 'timeline' | 'assets' | 'system';
+type View = 'home' | 'scenarios' | 'controls' | 'timeline' | 'assets' | 'system';
 
 const NAV: Array<{ id: View; label: string; icon: IconName; hint: string }> = [
+  { id: 'home', label: 'Home', icon: 'home', hint: 'What JIVA is, and every role interface' },
   { id: 'scenarios', label: 'Scenarios', icon: 'activity', hint: 'Run scripted journeys step by step' },
   { id: 'controls', label: 'Controls', icon: 'panel', hint: 'Drive the demo case by hand' },
   { id: 'timeline', label: 'Timeline', icon: 'clock', hint: 'What was actually recorded' },
@@ -19,7 +21,7 @@ const NAV: Array<{ id: View; label: string; icon: IconName; hint: string }> = [
 
 const readView = (): View => {
   const v = new URLSearchParams(window.location.search).get('view');
-  return NAV.some((n) => n.id === v) ? (v as View) : 'scenarios';
+  return NAV.some((n) => n.id === v) ? (v as View) : 'home';
 };
 
 /**
@@ -34,29 +36,43 @@ export default function Portal() {
   useEffect(() => {
     document.title = 'JIVA · Demo portal';
   }, []);
+  // Each view has its own URL (?view=…) and history entry, so the browser's Back button returns to the last view.
+  useEffect(() => {
+    const onPop = () => setView(readView());
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
   const go = (v: View) => {
+    if (v === view) return;
     setView(v);
     const url = new URL(window.location.href);
     url.searchParams.set('view', v);
-    window.history.replaceState(null, '', url.toString());
+    url.hash = '';
+    window.history.pushState(null, '', url.toString());
+    window.scrollTo({ top: 0 });
   };
+  const current = NAV.find((n) => n.id === view) ?? NAV[0];
 
   return (
-    <div className="min-h-dvh bg-amber-50/40">
-      <div aria-hidden="true" className="h-2 bg-[repeating-linear-gradient(135deg,#d97706_0_14px,#1f2937_14px_28px)]" />
-      <header className="sticky top-0 z-30 border-b border-amber-300 bg-amber-100/95 backdrop-blur">
+    <div className="min-h-dvh bg-canvas text-ink-900">
+      {/* The portal's own identity (OLED theme, set on <html>): a thin gradient edge, never an operational screen. */}
+      <div aria-hidden="true" className="h-[3px] jiva-gradient-brand" />
+      <header className="sticky top-0 z-30 border-b border-ink-200 bg-canvas/90 supports-[backdrop-filter]:backdrop-blur-md">
+        <a href="#main" className="sr-only z-50 rounded-lg jiva-fill-primary px-3 py-2 text-sm font-semibold focus:not-sr-only focus:absolute focus:left-3 focus:top-2">
+          Skip to content
+        </a>
         <div className="flex min-h-14 flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 lg:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <JivaLogo />
-            <span className="hidden h-6 w-px bg-amber-300 sm:block" aria-hidden="true" />
+            <span className="hidden h-6 w-px bg-ink-200 sm:block" aria-hidden="true" />
             <div className="min-w-0 leading-tight">
-              <div className="truncate text-[15px] font-bold text-amber-950">Demonstration portal</div>
-              <div className="truncate text-xs text-amber-900">Synthetic data only · not an operational interface</div>
+              <h1 className="truncate text-[15px] font-semibold tracking-[-0.01em] text-ink-900">Demonstration portal</h1>
+              <div className="truncate text-xs text-ink-500">Synthetic data only · not an operational interface</div>
             </div>
           </div>
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-amber-900 px-2.5 text-xs font-bold uppercase tracking-wide text-amber-50">
-              <Icon name="alertTriangle" size={13} /> Demo
+            <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-warn-50 px-2.5 text-xs font-semibold text-warn-800 ring-1 ring-inset ring-warn-200">
+              <Icon name="info" size={13} /> Demo mode · synthetic data
             </span>
             <ConnectionPill state={live.connection} />
           </div>
@@ -70,8 +86,8 @@ export default function Portal() {
               title={n.hint}
               onClick={() => go(n.id)}
               className={cx(
-                '-mb-px flex h-10 shrink-0 items-center gap-1.5 border-b-2 px-3 text-sm font-semibold',
-                view === n.id ? 'border-amber-700 text-amber-950' : 'border-transparent text-amber-900/70 hover:text-amber-950',
+                '-mb-px flex h-10 shrink-0 items-center gap-1.5 border-b-2 px-3 text-sm font-semibold transition-colors duration-150',
+                view === n.id ? 'border-brand-500 text-ink-900' : 'border-transparent text-ink-500 hover:border-ink-300 hover:text-ink-900',
               )}
             >
               <Icon name={n.icon} size={15} />
@@ -82,6 +98,30 @@ export default function Portal() {
       </header>
 
       <main id="main" className="mx-auto max-w-[1400px] px-4 py-6 lg:px-6">
+        {view !== 'home' && (
+          <nav aria-label="Breadcrumb" className="mb-4">
+            <ol className="flex flex-wrap items-center gap-1.5 text-[13px]">
+              <li>
+                <a
+                  href="?view=home"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    go('home');
+                  }}
+                  className="font-semibold text-brand-700 underline-offset-2 hover:underline"
+                >
+                  Demo portal
+                </a>
+              </li>
+              <li aria-hidden="true" className="text-ink-400">
+                <Icon name="chevronRight" size={13} />
+              </li>
+              <li aria-current="page" className="font-semibold text-ink-800">
+                {current.label}
+              </li>
+            </ol>
+          </nav>
+        )}
         {live.apiReachable === null ? (
           <div className="space-y-3">
             <JivaSkeleton className="h-6 w-1/3" />
@@ -107,6 +147,7 @@ export default function Portal() {
                 The JIVA API stopped answering. The portal keeps the last known state and retries automatically.
               </div>
             )}
+            {view === 'home' && <Home live={live} onOpenScenarios={() => go('scenarios')} />}
             {view === 'scenarios' && <ScenarioRunner live={live} />}
             {view === 'controls' && <Controls live={live} />}
             {view === 'timeline' && <TimelineView live={live} />}
@@ -115,7 +156,7 @@ export default function Portal() {
           </>
         )}
       </main>
-      <footer className="px-4 pb-8 text-center text-xs text-amber-900/80">
+      <footer className="px-4 pb-8 text-center text-xs text-ink-500">
         Every action here is a real API call made as a demo persona and checked by the same rules as the operational apps. Everything shown is synthetic.
       </footer>
     </div>

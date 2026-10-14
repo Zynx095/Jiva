@@ -41,3 +41,27 @@ export async function postCommand<T = Record<string, unknown>>(path: string, bod
   const json = (await res.json().catch(() => ({}))) as CommandResponse<T>['body'];
   return { status: res.status, body: json };
 }
+
+export interface Point {
+  latitude: number;
+  longitude: number;
+}
+
+/**
+ * Send this unit's position, set by the crew. JIVA receives no GPS from the ambulance, so the crew updates
+ * the position when it moves; it is recorded with source MANUAL and shown as "Set by the crew" everywhere.
+ * It goes through the same event API and authorization as any position update.
+ */
+export async function sendManualPosition(ambulanceId: string, p: Point): Promise<string | null> {
+  const r = await postCommand('/api/events', {
+    eventId: crypto.randomUUID(),
+    eventType: 'ambulance.location.updated',
+    timestamp: new Date().toISOString(),
+    version: '1.0',
+    source: { type: 'ambulance', id: ambulanceId },
+    payload: { ambulanceId, coordinates: { latitude: p.latitude, longitude: p.longitude }, source: 'MANUAL' },
+  }).catch(() => null);
+  if (!r) return 'Cannot reach JIVA. The position was not sent — try again.';
+  if (r.status === 202 || r.status === 200) return null;
+  return r.body.message ?? r.body.error ?? `JIVA refused the position (${r.status}).`;
+}

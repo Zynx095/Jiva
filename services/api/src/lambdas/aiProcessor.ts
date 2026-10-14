@@ -16,6 +16,7 @@ const metrics = new MetricsCollector(true, REGION);
 // Bedrock with caching
 const baseAi = process.env.USE_BEDROCK === 'true' ? new BedrockAIProvider(REGION) : new MockAIProvider();
 const aiProvider: AIProvider = new CachedAIProvider(baseAi);
+const generator = process.env.USE_BEDROCK === 'true' ? 'LLM' : 'TEMPLATE';
 
 export const handler = async (event: EventBridgeEvent<string, any>) => {
   const jivaEvent = event.detail;
@@ -51,6 +52,7 @@ export const handler = async (event: EventBridgeEvent<string, any>) => {
           payload: {
             patientId: patient.patientId,
             ...handoff,
+            generator,
           },
         });
       }
@@ -86,6 +88,7 @@ export const handler = async (event: EventBridgeEvent<string, any>) => {
               patientId: patient.patientId,
               anomalies: [reason],
               ...explanation,
+              generator,
             },
           });
         }

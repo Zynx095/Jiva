@@ -10,76 +10,106 @@
   --font-sans: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
 
-  /* Brand green: confident, slightly cool, never neon. 700 is the text/button shade (6.6:1 on white). */
-  --color-brand-50: #ecf7f1;
-  --color-brand-100: #d3eedf;
-  --color-brand-200: #a9dcc1;
-  --color-brand-300: #74c39c;
-  --color-brand-400: #3fa574;
-  --color-brand-500: #1c8a58;
-  --color-brand-600: #0f7a4a;
-  --color-brand-700: #0b6b41;
-  --color-brand-800: #0a5535;
-  --color-brand-900: #08432a;
-  --color-brand-950: #04261a;
+  /* Healthcare green: calm, deep, never neon. 700 (#236B4B) is the button and link shade (6.4:1 on white),
+     800 the hover shade, 50 the soft surface and 200 the subtle border. */
+  --color-brand-50: #e8f2eb;
+  --color-brand-100: #dcebe1;
+  --color-brand-200: #c9dfd0;
+  --color-brand-300: #a3c9b1;
+  --color-brand-400: #6fa88a;
+  --color-brand-500: #3f8d68;
+  --color-brand-600: #2c7a57;
+  --color-brand-700: #236b4b;
+  --color-brand-800: #1b573c;
+  --color-brand-900: #15452f;
+  --color-brand-950: #0c2a1d;
 
-  /* Ink: the only gray family, faintly tinted toward the brand. 500 is the lightest text shade (5.6:1). */
-  --color-ink-25: #fbfcfb;
-  --color-ink-50: #f5f7f6;
-  --color-ink-100: #ecefed;
-  --color-ink-200: #dee3e0;
-  --color-ink-300: #c6cec9;
-  --color-ink-400: #96a19b;
-  --color-ink-500: #5f6b65;
-  --color-ink-600: #4a5550;
-  --color-ink-700: #36403c;
-  --color-ink-800: #232b28;
-  --color-ink-900: #151b19;
-  --color-ink-950: #0b100e;
+  /* Ink: the only neutral family, warm (cream to deep green-black). 100 is the cream secondary surface,
+     200 the warm border; 500 is the lightest TEXT shade (5.5:1 on white, 4.8:1 on cream); 400 is decorative. */
+  --color-ink-25: #fcfbf8;
+  --color-ink-50: #f7f5f0;
+  --color-ink-100: #f3f0e7;
+  --color-ink-200: #e8e5dc;
+  --color-ink-300: #d9d1c1;
+  --color-ink-400: #9a9f96;
+  --color-ink-500: #636b62;
+  --color-ink-600: #545c53;
+  --color-ink-700: #404840;
+  --color-ink-800: #2d352d;
+  --color-ink-900: #202820;
+  --color-ink-950: #151b16;
 
-  /* Amber: pending, limited, stale, needs attention. Text uses 700. */
-  --color-warn-50: #fff8eb;
-  --color-warn-100: #feefc7;
-  --color-warn-200: #fcdc8e;
-  --color-warn-300: #f8c55a;
-  --color-warn-400: #f0a92e;
-  --color-warn-500: #db8b12;
-  --color-warn-600: #b4690e;
-  --color-warn-700: #9a5b0b;
-  --color-warn-800: #7a460c;
-  --color-warn-900: #5e360c;
+  /* The page: warm white. Panels are pure white on it. */
+  --color-canvas: #faf9f6;
 
-  /* Red: critical, rejected, unavailable, error. Never decorative. */
-  --color-danger-50: #fef3f2;
-  --color-danger-100: #fee4e2;
-  --color-danger-200: #fdcdc9;
-  --color-danger-300: #faa7a0;
-  --color-danger-400: #f27466;
-  --color-danger-500: #e5483b;
-  --color-danger-600: #c9352a;
-  --color-danger-700: #a3281f;
-  --color-danger-800: #85211b;
-  --color-danger-900: #6b1c18;
+  /*
+   * Surfaces (dimensional layering). Level 0 is the canvas; 1 panels; 2 cards and wells inside panels;
+   * 3 selected / focused controls; 4 dialogs, menus and toasts. Components use these, never a literal white,
+   * so a theme (e.g. the demo portal's OLED theme) can re-skin them.
+   */
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #f7f5f0;
+
+  /* Amber: waiting, pending response, limited, stale — needs attention, not alarm. Text uses 700/800. */
+  --color-warn-50: #fbf5e8;
+  --color-warn-100: #f6e9cc;
+  --color-warn-200: #edd7a6;
+  --color-warn-300: #e1bd73;
+  --color-warn-400: #d2a04a;
+  --color-warn-500: #bb8633;
+  --color-warn-600: #9c6b1f;
+  --color-warn-700: #7f5616;
+  --color-warn-800: #664512;
+  --color-warn-900: #4f3610;
+
+  /* Clinical red: critical emergencies, destructive actions and errors only. Never decorative. */
+  --color-danger-50: #fbecec;
+  --color-danger-100: #f7dede;
+  --color-danger-200: #eecaca;
+  --color-danger-300: #e2a5a5;
+  --color-danger-400: #d67676;
+  --color-danger-500: #cc5555;
+  --color-danger-600: #c43d3d;
+  --color-danger-700: #a82f32;
+  --color-danger-800: #8b272a;
+  --color-danger-900: #6f2023;
+
+  /* Muted blue-grey: informational notices (demo data, synthetic labels). Quiet by design. */
+  --color-info-50: #eef2f5;
+  --color-info-100: #e1e8ee;
+  --color-info-200: #cbd6df;
+  --color-info-300: #a9b9c6;
+  --color-info-500: #6a7f8f;
+  --color-info-600: #546a7a;
+  --color-info-700: #435766;
+  --color-info-800: #364855;
 
   /* Shadows are tinted with ink, from a single top light source. */
-  --shadow-xs: 0 1px 2px rgb(21 27 25 / 0.06);
-  --shadow-sm: 0 1px 3px rgb(21 27 25 / 0.08), 0 1px 2px rgb(21 27 25 / 0.04);
-  --shadow-md: 0 6px 16px -4px rgb(21 27 25 / 0.12), 0 2px 4px -2px rgb(21 27 25 / 0.06);
-  --shadow-lg: 0 16px 40px -12px rgb(21 27 25 / 0.22), 0 4px 10px -4px rgb(21 27 25 / 0.08);
+  --shadow-xs: 0 1px 2px rgb(32 40 32 / 0.06);
+  --shadow-sm: 0 1px 3px rgb(32 40 32 / 0.08), 0 1px 2px rgb(32 40 32 / 0.04);
+  --shadow-md: 0 6px 16px -4px rgb(32 40 32 / 0.12), 0 2px 4px -2px rgb(32 40 32 / 0.06);
+  --shadow-lg: 0 16px 40px -12px rgb(32 40 32 / 0.22), 0 4px 10px -4px rgb(32 40 32 / 0.08);
+
+  /* Elevation by level: hairline lift (1), card on a panel (2), selected / hovered control (3), overlay (4). */
+  --shadow-e1: 0 1px 2px rgb(32 40 32 / 0.04), 0 1px 1px rgb(32 40 32 / 0.02);
+  --shadow-e2: 0 1px 3px rgb(32 40 32 / 0.06), 0 6px 16px -10px rgb(32 40 32 / 0.12);
+  --shadow-e3: 0 2px 6px -1px rgb(32 40 32 / 0.08), 0 12px 28px -14px rgb(32 40 32 / 0.22);
+  --shadow-e4: 0 24px 56px -16px rgb(32 40 32 / 0.28), 0 6px 14px -6px rgb(32 40 32 / 0.10);
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
-  --animate-enter: jiva-enter 380ms var(--ease-out) both;
-  --animate-fade: jiva-fade 240ms ease-out both;
-  --animate-toast: jiva-toast 320ms var(--ease-out) both;
-  --animate-drawer: jiva-drawer 320ms var(--ease-out) both;
+  --animate-enter: jiva-enter 240ms var(--ease-out) both;
+  --animate-fade: jiva-fade 180ms ease-out both;
+  --animate-toast: jiva-toast 260ms var(--ease-out) both;
+  --animate-drawer: jiva-drawer 260ms var(--ease-out) both;
   --animate-shimmer: jiva-shimmer 1.6s linear infinite;
   --animate-breathe: jiva-breathe 1.8s ease-in-out infinite;
   --animate-ring: jiva-ring 2.2s var(--ease-out) infinite;
 
   @keyframes jiva-enter {
-    from { opacity: 0; transform: translateY(6px); }
+    from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: none; }
   }
   @keyframes jiva-fade {
@@ -108,7 +138,173 @@
   }
 }
 
+/*
+ * Fills: the few places colour is applied as a surface with text on it (primary, danger and critical actions,
+ * inverse chips, accent gradients). Gradients are vertical and subtle in the operational apps — depth, not
+ * decoration. Themes override these variables; components use the utilities below.
+ */
+:root {
+  --fill-primary: linear-gradient(180deg, #2b7b57 0%, #236b4b 100%);
+  --fill-primary-hover: linear-gradient(180deg, #236b4b 0%, #1b573c 100%);
+  --on-primary: #ffffff;
+  --fill-danger: linear-gradient(180deg, #c64444 0%, #c43d3d 100%);
+  --fill-danger-hover: linear-gradient(180deg, #c43d3d 0%, #a82f32 100%);
+  --fill-critical: linear-gradient(180deg, #b93a3c 0%, #a82f32 55%, #962a2d 100%);
+  --fill-critical-hover: linear-gradient(180deg, #a82f32 0%, #8b272a 100%);
+  --on-danger: #ffffff;
+  --fill-inverse: #202820;
+  --on-inverse: #ffffff;
+  /* Accent gradients for the one hero element of a screen (current care, next action). */
+  --gradient-brand: linear-gradient(135deg, #1d6446 0%, #236b4b 55%, #226a5a 100%);
+  --gradient-critical: linear-gradient(135deg, #a82f32 0%, #c43d3d 60%, #c9524a 100%);
+  --gradient-sheen: linear-gradient(180deg, rgb(255 255 255 / 0.9) 0%, rgb(255 255 255 / 0) 100%);
+  --logo-fill: #236b4b;
+  --ring-focus: #2c7a57;
+  /* Behind dialogs and drawers. */
+  --scrim: rgb(21 27 22 / 0.35);
+}
+
+@utility jiva-fill-primary {
+  background: var(--fill-primary);
+  color: var(--on-primary);
+}
+@utility jiva-fill-primary-hover {
+  background: var(--fill-primary-hover);
+}
+@utility jiva-fill-danger {
+  background: var(--fill-danger);
+  color: var(--on-danger);
+}
+@utility jiva-fill-danger-hover {
+  background: var(--fill-danger-hover);
+}
+@utility jiva-fill-critical {
+  background: var(--fill-critical);
+  color: var(--on-danger);
+}
+@utility jiva-fill-critical-hover {
+  background: var(--fill-critical-hover);
+}
+@utility jiva-fill-inverse {
+  background: var(--fill-inverse);
+  color: var(--on-inverse);
+}
+@utility jiva-gradient-brand {
+  background-image: var(--gradient-brand);
+}
+@utility jiva-gradient-critical {
+  background-image: var(--gradient-critical);
+}
+
+/*
+ * OLED theme — the demo portal only (set `theme-oled` on its root; the operational apps never use it).
+ * True black canvas, charcoal surfaces separated by fine borders and soft glows instead of shadows, the
+ * neutral scale inverted (ink-900 is near-white text), status scales re-tuned so their soft surfaces are dark
+ * tints and their text shades light, and vivid green-to-teal fills with dark text for primary actions.
+ * Every text pairing keeps at least 7:1 (ink-500 on surfaces) — no low-contrast grey.
+ */
+.theme-oled {
+  color-scheme: dark;
+  --color-canvas: #000000;
+  --color-surface: #0a0c0b;
+  --color-surface-raised: #121614;
+  --color-surface-sunken: #050605;
+
+  --color-ink-25: #070908;
+  --color-ink-50: #0e110f;
+  --color-ink-100: #151a17;
+  --color-ink-200: #232a26;
+  --color-ink-300: #333c37;
+  --color-ink-400: #5d665f;
+  --color-ink-500: #9aa39c;
+  --color-ink-600: #b3bbb5;
+  --color-ink-700: #cfd5d0;
+  --color-ink-800: #e3e7e4;
+  --color-ink-900: #f2f5f3;
+  --color-ink-950: #ffffff;
+
+  --color-brand-50: #062016;
+  --color-brand-100: #0a2c1e;
+  --color-brand-200: #134a32;
+  --color-brand-300: #1f6e4b;
+  --color-brand-400: #2f9e6c;
+  --color-brand-500: #34d399;
+  --color-brand-600: #4ade9b;
+  --color-brand-700: #6ee7b0;
+  --color-brand-800: #9af0c8;
+  --color-brand-900: #c8f7e1;
+  --color-brand-950: #e8fcf2;
+
+  --color-warn-50: #1f1606;
+  --color-warn-100: #2b1f09;
+  --color-warn-200: #4a360f;
+  --color-warn-300: #7a5a19;
+  --color-warn-400: #b07f22;
+  --color-warn-500: #e0a33a;
+  --color-warn-600: #f2b44c;
+  --color-warn-700: #fbbf5a;
+  --color-warn-800: #fcd38a;
+  --color-warn-900: #fde7bd;
+
+  --color-danger-50: #2a0d0e;
+  --color-danger-100: #3a1213;
+  --color-danger-200: #5c1d20;
+  --color-danger-300: #8a2b2f;
+  --color-danger-400: #c43d3d;
+  --color-danger-500: #e25c5c;
+  --color-danger-600: #ef7b7b;
+  --color-danger-700: #f8a3a3;
+  --color-danger-800: #fbc4c4;
+  --color-danger-900: #fde2e2;
+
+  --color-info-50: #0b1a24;
+  --color-info-100: #102431;
+  --color-info-200: #1b3a4d;
+  --color-info-300: #2c5a75;
+  --color-info-500: #5f95b8;
+  --color-info-600: #7fb0cf;
+  --color-info-700: #9cc3dc;
+  --color-info-800: #c3dbea;
+
+  --shadow-xs: 0 0 0 1px rgb(255 255 255 / 0.03);
+  --shadow-sm: 0 0 0 1px rgb(255 255 255 / 0.04), 0 8px 20px -12px rgb(0 0 0 / 0.9);
+  --shadow-md: 0 0 0 1px rgb(255 255 255 / 0.05), 0 16px 32px -16px rgb(0 0 0 / 0.95);
+  --shadow-lg: 0 0 0 1px rgb(255 255 255 / 0.06), 0 24px 64px -20px rgb(0 0 0 / 1);
+  --shadow-e1: inset 0 1px 0 rgb(255 255 255 / 0.04);
+  --shadow-e2: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 12px 28px -18px rgb(0 0 0 / 0.95);
+  --shadow-e3: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 0 0 1px rgb(52 211 153 / 0.18), 0 16px 40px -20px rgb(16 185 129 / 0.35);
+  --shadow-e4: 0 0 0 1px rgb(255 255 255 / 0.07), 0 32px 80px -24px rgb(0 0 0 / 1);
+
+  --fill-primary: linear-gradient(135deg, #34d399 0%, #10b981 45%, #14b8a6 100%);
+  --fill-primary-hover: linear-gradient(135deg, #4ade9b 0%, #2bc48d 45%, #22c7b8 100%);
+  --on-primary: #03140c;
+  --fill-danger: linear-gradient(180deg, #c64444 0%, #b93a3c 100%);
+  --fill-danger-hover: linear-gradient(180deg, #cc4444 0%, #c43d3d 100%);
+  --fill-critical: linear-gradient(135deg, #c43d3d 0%, #a82f32 100%);
+  --fill-critical-hover: linear-gradient(135deg, #c64444 0%, #b33437 100%);
+  --on-danger: #ffffff;
+  --fill-inverse: #f2f5f3;
+  --on-inverse: #050605;
+  --gradient-brand: linear-gradient(120deg, #34d399 0%, #14b8a6 45%, #22d3ee 100%);
+  --gradient-critical: linear-gradient(120deg, #ef4444 0%, #c43d3d 100%);
+  --gradient-sheen: linear-gradient(180deg, rgb(255 255 255 / 0.06) 0%, rgb(255 255 255 / 0) 100%);
+  --logo-fill: #0f9d6c;
+  --ring-focus: #4ade9b;
+  --scrim: rgb(0 0 0 / 0.72);
+
+  background-color: var(--color-canvas);
+  color: var(--color-ink-900);
+}
+.theme-oled ::selection {
+  background: var(--color-brand-200);
+  color: var(--color-brand-950);
+}
+
 @layer base {
+  :root {
+    /* Height of the sticky app header; AppHeader keeps it current. */
+    --jiva-header-h: 57px;
+  }
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -133,7 +329,7 @@
     color: var(--color-brand-900);
   }
   :focus-visible {
-    outline: 2px solid var(--color-brand-600);
+    outline: 2px solid var(--ring-focus);
     outline-offset: 2px;
   }
   button, [role="button"], summary {
@@ -240,7 +436,7 @@
     font-weight: 600;
     line-height: 1;
     color: var(--color-ink-900);
-    background: white;
+    background: var(--color-surface);
     border: 1px solid var(--color-ink-200);
     border-radius: 6px;
     padding: 5px 7px;
@@ -249,8 +445,10 @@
     transition: opacity 150ms ease-out, transform 150ms var(--ease-out);
   }
   .jiva-mk__label small {
+    /* The browser default for <small> is ~9.6px here: too small for a status. */
+    font-size: 11px;
     font-weight: 500;
-    color: var(--color-ink-500);
+    color: var(--color-ink-600);
     margin-left: 4px;
   }
   .jiva-mk:hover .jiva-mk__label,
@@ -268,7 +466,7 @@
     border-radius: 8px;
     color: white;
     border: 2px solid white;
-    box-shadow: 0 2px 6px rgb(21 27 25 / 0.28);
+    box-shadow: 0 2px 6px rgb(32 40 32 / 0.28);
   }
   .jiva-mk--hospital[data-tone="ok"] .jiva-mk__body { background: var(--color-brand-600); }
   .jiva-mk--hospital[data-tone="warn"] .jiva-mk__body { background: var(--color-warn-600); }
@@ -303,7 +501,7 @@
   .jiva-mk[data-tone="warn"] .jiva-mk__badge { color: var(--color-warn-700); }
   .jiva-mk[data-tone="danger"] .jiva-mk__badge { color: var(--color-danger-700); }
   .jiva-mk[data-selected="true"] .jiva-mk__body {
-    box-shadow: 0 0 0 4px var(--color-brand-200), 0 4px 10px rgb(21 27 25 / 0.3);
+    box-shadow: 0 0 0 4px var(--color-brand-200), 0 4px 10px rgb(32 40 32 / 0.3);
   }
 
   /* Ambulance: dark pill when on a job; compact chip when idle. */
@@ -318,7 +516,7 @@
     font-weight: 600;
     letter-spacing: 0.01em;
     border: 2px solid white;
-    box-shadow: 0 3px 10px rgb(21 27 25 / 0.32);
+    box-shadow: 0 3px 10px rgb(32 40 32 / 0.32);
     white-space: nowrap;
   }
   .jiva-mk--ambulance .jiva-mk__dot {
@@ -355,7 +553,7 @@
     background: var(--color-danger-600);
     color: white;
     border: 2px solid white;
-    box-shadow: 0 2px 8px rgb(201 53 42 / 0.45);
+    box-shadow: 0 2px 8px rgb(196 61 61 / 0.4);
   }
   .jiva-mk--emergency .jiva-mk__ring {
     position: absolute;
