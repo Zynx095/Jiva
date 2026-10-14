@@ -35,3 +35,23 @@ which manual or simulated path covers each dependency.
 - Manual controls go through the same API, validation and authorization as automated events.
 - No clinical thresholds, alerts or interpretations are invented. Plausibility bounds reject entry errors
   only and are documented as such.
+
+## 3. Final state (after this work)
+
+Each gap from section 1, and what closed it. Verified by `tests/integration/manual-operation.test.ts` (real API)
+and `tests/browser/portal-manual.browser.ts` (real browser), plus the unit suites named below.
+
+| Gap | Now |
+|---|---|
+| No blood glucose | `BLOOD_GLUCOSE` (mg/dL, plausibility 10–900 — an entry-error bound, not a clinical threshold) in the clinical schema, crew intake, crew observations and the doctor form (`vitals-entry`, `medical-telemetry`) |
+| Entered values could not be corrected | `POST /api/encounters/:id/vitals/:measurementId/correct`: replace (same type and time) or withdraw "as entered in error", reason required; original kept with who/when/why; patient sees only current values; simulated readings and other clinicians refused (`vitals-correction`) |
+| No crew-controlled position; every position called "GPS" | `ambulance.location.updated` carries `source` (`MANUAL`, `SIMULATED`, `DEVICE_GPS`); the crew app's **Your position** card sends `MANUAL` positions ("I'm at the scene", "I'm at ‹hospital›", "Set on the map"); demo tools send `SIMULATED`; screens say "Set by the crew", "Simulated position" or "source not stated" — "GPS" only for `DEVICE_GPS`, which nothing sends (`location-source`) |
+| Crew could not report arrival without a position event | The crew's manual "I'm at ‹hospital›" position marks the unit arrived; the hospital still records the authoritative arrival |
+| ICU, trauma, ventilators not reportable individually | Per-service status in the hospital Facility panel (Available / Limited / Unavailable / Unknown) |
+| No handover notes | Optional notes (≤ 1000 characters) on the handover; hospital and assigned doctor only; never on an event (`handover-notes`) |
+| Template summaries labelled "AI-generated" | `ai.*` events carry `generator` (`TEMPLATE` / `LLM`); screens say "Automatic summary · template, no AI" (`mock-ai-facts`) |
+| Health did not state position sources | `/api/health` → `provenance.providers.positions` `{ manual, simulator (demo only), deviceGps: false }` and `liveIntegrations.ambulanceGps: false` (`runtime-mode`) |
+
+Still not integrated, by design of this prototype: medical devices, ambulance GPS, hospital capacity feeds,
+staff directory, EHR, an AI service, live routing, durable persistence, AWS deployment. See
+[`demo-portal-and-manual-operation.md`](demo-portal-and-manual-operation.md) §8.
