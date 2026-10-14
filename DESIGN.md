@@ -30,7 +30,8 @@ Everyday users never have to read level 4. Operations and audit users can always
 
 **Honesty comes before polish:**
 - Unknown stays unknown. A hospital with no current answer is shown as *No current response* (gray, `?`), never as available.
-- Synthetic data is always labelled: the *Demo data* badge, *Synthetic route · mock provider*, *Simulated demo response*, *AI-generated · advisory only*.
+- Synthetic data is always labelled: the *Demo data* badge, *Synthetic route · mock provider*, *Simulated demo response*, *Simulated (demo)* readings, *Simulated position*, *Automatic summary · template, no AI*.
+- No hardware is connected, and screens never pretend otherwise: vital signs say *Entered manually · care team* / *· ambulance crew*; positions say *Set by the crew* or *Simulated position*; only a reading or position that came from a real device may ever say "monitor" or "GPS" (none does today).
 - A feature without backend data is shown as **not connected**, never mocked. Patient health records are the example: they are labelled *Coming later*.
 
 **Cause → effect.** An action shows four states: idle, then pending ("Sending…"), then success (✓) or error (✕ with the reason and a retry). The downstream effect is then shown where it happened, for example "AMB-BLR-001 is now heading here · 22 min".
@@ -41,12 +42,12 @@ Everyday users never have to read level 4. Operations and audit users can always
 
 ### Colour
 
-Light only. A warm white page, pure white panels, cream for secondary surfaces, one healthcare green, one warm neutral family, and three colours that carry meaning: amber (waiting), muted blue-grey (information) and clinical red (critical). Do not add other hues; most content is neutral and strong colour is reserved for actions and states.
+Two themes share one token set and one component library (section 2a): the **operational theme** (light, every operational app) and the **OLED theme** (the demonstration portal only). The operational theme: a warm white page, pure white panels, cream for secondary surfaces, one healthcare green, one warm neutral family, and three colours that carry meaning: amber (waiting), muted blue-grey (information) and clinical red (critical). Do not add other hues; most content is neutral and strong colour is reserved for actions and states.
 
 | Token | Hex | Use |
 |---|---|---|
 | `canvas` | `#faf9f6` | The page background (warm white) |
-| white | `#ffffff` | Panels, cards, header |
+| `surface` | `#ffffff` | Panels, cards, header (never write literal white: themes remap `surface`) |
 | `ink-100` | `#f3f0e7` | Cream secondary surface, icon chips, subtle fills |
 | `ink-200` | `#e8e5dc` | Warm borders and dividers |
 | `ink-300` | `#d9d1c1` | Input outlines, stronger borders (`ink-400` on hover) |
@@ -64,16 +65,36 @@ Light only. A warm white page, pure white panels, cream for secondary surfaces, 
 
 - The neutrals are warm (cream to deep green-black). Do not mix in cool Tailwind grays or Tailwind's default amber.
 - Demo/synthetic labels use the **info** tone, not amber, so amber keeps meaning "needs attention".
-- No dark theme, purple, neon, rainbow gradients or glass panels.
-- Shadows are tinted with ink and come from one top light source. Elevation is reserved for floating layers: popovers, toasts, drawers and map controls.
-- There are no gradients, glass effects, neon, glows or purple "AI" styling. AI output is styled like any other neutral content and is labelled as advisory.
+- The operational apps never use the dark theme. No purple, neon, rainbow gradients or glass panels anywhere.
+- Shadows are tinted with ink and come from one top light source (elevation levels in section 2a).
+- Gradients are allowed in exactly three places: the primary / danger / critical action fills (a subtle vertical gradient), and the **one** hero surface of a screen (the patient's *Current care*). Never on every card. No glass effects, neon, glows or purple "AI" styling. Automatic summaries are styled like any other neutral content and say what produced them (*Automatic summary · template, no AI*).
+
+### 2a. Tokens: surfaces, elevation, fills and themes
+
+All in `packages/ui/src/styles/jiva.css`. Components use the semantic tokens below and never a literal colour, so a theme re-skins every shared component without a second component library.
+
+| Token | Operational (light) | OLED (portal) | Use |
+|---|---|---|---|
+| `canvas` (level 0) | `#faf9f6` | `#000000` | Page background |
+| `surface` (level 1–2) | `#ffffff` | `#0a0c0b` | Panels, cards, header |
+| `surface-raised` (level 4) | `#ffffff` | `#121614` | Dialogs, toasts, drawers, menus |
+| `surface-sunken` | `#f7f5f0` | `#050605` | Wells inside a card (e.g. the scenario briefing) |
+| `shadow-e1` … `e4` | ink-tinted, one light source | hairline borders and soft glows | e1 hairline lift (cards) · e2 card on a panel · e3 selected / hovered control · e4 overlays |
+| `--fill-primary` (`jiva-fill-primary`) | green `#2b7b57 → #236b4b`, white text (≥ 5.2:1) | green → teal `#34d399 → #14b8a6`, near-black text (≥ 7.6:1) | Primary actions |
+| `--fill-danger` / `--fill-critical` | red gradients, white text (≥ 4.7:1 at every stop) | same family, white text | Destructive and critical actions |
+| `--fill-inverse` | `#202820` / white | `#f2f5f3` / black | Active filter chips |
+| `--gradient-brand` | `#1d6446 → #236b4b → #226a5a` | `#34d399 → #14b8a6 → #22d3ee` | The one hero surface; the portal's edge and title accent |
+| `--scrim` | ink 35 % | black 72 % | Behind dialogs and drawers |
+| `--ring-focus` | `#2c7a57` | `#4ade9b` | Focus outline (2 px) |
+
+**Theme boundary.** The OLED theme is a class, `theme-oled`, set on the portal's `<html>` (`apps/demo-portal/index.html`). It remaps the tokens inside that element only: true black canvas, charcoal surfaces, an inverted neutral scale (`ink-900` becomes near-white text; `ink-500` stays ≥ 7:1 on surfaces, so there is no low-contrast grey), status scales whose `-50` surfaces are dark tints and whose `-700/800` text is light, restrained red, and green-to-teal accents. No operational app sets the class; the browser suite `tests/browser/portal-manual.browser.ts` checks both sides of the boundary.
 
 ### Typography
 
 - **Plus Jakarta Sans Variable** is self-hosted through `@fontsource-variable` (OFL-1.1) and imported once per app via `@jiva/ui/src/fonts`. There is no runtime font CDN.
 - Font sizes:
   - Body text is 14px in operations apps and 15–16px on the patient screen.
-  - The minimum size is 12px. Only the patient journey labels on phones use 11px.
+  - The minimum size is 12px. Only the patient journey labels on phones and the secondary line of map marker labels use 11px.
 - Headings are semibold with slightly negative tracking, e.g. `tracking-[-0.01em]`. Use sentence case and avoid uppercase labels.
 - Numbers that change (ETAs, counts, countdowns) use `tabular-nums` so they do not jitter.
 - IDs and hashes in technical views use the system monospace.
@@ -111,6 +132,19 @@ Helpers:
 - `dataStatus()` covers provenance.
 
 Every helper also returns a one-sentence `hint`, which is used as the tooltip.
+
+**Where a value came from** (helpers in `lib/vitals.ts`, `lib/position.ts`, `lib/labels.ts`):
+
+| Source | Label | Tone |
+|---|---|---|
+| Vital sign typed by the assigned clinician | Entered manually · care team | neutral |
+| Vital sign typed by the crew | Entered manually · ambulance crew | neutral |
+| Demo simulated monitor | Simulated (demo) | info |
+| Corrected / withdrawn value | "Corrected to …" / "Withdrawn as entered in error", with who, when and why (history only; the patient sees current values) | neutral |
+| Ambulance position set in the crew app | Set by the crew | neutral |
+| Position from a demo tool or scenario | Simulated position | info |
+| Position with no stated source | Position, source not stated (never "GPS") | neutral |
+| Template summary / brief | Automatic summary · template, no AI | neutral |
 
 ---
 
@@ -153,7 +187,7 @@ Each marker type has its own shape, colour and label.
 | Marker | Shape | Colour | Label and behaviour |
 |---|---|---|---|
 | Hospital | Rounded square with **H** | Acceptance tone. White with a gray outline when unknown | A corner glyph repeats the state |
-| Ambulance on a job | Dark pill with call sign | Dark ink | Glides about 0.9 s between GPS fixes |
+| Ambulance on a job | Dark pill with call sign | Dark ink | Glides about 0.9 s between position updates |
 | Idle or arrived ambulance | Compact chip | — | Offset so it never hides a hospital |
 | Emergency | Red dot | Red | Soft ring while the case is open |
 
@@ -194,7 +228,7 @@ The map is never covered by permanent panels.
 - **Whose record is this?** The doctor workspace pins the selected patient (case id, reported symptoms, encounter, responsible doctor, status) and the section tabs under the header from tablets up. The selected patient row carries a green ring and a left bar.
 - **Never carry edits to another patient.** Per-patient panels remount when the patient changes. Forms report unsaved edits (`apps/doctor-web/src/unsaved.tsx`); switching patients with edits open asks first, naming both patients ("Keep editing CASE-…" is the default; "Discard and open CASE-…"), and a reload or close warns.
 - **What needs me now?** Each screen leads with its decision: open hospital requests (with the request time and a countdown), the crew's next action with the job's progress, drafts awaiting the doctor's authorisation, the patient's current care.
-- **Honest estimates.** An ETA is labelled an estimate and says its basis (synthetic route, no live traffic, last known position when the unit has sent no GPS fix since the report).
+- **Honest estimates.** An ETA is labelled an estimate and says its basis: the ambulance's last reported position and who set it (*Set by the crew · 2 min ago*), or its last known position when none was reported since dispatch, and the routing used (synthetic route, no live traffic).
 
 ## 8. Realtime feedback
 
@@ -205,7 +239,7 @@ When something changes, say so in context. Do not silently replace a number.
 | Notable event (answer, reroute, arrival, ED unavailable) | Grouped toast with a *View* shortcut |
 | Headline number or ETA changed | `Flash` on the value |
 | New activity | Timeline entry slides in |
-| GPS fix | Marker glides; no toast, no timeline row (GPS rows can be shown on demand) |
+| Position update | Marker glides; no toast, no timeline row (position rows can be shown on demand) |
 | Reroute (crew) | Persistent card: old destination → why → re-evaluated → new destination + ETA, until acknowledged |
 | Answer sent (hospital) | Confirmation card stating the effect ("AMB-BLR-001 is now heading here") |
 | Connection | `ConnectionPill`: Live / Connecting… / Reconnecting… / Offline — showing last known data |
@@ -230,7 +264,7 @@ Each app resyncs from the API about 120 ms after every event, and every 15 s as 
   - Give no clinical interpretation and no "healthy/unhealthy" judgements.
   - Always offer *Call 108*.
 - **Operations screens:** use short labels (*ICU*, *Trauma*, *Awaiting response*). IDs are allowed.
-- **AI text** is always labelled *AI-generated · advisory only* and never presented as a decision.
+- **Automatic text** says what produced it — *Automatic summary · template, no AI* today (an LLM provider would read *AI-generated · advisory only*) — and is never presented as a decision.
 
 ---
 
@@ -259,5 +293,5 @@ The header actions wrap. No screen scrolls horizontally at 390px.
 
 ## 13. Performance
 
-- The map is created once. Markers update their attributes instead of re-mounting. Routes keep a stable reference per calculation, so GPS fixes never redraw them.
+- The map is created once. Markers update their attributes instead of re-mounting. Routes keep a stable reference per calculation, so position updates never redraw them.
 - Event lists are capped (Command Center: 400 in memory, 150 rendered). Search uses `useDeferredValue`. The clock re-renders every 1 s only while a deadline is visible, otherwise every 5 s.
