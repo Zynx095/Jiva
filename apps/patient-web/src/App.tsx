@@ -203,8 +203,8 @@ export default function App() {
 
         <div className="min-w-0 space-y-5">
           {/* CURRENT CARE */}
-          <section aria-labelledby="current-care" className="overflow-hidden rounded-2xl bg-white ring-1 ring-ink-200">
-            <div className="bg-brand-700 px-5 pb-5 pt-5 text-white">
+          <section aria-labelledby="current-care" className="overflow-hidden rounded-2xl bg-surface shadow-e2 ring-1 ring-ink-200">
+            <div className="jiva-gradient-brand px-5 pb-5 pt-5 text-white">
               <p id="current-care" className="text-[13px] font-semibold text-brand-100">
                 Current care
               </p>
@@ -225,7 +225,7 @@ export default function App() {
                 </div>
               )}
               {patient && !arrived && (
-                <div className="mt-4 flex items-end justify-between gap-3 rounded-xl bg-white/10 px-4 py-3">
+                <div className="mt-4 flex items-end justify-between gap-3 rounded-xl bg-black/15 px-4 py-3 ring-1 ring-inset ring-white/10">
                   <div>
                     <p className="text-[13px] font-semibold text-brand-100">Estimated arrival at hospital</p>
                     <p className="text-xs text-brand-100">
